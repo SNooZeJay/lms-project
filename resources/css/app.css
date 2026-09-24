@@ -1,0 +1,109 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+    --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+    --color-canvas: var(--lms-canvas);
+    --color-surface: var(--lms-surface);
+    --color-surface-muted: var(--lms-surface-muted);
+    --color-ink: var(--lms-ink);
+    --color-ink-muted: var(--lms-ink-muted);
+    --color-line: var(--lms-line);
+    --color-primary: var(--lms-primary);
+    --color-primary-hover: var(--lms-primary-hover);
+    --color-primary-text: var(--lms-primary-text);
+    --color-accent: var(--lms-accent);
+    --color-focus: var(--lms-focus);
+    --color-success-surface: var(--lms-success-surface);
+    --color-success-text: var(--lms-success-text);
+}
+
+:root {
+    color-scheme: light;
+    --lms-canvas: #f8fafc;
+    --lms-surface: #ffffff;
+    --lms-surface-muted: #f1f5f9;
+    --lms-ink: #0f172a;
+    --lms-ink-muted: #475569;
+    --lms-line: #cbd5e1;
+    --lms-primary: #1d4ed8;
+    --lms-primary-hover: #1e40af;
+    --lms-primary-text: #1d4ed8;
+    --lms-accent: #0f766e;
+    --lms-focus: #2563eb;
+    --lms-success-surface: #ecfdf5;
+    --lms-success-text: #166534;
+}
+
+.dark {
+    color-scheme: dark;
+    --lms-canvas: #0f172a;
+    --lms-surface: #1e293b;
+    --lms-surface-muted: #334155;
+    --lms-ink: #f1f5f9;
+    --lms-ink-muted: #cbd5e1;
+    --lms-line: #475569;
+    --lms-primary: #2563eb;
+    --lms-primary-hover: #1d4ed8;
+    --lms-primary-text: #93c5fd;
+    --lms-accent: #5eead4;
+    --lms-focus: #93c5fd;
+    --lms-success-surface: #14532d;
+    --lms-success-text: #bbf7d0;
+}
+
+@layer base {
+    html {
+        min-width: 20rem;
+        scroll-behavior: smooth;
+    }
+
+    body {
+        min-height: 100vh;
+        text-rendering: optimizeLegibility;
+    }
+
+    a,
+    button {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+        cursor: pointer;
+    }
+
+    button:disabled {
+        cursor: not-allowed;
+    }
+
+    :focus-visible {
+        outline: 3px solid var(--lms-focus);
+        outline-offset: 3px;
+    }
+
+    ::selection {
+        background: var(--lms-primary);
+        color: #ffffff;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
