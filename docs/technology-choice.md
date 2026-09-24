@@ -10,7 +10,7 @@ PHP 8.3 to 8.5
 Blade templates
 Tailwind CSS
 MySQL 8.x
-Laravel built-in authentication
+Laravel Fortify authentication
 Laravel Policies and Gates
 Laravel Events, Listeners, and Jobs
 Laravel Storage

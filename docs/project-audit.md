@@ -6,15 +6,15 @@ Audit date: September 25, 2026
 
 This document describes the repository as it exists now.
 
-The Laravel foundation is implemented. Phase 2 is in progress: Fortify, identity tables, models, and Student registration are implemented. Login, profile pages, password reset, verification screens, and the owner command remain unfinished. Later LMS business modules remain unbuilt.
+The Laravel foundation is implemented. Phase 2 is at its human approval checkpoint: Fortify authentication, identity tables, models, registration, login/logout, password reset, email verification, own profiles, the forced password gate, the local owner command, and fallback Edge review evidence are complete. Later LMS business modules remain unbuilt.
 
 ## 2. Current repository state
 
-The repository is an implementation-stage BSIT Academic LMS.
+The repository is an implementation-stage IT Learning Hub for a BSIT Academic LMS.
 
 It contains the Laravel 13 foundation, documentation, project support files, and a compiled static dashboard reference.
 
-The foundation is runnable. The product display name is now `IT Learning Hub`. Phase 2 now contains the Fortify package, User and Profile records, Student registration, and the initial identity boundary. The application does not yet contain completed login/profile flows, role management, courses, enrollment, learning materials, progress, quizzes, certificates, private uploads, or PayMongo.
+The foundation is runnable. The product display name is now `IT Learning Hub`. Phase 2 now contains the Fortify package, User and Profile records, authentication screens, verified email access, own-profile editing, the forced temporary-password gate, the local Administrator owner, and the completed automated/browser evidence checkpoint. The application does not yet contain role management, courses, enrollment, learning materials, progress, quizzes, certificates, private uploads, or PayMongo.
 
 ## 3. Root contents
 
@@ -25,15 +25,15 @@ The foundation is runnable. The product display name is now `IT Learning Hub`. P
 | `.opencode/` | Project OpenCode commands and skills | Preserve unless explicitly asked |
 | `docs/` | Product, design, architecture, roadmap, and audit documentation | Project truth |
 | `FOR_UI/` | Compiled Adminator-style dashboard distribution | Read-only visual reference |
-| `app/` | Laravel application layer with the public Home controller | Application source |
+| `app/` | Laravel application layer with public, authentication, account, and owner-command code | Application source |
 | `bootstrap/` | Laravel application bootstrap | Application source |
-| `config/` | Laravel configuration | Application source |
-| `database/` | Phase 1 framework migrations and empty business seeder | Application source |
+| `config/` | Laravel, Fortify, and local owner configuration | Application source |
+| `database/` | Framework and Phase 2 identity migrations, factory, and empty business seeder | Application source |
 | `public/` | Public document root and compiled local assets | Generated assets are ignored |
-| `resources/` | Blade views, Tailwind CSS, and small theme script | Application source |
-| `routes/` | Web route and health route configuration | Application source |
+| `resources/` | Blade layouts, authentication/account views, Tailwind CSS, and theme script | Application source |
+| `routes/` | Public, authentication, account, and health route configuration | Application source |
 | `storage/` | Private local storage skeleton | Local runtime files are ignored |
-| `tests/` | Foundation feature tests | Application source |
+| `tests/` | Authentication, account, owner-command, database, and UI feature tests | Application source |
 | `vendor/` | Installed Composer dependencies | Generated and ignored |
 | `node_modules/` | Installed npm dependencies | Generated and ignored |
 | `AGENTS.md` | OpenCode project instructions | Persistent coding context |
@@ -64,7 +64,7 @@ The following Phase 1 foundation files exist:
 - `package.json` and `package-lock.json`
 - `phpunit.xml`
 
-The following Phase 1 capabilities exist:
+The following Phase 1 and Phase 2 capabilities exist:
 
 - Laravel application bootstrap
 - Named public Home route and thin controller
@@ -81,15 +81,15 @@ The following Phase 1 capabilities exist:
 - `users`, `password_reset_tokens`, and `profiles` identity migrations
 - User and Profile models with Student registration
 - Student-only registration action and email verification contract
+- Login, logout, safe password reset, and email verification screens
+- Own name and bio profile editing
+- Forced temporary-password change middleware and page
+- Local Administrator owner command with Windows DPAPI storage
+- Login throttling and suspended-account blocking
 
 The following capabilities are not implemented yet:
 
-- Completed login and logout views
-- Password reset and email verification views
-- Own profile pages
-- Forced temporary-password change
-- Local Administrator bootstrap
-- Role assignment
+- Role assignment and role management
 - Course management
 - Enrollment
 - Learning materials
@@ -134,7 +134,7 @@ Checked on September 25, 2026:
 | Credential storage | DPAPI-encrypted file under `C:\Users\Administrator\.secrets\lms-mysql.json` | Ready |
 | XAMPP database | MariaDB 10.4.32 remains on port 3306 | Preserved and not used by the LMS |
 
-Phase 1 environment prerequisites and the Laravel foundation are ready. Human review remains before Phase 2 authentication work begins.
+Phase 1 environment prerequisites, the Laravel foundation, and the approved Phase 2 identity slices are ready. Human approval remains before the Phase 2 exit.
 
 ## 5. Documentation state
 
@@ -277,7 +277,7 @@ The final folder structure follows Laravel conventions and does not copy the ref
 
 Phase 1 has the default Laravel web middleware, Blade escaping, CSRF protection, secure session cookie settings, local-only secrets, and a safe error view.
 
-Phase 2 adds these controls when implemented:
+Phase 2 now includes these controls:
 
 - Laravel Fortify authentication
 - CSRF-protected registration, login, logout, reset, and verification flows
@@ -305,7 +305,7 @@ The browser theme preference uses browser storage for display preference only. I
 
 ## 10. Quality posture
 
-Phase 1 quality checks exist:
+Phase 1 and Phase 2 quality checks exist:
 
 - `php artisan test` with MySQL-backed feature tests
 - `vendor/bin/pint --test`
@@ -316,7 +316,7 @@ Phase 1 quality checks exist:
 - Local MySQL migrations
 - Blade, route, and configuration cache checks
 
-The first full foundation run passed 7 tests and 26 assertions. After the Fortify dependency and identity slice, the suite passed 9 tests and 45 assertions. The first dependency pass found a missing PHP Fileinfo extension, which was enabled and retested. A later cached-config run exposed a test database selection defect, which was fixed and retested. A first-run Blade check exposed an unconditional Vite manifest dependency, which was fixed and retested. A local `.env` owner-name value needed quoting and was fixed before the Phase 2 tests passed. Edge headless review confirmed the responsive layout, theme toggle, local preference persistence, and safe mobile width.
+The first full foundation run passed 7 tests and 26 assertions. After the Fortify dependency and identity slice, the suite passed 9 tests and 45 assertions. The completed Phase 2 authentication and profile slice passes 28 tests and 141 assertions, including a real Windows DPAPI round trip. The first dependency pass found a missing PHP Fileinfo extension, which was enabled and retested. A later cached-config run exposed a test database selection defect, which was fixed and retested. A first-run Blade check exposed an unconditional Vite manifest dependency, which was fixed and retested. A local `.env` owner-name value needed quoting and was fixed before the Phase 2 tests passed. Fortify’s default unknown-email reset response initially exposed account state, so a safe generic response was added and retested. The password-change middleware initially allowed the GET route but not the POST route, and the fix was retested. The owner test initially reused the real local secret path, so it now uses a unique temporary path. Registration normalization initially assumed missing fields were present, so missing-field validation now returns safe errors. Edge fallback review confirmed responsive auth layout, theme persistence, and keyboard-safe controls.
 
 CI and production deployment checks are not implemented yet.
 
@@ -372,21 +372,14 @@ Each deferred item has a safe planning default in `plan.md` and `architecture.md
 
 ## 14. Next approved milestone
 
-The next milestone is completing Phase 2 authentication and profile implementation.
+The next milestone is human approval of the completed Phase 2 checkpoint.
 
-The next slices cover:
-
-- Login and logout views
-- Password reset and email verification views
-- Own-profile pages
-- Forced temporary-password change
-- Local Administrator bootstrap
-- Authentication security tests
+Fallback Edge review evidence is recorded: desktop and 390px screenshots, no horizontal overflow, keyboard focus, 44px controls, password-manager autocomplete, theme persistence, and local log-mailer delivery all passed. The desktop browser connector was unavailable in this session.
 
 Role management, courses, enrollment, and payments remain later phases.
 
 ## 15. Audit conclusion
 
-The repository now has a runnable Laravel 13 foundation and the first tested Phase 2 identity slice for IT Learning Hub.
+The repository now has a runnable Laravel 13 foundation and a tested Phase 2 authentication/profile slice for IT Learning Hub.
 
-The safe next step is the login and profile slice. Payment and course work remain later phases.
+The safe next step is human approval. Payment and course work remain later phases.

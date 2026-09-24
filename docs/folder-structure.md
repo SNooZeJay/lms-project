@@ -45,6 +45,8 @@ A browser sends requests to Laravel. Laravel returns HTML, redirects, validation
 lms-project/
 ├── app/
 │   ├── Actions/
+│   │   ├── Account/
+│   │   │   └── ChangePassword.php
 │   │   ├── Fortify/
 │   │   │   ├── CreateNewUser.php
 │   │   │   ├── PasswordValidationRules.php
@@ -77,6 +79,8 @@ lms-project/
 │   ├── Console/
 │   │   └── Commands/
 │   │       └── BootstrapOwner.php
+│   ├── Contracts/
+│   │   └── LocalSecretStore.php
 │   ├── Enums/
 │   │   ├── UserRole.php
 │   │   ├── UserAccountStatus.php
@@ -99,6 +103,9 @@ lms-project/
 │   │   │   ├── EnsureAccountIsActive.php
 │   │   │   └── EnsureUserHasRole.php
 │   │   ├── Controllers/
+│   │   │   ├── Account/
+│   │   │   │   ├── PasswordController.php
+│   │   │   │   └── ProfileController.php
 │   │   │   ├── Admin/
 │   │   │   ├── Auth/
 │   │   │   ├── Instructor/
@@ -106,13 +113,18 @@ lms-project/
 │   │   │   ├── Student/
 │   │   │   └── Webhook/
 │   │   │       └── PayMongoWebhookController.php
-│   │   └── Requests/
-│   │       ├── Auth/
-│   │       ├── Courses/
-│   │       ├── Enrollment/
-│   │       ├── Learning/
-│   │       ├── Payments/
-│   │       └── Quizzes/
+│   │   ├── Requests/
+│   │   │   ├── Account/
+│   │   │   │   ├── ChangePasswordRequest.php
+│   │   │   │   └── UpdateProfileRequest.php
+│   │   │   ├── Auth/
+│   │   │   ├── Courses/
+│   │   │   ├── Enrollment/
+│   │   │   ├── Learning/
+│   │   │   ├── Payments/
+│   │   │   └── Quizzes/
+│   │   ├── Responses/
+│   │   │   └── SafePasswordResetLinkResponse.php
 │   ├── Jobs/
 │   │   ├── SendPaymentReceipt.php
 │   │   └── RemoveOrphanedMaterial.php
@@ -158,6 +170,8 @@ lms-project/
 │   │   │   └── QuizGrader.php
 │   │   └── Storage/
 │   │       └── LearningMaterialStorage.php
+│   ├── Support/
+│   │   └── WindowsDpapiSecretStore.php
 │   ├── View/Components/
 │   │   ├── Alert.php
 │   │   ├── Button.php
@@ -167,13 +181,15 @@ lms-project/
 │   │   ├── ProgressBar.php
 │   │   └── StatusBadge.php
 │   └── Providers/
-│       └── AppServiceProvider.php
+│       ├── AppServiceProvider.php
+│       └── FortifyServiceProvider.php
 ├── bootstrap/
 │   ├── app.php
 │   └── providers.php
 ├── config/
 │   ├── auth.php
 │   ├── fortify.php
+│   ├── owner.php
 │   ├── database.php
 │   ├── filesystems.php
 │   ├── logging.php
@@ -237,7 +253,8 @@ lms-project/
 │       ├── Certificates/
 │       ├── Learning/
 │       ├── Payments/
-│       └── Quizzes/
+│       ├── Quizzes/
+│       └── Support/
 ├── vendor/
 ├── docs/
 │   ├── README.md

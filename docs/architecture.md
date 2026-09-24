@@ -2,7 +2,7 @@
 
 ## 1. Document status
 
-This document defines the approved target architecture for the BSIT Academic LMS. The Phase 1 Laravel foundation is now implemented, while later business modules remain unbuilt. This document does not create accounts, hosted services, or payment resources.
+This document defines the approved target architecture for the BSIT Academic LMS. The Phase 1 Laravel foundation and Phase 2 authentication/profile slices are now implemented, while later business modules remain unbuilt. This document does not create hosted services or payment resources.
 
 The approved stack is:
 
@@ -12,7 +12,7 @@ PHP 8.3 to 8.5
 Blade
 Tailwind CSS
 MySQL 8.x
-Laravel authentication
+Laravel Fortify authentication
 Laravel Policies and Gates
 Laravel Events, Listeners, and Jobs
 Laravel Storage
@@ -34,7 +34,7 @@ Read sections 2 through 9 first for system layers, routes, authentication, and a
 2. Keep privileged decisions on the server or in the database.
 3. Keep controllers, views, policies, and business workflows separate.
 4. Use MySQL relationships, constraints, indexes, and transactions.
-5. Use Laravel authentication for browser sessions.
+5. Use Laravel Fortify authentication for browser sessions.
 6. Use Policies for resource authorization.
 7. Keep PayMongo secrets and payment transitions on the server.
 8. Treat Enrollment as the access record and Payment as a separate record.
@@ -564,7 +564,7 @@ erDiagram
 
 ### `users`
 
-Standard Laravel authentication table.
+Standard Laravel Fortify authentication table.
 
 | Column | Type | Rules |
 |---|---|---|
@@ -591,6 +591,8 @@ Standard Laravel authentication table.
 | timestamps | TIMESTAMP | Required |
 
 Role and account status cannot be updated by the profile owner.
+
+`avatar_path` is a later private Storage field. It is not part of the Phase 2 migration.
 
 ### `courses`
 
@@ -1131,7 +1133,7 @@ Use the database queue during early development. Select a production queue drive
 
 ## 20. Security rules
 
-1. Use Laravel authentication for all protected browser routes.
+1. Use Laravel Fortify authentication for all protected browser routes.
 2. Use Policies for all resource actions.
 3. Repeat authorization inside Actions, Jobs, and webhook handlers.
 4. Use Form Requests for validation.

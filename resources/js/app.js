@@ -61,3 +61,9 @@ systemTheme.addEventListener('change', (event) => {
         applyTheme(event.matches ? 'dark' : 'light', false);
     }
 });
+
+const errorSummary = document.querySelector('[data-error-summary]');
+
+if (errorSummary) {
+    errorSummary.focus();
+}

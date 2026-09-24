@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Foundation for a BSIT academic learning management system.">
+    <meta name="description" content="IT Learning Hub, a practical academic learning management system for BSIT students.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', config('app.name'))</title>
@@ -44,10 +44,10 @@
     <div class="flex min-h-screen flex-col">
         <header class="sticky top-0 z-30 border-b border-line bg-canvas">
             <div class="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-                <a href="{{ route('home') }}" class="flex min-h-11 items-center rounded-md" aria-label="BSIT Academic LMS home">
+                <a href="{{ route('home') }}" class="flex min-h-11 items-center rounded-md" aria-label="IT Learning Hub home">
                     <span class="leading-tight">
-                        <span class="block text-sm font-semibold text-ink">BSIT Academic LMS</span>
-                        <span class="block text-xs text-ink-muted">Academic learning foundation</span>
+                        <span class="block text-sm font-semibold text-ink">IT Learning Hub</span>
+                        <span class="block text-xs text-ink-muted">Academic learning platform</span>
                     </span>
                 </a>
 
@@ -61,8 +61,8 @@
 
         <footer class="border-t border-line bg-surface">
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-ink-muted sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-                <p>BSIT Academic LMS</p>
-                <p>Phase 1 foundation. Student and payment workflows are not enabled.</p>
+                <p>IT Learning Hub</p>
+                <p>Phase 2 authentication foundation. Course and payment workflows are not enabled.</p>
             </div>
         </footer>
     </div>

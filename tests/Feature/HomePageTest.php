@@ -12,9 +12,11 @@ class HomePageTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('BSIT Academic LMS')
+            ->assertSee('IT Learning Hub')
             ->assertSee('A clear foundation for academic learning.')
             ->assertSee('Foundation preview')
+            ->assertSee('Sign in')
+            ->assertSee('Create student account')
             ->assertSee('Skip to main content')
             ->assertSee('data-theme-toggle', false);
     }

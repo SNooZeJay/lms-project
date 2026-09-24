@@ -52,4 +52,12 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseMissing('users', ['email' => 'unsafe@example.test']);
         $this->assertGuest();
     }
+
+    public function test_registration_returns_validation_errors_for_missing_fields(): void
+    {
+        $response = $this->post('/register', []);
+
+        $response->assertSessionHasErrors(['name', 'email', 'password']);
+        $this->assertGuest();
+    }
 }

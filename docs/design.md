@@ -323,7 +323,7 @@ The page should communicate:
 
 Do not use unsupported claims, fake testimonials, or fabricated statistics.
 
-After the Phase 2 authentication routes exist, the home page must show working **Sign in** and **Create student account** links. It must not show links to courses, dashboards, or payments before those routes exist.
+The home page shows working **Sign in** and **Create student account** links for guests. It does not show links to courses, dashboards, or payments before those routes exist.
 
 ### Authentication pages
 

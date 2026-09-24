@@ -66,7 +66,7 @@ return [
         'password-confirmation' => null,
         'register' => '/email/verify',
         'email-verification' => '/email/verify',
-        'password-reset' => null,
+        'password-reset' => '/account/profile',
     ],
     'passkeys' => [
         'relying_party_id' => parse_url(config('app.url'), PHP_URL_HOST),

@@ -11,12 +11,12 @@ The repository currently contains:
 - Product and architecture documentation
 - A Laravel 13 application foundation
 - Blade and Tailwind CSS foundation views
-- MySQL migrations for framework infrastructure tables
+- MySQL migrations for framework infrastructure and Phase 2 identity tables
 - Automated feature tests and quality commands
 - Project-local agent skills and OpenCode configuration
 - A compiled Adminator dashboard under `FOR_UI/`
 
-Authentication, roles, courses, enrollment, learning materials, progress, quizzes, certificates, private uploads, and PayMongo are not implemented yet.
+Role management, courses, enrollment, learning materials, progress, quizzes, certificates, private uploads, and PayMongo are not implemented yet.
 
 ## Approved technology stack
 
@@ -180,17 +180,30 @@ npm audit
 npm run build
 ```
 
-## Next milestone
+## Phase 2 checkpoint
 
-Phase 2 authentication and profiles are approved:
+The authentication and profile slice is implemented and the automated plus fallback Edge checks pass. Human approval remains before Phase 3 begins.
 
-- Add Laravel Fortify
-- Add User and Profile records
-- Add registration, login, logout, password reset, and email verification
-- Add the forced temporary-password change
-- Add own-profile editing for name and bio
-- Add the local Administrator bootstrap command
-- Add authentication security tests
-- Stop before role management, courses, enrollment, or payments
+Review evidence includes:
 
-The provided PayMongo public test key remains local configuration only.
+- Desktop and 390px authentication layout checks
+- Keyboard focus and 44px control checks
+- Light and dark theme persistence
+- Local log-mailer verification and reset-link checks
+- Full automated quality checks
+
+The local Administrator is provisioned with:
+
+```text
+php artisan owner:bootstrap
+```
+
+Run it without `--show-password` to keep the generated password in the external DPAPI file. When needed, run `php artisan owner:bootstrap --show-password` locally. The account is:
+
+```text
+Name: Jayzee Bautista
+Email: bautista.jayzee@ncst.edu.ph
+Role: Administrator
+```
+
+The first sign-in requires a password change. The provided PayMongo public test key remains local configuration only. Role management, courses, enrollment, and payments remain later phases.

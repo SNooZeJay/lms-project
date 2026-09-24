@@ -4,7 +4,7 @@
 
 This roadmap turns the approved LMS plan into small, testable steps.
 
-Phase 0 is approved. Phase 1 implementation started on September 25, 2026. No later phase has started.
+Phase 0 is approved. Phase 1 is complete. Phase 2 authentication and profile implementation is in progress. No Phase 3 or later implementation has started.
 
 Do not skip directly to payment processing or dashboard polish.
 
@@ -179,7 +179,7 @@ Create a clean Laravel 13 application with no LMS business logic yet.
 
 ### Status
 
-Approved. Phase 2 authentication and profile implementation is approved to begin.
+Approved. Phase 1 implementation is complete and the Phase 2 checkpoint is in progress.
 
 ### Environment preflight
 
@@ -325,7 +325,7 @@ Create secure accounts, verified email access, editable own profiles, and one lo
 
 ### Status
 
-Approved on September 25, 2026. Implementation starts with the data and interface slices below.
+Approved on September 25, 2026. Core identity, authentication, profile, password-gate, local owner, and fallback Edge review evidence are complete. Human approval remains before the phase exit.
 
 ### Confirmed decisions
 
@@ -358,6 +358,7 @@ Existing evidence:
 - `architecture.md` defines `users`, `profiles`, registration, session, and email-verification rules.
 - `design.md` defines public authentication pages and accessible form states.
 - The Phase 1 schema contains framework infrastructure tables only.
+- The Phase 2 migrations now add `users`, `password_reset_tokens`, and `profiles` without business tables.
 
 Phase 2 identity ERD:
 
@@ -483,26 +484,50 @@ flowchart TD
   - Acceptance: `users`, `password_reset_tokens`, and `profiles` exist with the approved fields and relationships.
   - Verify: focused migration and model tests on `lms_test`.
 
-- [ ] Task 3: Add registration, login, logout, reset, and verification
+- [x] Task 3: Add registration, login, logout, reset, and verification
   - Acceptance: Student registration never accepts a role; invalid credentials and suspended accounts fail safely; logout invalidates the session.
   - Verify: auth feature tests and browser smoke flow.
 
-- [ ] Task 4: Add forced password change and own profile
+- [x] Task 4: Add forced password change and own profile
   - Acceptance: temporary-password users reach only the password change page; approved name and bio fields update; email and role fields cannot be changed through the profile form.
   - Verify: middleware, authorization, validation, and browser tests.
 
-- [ ] Task 5: Add local Administrator bootstrap
+- [x] Task 5: Add local Administrator bootstrap
   - Acceptance: local command creates the named Administrator, refuses unsafe promotion, stores the generated password with DPAPI, and never logs the secret.
   - Verify: command tests plus a local database inspection.
 
-- [ ] Checkpoint: Phase 2 security and UI review
-  - [ ] Full test suite passes.
-  - [ ] Build passes.
-  - [ ] Composer and npm audits pass.
-  - [ ] Desktop and mobile authentication screens are keyboard usable.
-  - [ ] Light and dark themes work.
-  - [ ] Verification and reset links are available through the local log mailer.
-  - [ ] No payment route or payment behavior exists.
+- [x] Checkpoint: Phase 2 security and UI review
+  - [x] Full test suite passes.
+  - [x] Build passes.
+  - [x] Composer and npm audits pass.
+  - [x] Desktop and mobile authentication screens are keyboard usable.
+  - [x] Light and dark themes work.
+  - [x] Verification and reset links are available through the local log mailer.
+  - [x] No payment route or payment behavior exists.
+
+### Phase 2 implementation evidence
+
+- `laravel/fortify` v1.40.0 is installed with passkeys and two-factor authentication disabled.
+- `users`, `password_reset_tokens`, and `profiles` migrations run on `lms_test` and local `lms`.
+- Student registration creates a User and Profile in one transaction and rejects privileged fields.
+- Login blocks invalid credentials and suspended accounts, regenerates the session, and throttles repeated failures.
+- Password reset uses a generic response for known and unknown email addresses.
+- The local owner command created `Jayzee Bautista` as a verified Administrator with `must_change_password = true`.
+- The temporary owner password is stored at the configured external path with Windows DPAPI.
+- The automated suite passes 28 tests and 141 assertions.
+- Vite build, Composer validation/audit, npm audit, route listing, and cache checks pass.
+- Edge headless review at 1440px and 390px confirmed the sign-in layout has no horizontal overflow, 44px submit controls, visible labels, password-manager autocomplete, keyboard focus, and no role input on registration.
+- Edge evaluation confirmed the theme toggle changes the document theme and persists `lms-theme` in browser storage.
+- A real local Administrator login reached `/account/password` without printing the temporary password.
+- Laravel's local log mailer recorded a password-reset link; the temporary reset token was deleted after the check.
+
+Bugs found and fixed during this phase:
+
+- The local owner name needed quoting in `.env`.
+- Fortify’s default unknown-email reset response exposed account state, so the project now uses a safe generic response.
+- The owner command test initially reused the real local secret path, so the test now uses a unique temporary path outside the repository.
+- The password-change middleware initially allowed the page route but not its POST route, so the gate now permits both password-change endpoints.
+- Registration normalization initially assumed name and email keys existed, so missing-field validation now returns errors instead of a server error.
 
 ### Security tests
 
@@ -983,6 +1008,6 @@ A task is done when:
 
 ## 23. Current next action
 
-The current next action is documentation review.
+The current next action is human approval of the completed Phase 2 checkpoint.
 
-Environment preflight is complete. The current next action is owner readiness review. Application scaffolding begins only after owner confirmation.
+Environment preflight, the Laravel foundation, the Phase 2 identity/authentication slices, local migrations, the local Administrator owner, and fallback Edge review are complete. Do not begin Phase 3 until the checkpoint is approved.

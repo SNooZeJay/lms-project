@@ -21,8 +21,8 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
-        $input['email'] = Str::lower(trim((string) $input['email']));
-        $input['name'] = trim((string) $input['name']);
+        $input['email'] = Str::lower(trim((string) ($input['email'] ?? '')));
+        $input['name'] = trim((string) ($input['name'] ?? ''));
 
         Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],

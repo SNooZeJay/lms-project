@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'BSIT Academic LMS')
+@section('title', 'IT Learning Hub')
 
 @section('content')
     <div class="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
@@ -17,13 +17,28 @@
                 </h1>
 
                 <p class="mt-6 max-w-2xl text-lg leading-8 text-ink-muted">
-                    The Laravel shell, design system, and MySQL boundary are ready for approved authentication and course workflows in later phases.
+                    A calm, practical place for BSIT learners to build academic momentum through clear course workflows.
                 </p>
+
+                <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    @auth
+                        <a href="{{ route('account.profile') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
+                            Open your account
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
+                            Sign in
+                        </a>
+                        <a href="{{ route('register') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
+                            Create student account
+                        </a>
+                    @endauth
+                </div>
 
                 <div class="mt-8 border-l-4 border-accent bg-surface px-5 py-4 sm:px-6">
                     <p class="text-sm font-semibold text-ink">Current boundary</p>
                     <p class="mt-1 max-w-xl leading-7 text-ink-muted">
-                        This page shows technical readiness. It does not contain sample courses, accounts, progress, certificates, or payments.
+                        Authentication and profiles are being built in approved slices. Course access, progress, certificates, uploads, and payments remain later work.
                     </p>
                 </div>
             </div>
@@ -56,7 +71,7 @@
                         <span class="font-mono text-sm font-semibold text-primary-text">03</span>
                         <div>
                             <p class="font-semibold text-ink">Data foundation</p>
-                            <p class="mt-1 text-sm leading-6 text-ink-muted">Dedicated MySQL databases with framework-only Phase 1 tables.</p>
+                            <p class="mt-1 text-sm leading-6 text-ink-muted">Dedicated MySQL databases with framework infrastructure and approved identity tables.</p>
                         </div>
                     </li>
                 </ol>
@@ -95,7 +110,7 @@
             <div>
                 <h2 id="not-ready-heading" class="text-lg font-semibold text-ink">Not available yet</h2>
                 <p class="mt-2 max-w-2xl leading-7 text-ink-muted">
-                    Accounts, role assignment, courses, enrollment, quizzes, certificates, uploads, and PayMongo remain outside Phase 1.
+                    Role management, courses, enrollment, quizzes, certificates, uploads, and PayMongo remain outside the current authentication slice.
                 </p>
             </div>
             <p class="inline-flex w-fit items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink-muted">

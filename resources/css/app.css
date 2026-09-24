@@ -24,6 +24,8 @@
     --color-focus: var(--lms-focus);
     --color-success-surface: var(--lms-success-surface);
     --color-success-text: var(--lms-success-text);
+    --color-error-surface: var(--lms-error-surface);
+    --color-error-text: var(--lms-error-text);
 }
 
 :root {
@@ -41,6 +43,8 @@
     --lms-focus: #2563eb;
     --lms-success-surface: #ecfdf5;
     --lms-success-text: #166534;
+    --lms-error-surface: #fef2f2;
+    --lms-error-text: #991b1b;
 }
 
 .dark {
@@ -58,6 +62,8 @@
     --lms-focus: #93c5fd;
     --lms-success-surface: #14532d;
     --lms-success-text: #bbf7d0;
+    --lms-error-surface: #7f1d1d;
+    --lms-error-text: #fecaca;
 }
 
 @layer base {
