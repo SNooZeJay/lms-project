@@ -56,6 +56,10 @@ Register
 
 Instructors manage academic content. Administrators manage users, courses, enrollments, payments, reports, and system activity.
 
+## New to Laravel?
+
+Start with the beginner-friendly [tutorial.md](tutorial.md) for setup, startup, Administrator login, testing, and troubleshooting.
+
 ## Documentation map
 
 Read these files in order:
