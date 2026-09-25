@@ -6,7 +6,7 @@ Audit date: September 25, 2026
 
 This document describes the repository as it exists now.
 
-The Laravel foundation is implemented. Phase 2 is at its human approval checkpoint: Fortify authentication, identity tables, models, registration, login/logout, password reset, email verification, own profiles, the forced password gate, the local owner command, and fallback Edge review evidence are complete. Later LMS business modules remain unbuilt.
+The Laravel foundation and Phase 2 authentication/profile slice are human-approved. Phase 3 roles and authorization is implemented through the first tested backend and UI slices. The strict Phase 3 checkpoint remains open. Later LMS business modules remain unbuilt.
 
 ## 2. Current repository state
 
@@ -14,7 +14,7 @@ The repository is an implementation-stage IT Learning Hub for a BSIT Academic LM
 
 It contains the Laravel 13 foundation, documentation, project support files, and a compiled static dashboard reference.
 
-The foundation is runnable. The product display name is now `IT Learning Hub`. Phase 2 now contains the Fortify package, User and Profile records, authentication screens, verified email access, own-profile editing, the forced temporary-password gate, the local Administrator owner, and the completed automated/browser evidence checkpoint. The application does not yet contain role management, courses, enrollment, learning materials, progress, quizzes, certificates, private uploads, or PayMongo.
+The foundation is runnable. The product display name is now `IT Learning Hub`. Phase 2 contains the Fortify package, User and Profile records, authentication screens, verified email access, own-profile editing, the forced temporary-password gate, the local Administrator owner, and the completed automated/browser evidence checkpoint. Phase 3 now contains ActivityLog records, role/status Actions, Policies, active-account middleware, role pages, and Administrator user management. The application does not yet contain courses, enrollment, learning materials, progress, quizzes, certificates, private uploads, or PayMongo.
 
 ## 3. Root contents
 
@@ -25,15 +25,15 @@ The foundation is runnable. The product display name is now `IT Learning Hub`. P
 | `.opencode/` | Project OpenCode commands and skills | Preserve unless explicitly asked |
 | `docs/` | Product, design, architecture, roadmap, and audit documentation | Project truth |
 | `FOR_UI/` | Compiled Adminator-style dashboard distribution | Read-only visual reference |
-| `app/` | Laravel application layer with public, authentication, account, and owner-command code | Application source |
+| `app/` | Laravel application layer with public, authentication, account, role, and administration code | Application source |
 | `bootstrap/` | Laravel application bootstrap | Application source |
-| `config/` | Laravel, Fortify, and local owner configuration | Application source |
-| `database/` | Framework and Phase 2 identity migrations, factory, and empty business seeder | Application source |
+| `config/` | Laravel, Fortify, local owner, and role authorization configuration | Application source |
+| `database/` | Framework, Phase 2 identity, and Phase 3 activity-log migrations plus factory and empty business seeder | Application source |
 | `public/` | Public document root and compiled local assets | Generated assets are ignored |
-| `resources/` | Blade layouts, authentication/account views, Tailwind CSS, and theme script | Application source |
-| `routes/` | Public, authentication, account, and health route configuration | Application source |
+| `resources/` | Blade layouts, authentication/account/role/admin views, Tailwind CSS, and theme script | Application source |
+| `routes/` | Public, authentication, account, role, admin, and health route configuration | Application source |
 | `storage/` | Private local storage skeleton | Local runtime files are ignored |
-| `tests/` | Authentication, account, owner-command, database, and UI feature tests | Application source |
+| `tests/` | Authentication, account, role, admin, owner-command, database, and UI feature tests | Application source |
 | `vendor/` | Installed Composer dependencies | Generated and ignored |
 | `node_modules/` | Installed npm dependencies | Generated and ignored |
 | `AGENTS.md` | OpenCode project instructions | Persistent coding context |
@@ -64,7 +64,7 @@ The following Phase 1 foundation files exist:
 - `package.json` and `package-lock.json`
 - `phpunit.xml`
 
-The following Phase 1 and Phase 2 capabilities exist:
+The following Phase 1, Phase 2, and initial Phase 3 capabilities exist:
 
 - Laravel application bootstrap
 - Named public Home route and thin controller
@@ -86,10 +86,17 @@ The following Phase 1 and Phase 2 capabilities exist:
 - Forced temporary-password change middleware and page
 - Local Administrator owner command with Windows DPAPI storage
 - Login throttling and suspended-account blocking
+- ActivityLog migration and model
+- Role and account-status Actions with transaction and audit records
+- UserPolicy and ActivityLogPolicy
+- Role and active-account middleware
+- Role-based login and password-change redirects
+- Minimal Student, Instructor, and Administrator pages
+- Administrator user search, filters, pagination, role forms, and status forms
+- Read-only Administrator activity page
 
 The following capabilities are not implemented yet:
 
-- Role assignment and role management
 - Course management
 - Enrollment
 - Learning materials
@@ -115,6 +122,22 @@ The following capabilities are not implemented yet:
 - PayMongo public test key stored only in the local ignored `.env`
 - No payment package, route, table, checkout, or webhook
 
+### Approved Phase 3 specification
+
+- Reuse the existing UserRole and UserAccountStatus enums
+- Add Administrator user search, role filters, status filters, and pagination
+- Allow verified-target role assignment and account suspension/reactivation
+- Reject self-role and self-status changes
+- Protect the final active Administrator
+- Store role/status changes and ActivityLog records in one transaction
+- Add read-only Administrator activity records
+- Add minimal authorized Student, Instructor, and Administrator pages
+- Redirect login and forced-password-change completion by role
+- Block suspended sessions on the next request
+- No deletion, archive, bulk actions, multi-role accounts, or business modules
+
+Phase 3 code is implemented through the first tested backend and UI slices. The strict checkpoint remains open.
+
 ### Local environment check
 
 Checked on September 25, 2026:
@@ -134,7 +157,7 @@ Checked on September 25, 2026:
 | Credential storage | DPAPI-encrypted file under `C:\Users\Administrator\.secrets\lms-mysql.json` | Ready |
 | XAMPP database | MariaDB 10.4.32 remains on port 3306 | Preserved and not used by the LMS |
 
-Phase 1 environment prerequisites, the Laravel foundation, and the approved Phase 2 identity slices are ready. Human approval remains before the Phase 2 exit.
+Phase 1 environment prerequisites, the Laravel foundation, and the human-approved Phase 2 identity slices are ready. Phase 3 documentation and implementation are now approved.
 
 ## 5. Documentation state
 
@@ -288,6 +311,15 @@ Phase 2 now includes these controls:
 - Own-profile authorization
 - DPAPI-protected local bootstrap secret
 
+Phase 3 now includes these controls:
+
+- Role and active-account middleware
+- UserPolicy checks for Administrator account management
+- Self-change and last-Administrator safeguards
+- Role/status ActivityLog records
+- One transaction for each account change and audit record
+- Read-only Administrator activity page
+
 These later controls remain unimplemented until their approved phases:
 
 - Policies and Gates for LMS resources
@@ -297,7 +329,7 @@ These later controls remain unimplemented until their approved phases:
 - Safe upload validation
 - PayMongo signature verification
 - Idempotent webhook processing
-- Sanitized activity records
+- Sanitized activity records for later domains
 
 `APP_DEBUG=true` is limited to the local `.env`. Production must use `APP_DEBUG=false`.
 
@@ -305,7 +337,7 @@ The browser theme preference uses browser storage for display preference only. I
 
 ## 10. Quality posture
 
-Phase 1 and Phase 2 quality checks exist:
+Phase 1, Phase 2, and Phase 3 quality checks exist:
 
 - `php artisan test` with MySQL-backed feature tests
 - `vendor/bin/pint --test`
@@ -316,7 +348,7 @@ Phase 1 and Phase 2 quality checks exist:
 - Local MySQL migrations
 - Blade, route, and configuration cache checks
 
-The first full foundation run passed 7 tests and 26 assertions. After the Fortify dependency and identity slice, the suite passed 9 tests and 45 assertions. The completed Phase 2 authentication and profile slice passes 28 tests and 141 assertions, including a real Windows DPAPI round trip. The first dependency pass found a missing PHP Fileinfo extension, which was enabled and retested. A later cached-config run exposed a test database selection defect, which was fixed and retested. A first-run Blade check exposed an unconditional Vite manifest dependency, which was fixed and retested. A local `.env` owner-name value needed quoting and was fixed before the Phase 2 tests passed. Fortify’s default unknown-email reset response initially exposed account state, so a safe generic response was added and retested. The password-change middleware initially allowed the GET route but not the POST route, and the fix was retested. The owner test initially reused the real local secret path, so it now uses a unique temporary path. Registration normalization initially assumed missing fields were present, so missing-field validation now returns safe errors. Edge fallback review confirmed responsive auth layout, theme persistence, and keyboard-safe controls.
+The first full foundation run passed 7 tests and 26 assertions. After the Fortify dependency and identity slice, the suite passed 9 tests and 45 assertions. The completed Phase 2 authentication and profile slice passes 28 tests and 141 assertions, including a real Windows DPAPI round trip. The Phase 3 role and authorization slice now passes 41 tests and 195 assertions. The first dependency pass found a missing PHP Fileinfo extension, which was enabled and retested. A later cached-config run exposed a test database selection defect, which was fixed and retested. A first-run Blade check exposed an unconditional Vite manifest dependency, which was fixed and retested. A local `.env` owner-name value needed quoting and was fixed before the Phase 2 tests passed. Fortify’s default unknown-email reset response initially exposed account state, so a safe generic response was added and retested. The password-change middleware initially allowed the GET route but not the POST route, and the fix was retested. The owner test initially reused the real local secret path, so it now uses a unique temporary path. Registration normalization initially assumed missing fields were present, so missing-field validation now returns safe errors. Edge fallback review confirmed responsive auth layout, theme persistence, and keyboard-safe controls. The Phase 3 Administrator table initially caused mobile page overflow; stacked mobile cards fixed it and the 390px browser check was rerun.
 
 CI and production deployment checks are not implemented yet.
 
@@ -372,14 +404,14 @@ Each deferred item has a safe planning default in `plan.md` and `architecture.md
 
 ## 14. Next approved milestone
 
-The next milestone is human approval of the completed Phase 2 checkpoint.
+The next milestone is the final Phase 3 strict security and UI checkpoint.
 
-Fallback Edge review evidence is recorded: desktop and 390px screenshots, no horizontal overflow, keyboard focus, 44px controls, password-manager autocomplete, theme persistence, and local log-mailer delivery all passed. The desktop browser connector was unavailable in this session.
+Phase 2 fallback Edge review evidence and Phase 3 mobile Administrator review evidence are recorded. The desktop browser connector was unavailable in this session, so Edge fallback checks are used.
 
-Role management, courses, enrollment, and payments remain later phases.
+The remaining checkpoint work covers final full-suite evidence, build and audits, desktop/mobile role-page review, and human approval. Role management for later LMS resources, courses, enrollment, and payments remain separate approved boundaries.
 
 ## 15. Audit conclusion
 
-The repository now has a runnable Laravel 13 foundation and a tested Phase 2 authentication/profile slice for IT Learning Hub.
+The repository now has a runnable Laravel 13 foundation, a human-approved Phase 2 authentication/profile slice, and an implemented Phase 3 roles and authorization slice for IT Learning Hub.
 
-The safe next step is human approval. Payment and course work remain later phases.
+The safe next step is the final Phase 3 checkpoint review. Payment and course work remain later phases.

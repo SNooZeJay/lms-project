@@ -129,6 +129,27 @@ V1 does not include:
 - Co-instructors
 - Course ownership transfer
 
+### Phase 3 role management
+
+An Administrator can manage verified user accounts through protected server actions.
+
+Phase 3 allows:
+
+- Student, Instructor, and Administrator role assignment
+- Account suspension and reactivation
+- A searchable and filterable Administrator user list
+- A read-only activity page for role and status changes
+- Minimal authorized landing pages for each role
+
+Phase 3 rules:
+
+- A user cannot change their own role or account status.
+- The final active Administrator cannot be demoted or suspended.
+- Role changes require a verified target email.
+- Suspended accounts cannot sign in or continue using an existing session.
+- Role and status changes are written with their activity record in one database transaction.
+- No hard-delete, archive, bulk-action, or multi-role workflow is added.
+
 ### Initial Administrator bootstrap
 
 The first Administrator is provisioned through a local-only Artisan command for setup and recovery.
@@ -591,8 +612,15 @@ V1 succeeds when the following workflows pass automated and manual verification:
 - Students cannot access Administrator or Instructor actions
 - A Student cannot read another Student's private data
 - An Instructor cannot edit another Instructor's Course
-- An Administrator role change is audited
+- An Administrator can search and filter verified users
+- An Administrator can assign one approved role to another user
+- An Administrator can suspend and reactivate an account
+- A user cannot change their own role or account status
+- The final active Administrator cannot be demoted or suspended
+- Every role and status change creates an activity record
+- Role and status changes succeed or fail in one transaction
 - Every protected action checks a Policy
+- Role-specific pages contain no fabricated business data
 
 ### Courses and enrollment
 

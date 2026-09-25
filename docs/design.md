@@ -351,6 +351,35 @@ Every authentication form must include:
 
 Do not show a role selector, payment field, fake account, or unbuilt navigation item.
 
+### Phase 3 role pages
+
+Phase 3 role pages are intentionally small:
+
+- Student landing page
+- Instructor landing page
+- Administrator landing page
+
+Each page identifies the signed-in user, current role, and current account status. Links must point only to features already built.
+
+Do not add sample courses, fake progress, payment totals, or unbuilt dashboard cards.
+
+### Administrator user management
+
+The Administrator user list uses a responsive table or stacked mobile layout with:
+
+- Name
+- Email
+- Role
+- Account status
+- Created date
+- Search by name or email
+- Role and status filters
+- Pagination
+
+Role and status actions require clear labels and confirmation for suspension, reactivation, and demotion.
+
+The activity page is read-only. It shows actor, target, event, previous value, new value, and timestamp. It must not show passwords, tokens, IP addresses, or browser metadata.
+
 ### Course catalog
 
 - Search by course title

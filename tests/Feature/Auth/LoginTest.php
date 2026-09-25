@@ -22,7 +22,7 @@ class LoginTest extends TestCase
             'password' => 'password',
         ]);
 
-        $response->assertRedirect('/account/profile');
+        $response->assertRedirect('/student');
         $this->assertAuthenticatedAs($user);
     }
 

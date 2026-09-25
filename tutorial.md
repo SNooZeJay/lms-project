@@ -18,12 +18,15 @@ The current project includes:
 - A forced password change for the first Administrator login
 - A local Administrator account
 - Light and dark themes
+- Role-based landing pages
+- Administrator user search and role/status controls
+- Read-only role and account-status activity records
 
 The following features are not built yet:
 
 - Courses
 - Enrollment
-- Role management screens
+- Full role-specific business dashboards
 - Quizzes
 - Certificates
 - File uploads
@@ -325,7 +328,44 @@ After changing the password, you can open:
 http://127.0.0.1:8000/account/profile
 ```
 
-## 7. Create a Student account
+## 7. Try the Phase 3 role pages
+
+After the Administrator password change, Laravel sends the account to:
+
+```text
+http://127.0.0.1:8000/admin
+```
+
+The Administrator page links to:
+
+```text
+http://127.0.0.1:8000/admin/users
+http://127.0.0.1:8000/admin/activity
+```
+
+On the user-management page, you can:
+
+- Search by name or email
+- Filter by role or account status
+- Assign Student, Instructor, or Administrator
+- Suspend an account
+- Reactivate an account
+
+The activity page is read-only. It shows role and account-status changes. It does not show passwords, tokens, IP addresses, or browser metadata.
+
+A user cannot change their own role or status. The final active Administrator is protected from accidental demotion or suspension.
+
+Role-based pages are also available:
+
+```text
+/student
+/instructor
+/admin
+```
+
+Each page shows the current signed-in role and account status. Pages for other roles return a safe `403` response.
+
+## 8. Create a Student account
 
 Use a separate browser or private window if you want to keep the Administrator session.
 
@@ -338,7 +378,7 @@ Use a separate browser or private window if you want to keep the Administrator s
 
 The registration form has no role selector. Public registration cannot create an Administrator.
 
-## 8. Find email verification and reset links
+## 9. Find email verification and reset links
 
 The local development environment uses Laravel's log mailer.
 
@@ -360,7 +400,7 @@ Copy the local link into the browser.
 
 The log is local. Do not upload or share `storage/logs/laravel.log` because it can contain private links and account details.
 
-## 9. Run the frontend development server
+## 10. Run the frontend development server
 
 Use this when you are changing CSS or JavaScript.
 
@@ -385,7 +425,7 @@ For normal work, you can stop Vite with `Ctrl + C`. You can also build the final
 npm run build
 ```
 
-## 10. Run the automated checks
+## 11. Run the automated checks
 
 Run these commands from the project folder.
 
@@ -438,7 +478,7 @@ This shows all registered URLs and their controller or action.
 php artisan optimize:clear
 ```
 
-## 11. Useful commands
+## 12. Useful commands
 
 | Command | What it does |
 |---|---|
@@ -453,7 +493,7 @@ php artisan optimize:clear
 | `npm run dev` | Starts the Vite development server |
 | `npm run build` | Builds frontend assets |
 
-## 12. Troubleshooting
+## 13. Troubleshooting
 
 ### `composer` is not recognized
 
@@ -575,7 +615,7 @@ php artisan owner:bootstrap --show-password
 
 If you no longer need the local Administrator, ask before removing the protected file or changing the account.
 
-## 13. Project folder guide
+## 14. Project folder guide
 
 These are the folders you will use most often:
 
@@ -597,7 +637,7 @@ Do not edit files in `vendor/`, `node_modules/`, or `public/build/` by hand. The
 
 `FOR_UI/adminator (FOR USER DASHBOARD)` is a read-only visual reference. It is not the application source code.
 
-## 14. Security rules
+## 15. Security rules
 
 Keep these rules in mind:
 
@@ -609,7 +649,7 @@ Keep these rules in mind:
 - Keep `MAIL_MAILER=log` for local demonstrations.
 - Do not use a real payment secret until the payment architecture phase is approved.
 
-## 15. Recommended beginner order
+## 16. Recommended beginner order
 
 When you are learning the project, use this order:
 

@@ -234,6 +234,18 @@ The application identity linked to a Laravel User. A Profile stores the role, ac
 
 The stored account type: `student`, `instructor`, or `administrator`.
 
+**Role middleware**
+
+Middleware that checks the signed-in user's role before a protected route runs. The server still repeats authorization inside the controller or action.
+
+**Last active Administrator**
+
+The final account with both the Administrator role and active status. Phase 3 prevents demoting or suspending this account.
+
+**Activity log**
+
+A read-only record of an approved administrative action. Phase 3 records role and account-status changes without passwords, tokens, IP addresses, or browser metadata.
+
 **Initial Administrator**
 
 The first local Administrator account created by the owner bootstrap command. The project does not add a separate Owner role.

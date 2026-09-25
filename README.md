@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication and profile implementation is in progress.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication and profiles are human-approved. Phase 3 roles and authorization is in progress.
 
 The repository currently contains:
 
@@ -184,17 +184,20 @@ npm audit
 npm run build
 ```
 
-## Phase 2 checkpoint
+## Phase 3 checkpoint
 
-The authentication and profile slice is implemented and the automated plus fallback Edge checks pass. Human approval remains before Phase 3 begins.
+Phase 2 authentication and profiles are human-approved. Phase 3 roles and authorization is in progress. The first tested slices include:
 
-Review evidence includes:
+- Administrator user search and filters
+- Protected role assignment
+- Account suspension and reactivation
+- Role and active-account middleware
+- User policies
+- Audited ActivityLog records
+- Minimal authorized role landing pages
+- Strict role and security tests
 
-- Desktop and 390px authentication layout checks
-- Keyboard focus and 44px control checks
-- Light and dark theme persistence
-- Local log-mailer verification and reset-link checks
-- Full automated quality checks
+The Phase 3 human approval checkpoint remains open.
 
 The local Administrator is provisioned with:
 
@@ -210,4 +213,4 @@ Email: bautista.jayzee@ncst.edu.ph
 Role: Administrator
 ```
 
-The first sign-in requires a password change. The provided PayMongo public test key remains local configuration only. Role management, courses, enrollment, and payments remain later phases.
+The first sign-in requires a password change. The provided PayMongo public test key remains local configuration only. Courses, enrollment, quizzes, certificates, uploads, and payments remain later phases.

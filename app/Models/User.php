@@ -35,4 +35,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasOne(Profile::class);
     }
+
+    public function activityLogsAsActor(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class, 'actor_id');
+    }
+
+    public function activityLogsAsTarget(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class, 'target_user_id');
+    }
 }

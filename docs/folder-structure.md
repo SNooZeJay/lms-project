@@ -52,7 +52,8 @@ lms-project/
 │   │   │   ├── PasswordValidationRules.php
 │   │   │   └── ResetUserPassword.php
 │   │   ├── Authentication/
-│   │   │   └── AssignUserRole.php
+│   │   │   ├── AssignUserRole.php
+│   │   │   └── UpdateAccountStatus.php
 │   │   ├── Certificates/
 │   │   │   ├── IssueCertificate.php
 │   │   │   ├── RevokeCertificate.php
@@ -82,6 +83,7 @@ lms-project/
 │   ├── Contracts/
 │   │   └── LocalSecretStore.php
 │   ├── Enums/
+│   │   ├── ActivityEventType.php
 │   │   ├── UserRole.php
 │   │   ├── UserAccountStatus.php
 │   │   ├── CourseStatus.php
@@ -107,9 +109,15 @@ lms-project/
 │   │   │   │   ├── PasswordController.php
 │   │   │   │   └── ProfileController.php
 │   │   │   ├── Admin/
+│   │   │   │   ├── ActivityLogController.php
+│   │   │   │   └── UserController.php
 │   │   │   ├── Auth/
 │   │   │   ├── Instructor/
 │   │   │   ├── Public/
+│   │   │   ├── Role/
+│   │   │   │   ├── AdministratorController.php
+│   │   │   │   ├── InstructorController.php
+│   │   │   │   └── StudentController.php
 │   │   │   ├── Student/
 │   │   │   └── Webhook/
 │   │   │       └── PayMongoWebhookController.php
@@ -117,6 +125,9 @@ lms-project/
 │   │   │   ├── Account/
 │   │   │   │   ├── ChangePasswordRequest.php
 │   │   │   │   └── UpdateProfileRequest.php
+│   │   │   ├── Admin/
+│   │   │   │   ├── UpdateAccountStatusRequest.php
+│   │   │   │   └── UpdateUserRoleRequest.php
 │   │   │   ├── Auth/
 │   │   │   ├── Courses/
 │   │   │   ├── Enrollment/
@@ -124,6 +135,7 @@ lms-project/
 │   │   │   ├── Payments/
 │   │   │   └── Quizzes/
 │   │   ├── Responses/
+│   │   │   ├── RoleBasedLoginResponse.php
 │   │   │   └── SafePasswordResetLinkResponse.php
 │   ├── Jobs/
 │   │   ├── SendPaymentReceipt.php
@@ -152,6 +164,8 @@ lms-project/
 │   │   ├── ActivityLog.php
 │   │   └── SystemSetting.php
 │   ├── Policies/
+│   │   ├── ActivityLogPolicy.php
+│   │   ├── UserPolicy.php
 │   │   ├── CoursePolicy.php
 │   │   ├── EnrollmentPolicy.php
 │   │   ├── LearningMaterialPolicy.php
@@ -171,6 +185,7 @@ lms-project/
 │   │   └── Storage/
 │   │       └── LearningMaterialStorage.php
 │   ├── Support/
+│   │   ├── RoleBasedDestination.php
 │   │   └── WindowsDpapiSecretStore.php
 │   ├── View/Components/
 │   │   ├── Alert.php
@@ -211,6 +226,8 @@ lms-project/
 │   │   └── app.js
 │   └── views/
 │       ├── admin/
+│       │   ├── activity/
+│       │   └── users/
 │       ├── account/
 │       ├── auth/
 │       ├── certificates/
@@ -223,6 +240,7 @@ lms-project/
 │       ├── learning/
 │       ├── payments/
 │       ├── quizzes/
+│       ├── roles/
 │       └── student/
 ├── routes/
 │   ├── web.php
@@ -247,6 +265,7 @@ lms-project/
 │   │   ├── Admin/
 │   │   ├── Auth/
 │   │   ├── Instructor/
+│   │   ├── Role/
 │   │   ├── Student/
 │   │   └── Webhooks/
 │   └── Unit/

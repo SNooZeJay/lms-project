@@ -4,7 +4,7 @@
 
 This roadmap turns the approved LMS plan into small, testable steps.
 
-Phase 0 is approved. Phase 1 is complete. Phase 2 authentication and profile implementation is in progress. No Phase 3 or later implementation has started.
+Phase 0 is approved. Phase 1 is complete. Phase 2 is human-approved. Phase 3 roles and authorization implementation is in progress. No Phase 4 or later implementation has started.
 
 Do not skip directly to payment processing or dashboard polish.
 
@@ -179,7 +179,7 @@ Create a clean Laravel 13 application with no LMS business logic yet.
 
 ### Status
 
-Approved. Phase 1 implementation is complete and the Phase 2 checkpoint is in progress.
+Approved. Phase 1 implementation is complete, Phase 2 is human-approved, and Phase 3 is in progress.
 
 ### Environment preflight
 
@@ -325,7 +325,7 @@ Create secure accounts, verified email access, editable own profiles, and one lo
 
 ### Status
 
-Approved on September 25, 2026. Core identity, authentication, profile, password-gate, local owner, and fallback Edge review evidence are complete. Human approval remains before the phase exit.
+Approved on September 25, 2026. Human review confirmed the Phase 2 authentication and profile slice. Phase 3 is now approved and starts with the role, activity-log, and authorization data update.
 
 ### Confirmed decisions
 
@@ -564,30 +564,234 @@ A Student can register, verify access, sign in, view and update an own profile, 
 
 ### Goal
 
-Protect every role-specific route and resource.
+Protect every role-specific route and resource with server-side role checks, safe Administrator account controls, and auditable role/status changes.
+
+### Status
+
+Approved on September 25, 2026. Implementation starts with the activity-log ERD, authorization rules, and failing tests.
+
+### Confirmed decisions
+
+- Reuse the existing `UserRole` and `UserAccountStatus` enums
+- Keep one role per account: Student, Instructor, or Administrator
+- Add Administrator user management with search, filters, and pagination
+- Allow direct Administrator role assignment for verified accounts
+- Allow account suspension and reactivation
+- Reject self-role and self-status changes
+- Reject demotion or suspension of the final active Administrator
+- Require one database transaction for each account change and ActivityLog record
+- Add a read-only `/admin/activity` page with 25 records per page
+- Add minimal authorized `/student`, `/instructor`, and `/admin` pages
+- Redirect users to the landing page for their current role after login or forced password change
+- Block suspended sessions on the next request and require sign-in after reactivation
+- Do not add deletion, archive, bulk actions, IP addresses, user-agent data, or multi-role accounts
+
+### Phase 3 data gathering and ERD update
+
+Existing evidence:
+
+- `plan.md` requires protected role assignment, suspension/reactivation, and role-change audit records.
+- `architecture.md` defines role middleware, Policies, and an Administration domain.
+- `profiles.role` and `profiles.account_status` already exist from Phase 2.
+- No ActivityLog table exists in the current schema.
+- No role-specific routes or policies exist yet.
+
+Phase 3 identity and audit ERD:
+
+```mermaid
+erDiagram
+    USERS ||--|| PROFILES : has
+    USERS ||--o{ ACTIVITY_LOGS : acts
+    USERS ||--o{ ACTIVITY_LOGS : receives
+
+    USERS {
+        bigint id PK
+        varchar name
+        varchar email UK
+        timestamp email_verified_at
+        varchar password
+    }
+
+    PROFILES {
+        bigint user_id PK,FK
+        enum role
+        enum account_status
+        boolean must_change_password
+        text bio
+    }
+
+    ACTIVITY_LOGS {
+        bigint id PK
+        bigint actor_id FK
+        bigint target_user_id FK
+        enum event_type
+        enum previous_role
+        enum new_role
+        enum previous_status
+        enum new_status
+        timestamp created_at
+        timestamp updated_at
+    }
+```
+
+Schema rules:
+
+- `activity_logs.actor_id` references the acting User.
+- `activity_logs.target_user_id` references the changed User.
+- `event_type` uses `role_changed` or `account_status_changed`.
+- Role fields are populated for role events and null for status events.
+- Status fields are populated for status events and null for role events.
+- ActivityLog rows are read-only after creation in Phase 3.
+- Foreign keys prevent deleting Users referenced by an activity record.
+- The Profile update and ActivityLog insert use one transaction.
+
+### Phase 3 process flow
+
+```mermaid
+flowchart TD
+    A[Administrator opens user list] --> L[Search or filter verified users]
+    L --> T[Administrator selects a target]
+    T --> P[UserPolicy checks actor and target]
+    P -->|Denied| D[Safe authorization response]
+    P -->|Allowed| V[Validate role or status input]
+    V --> S{Protected safeguard passes?}
+    S -->|No| R[Reject without changing data]
+    S -->|Yes| X[Begin database transaction]
+    X --> U[Update target Profile]
+    U --> G[Insert ActivityLog]
+    G --> C[Commit transaction]
+    C --> N[Redirect with safe status message]
+```
+
+### Phase 3 Input, Process, and Output
+
+**Input**
+
+- Administrator session
+- Search text
+- Role filter
+- Account-status filter
+- Target User ID
+- New role or account status
+- Target current role and status
+- Current active Administrator count
+
+**Process**
+
+- Authenticate the actor
+- Verify the actor's email and active account
+- Run `UserPolicy`
+- Reject self-target changes
+- Reject unverified role-change targets
+- Reject invalid enum values
+- Reject last-Administrator demotion or suspension
+- Update the Profile on the server
+- Insert a sanitized ActivityLog record
+- Commit both records together
+- Redirect to a role-based landing page
+- End or block suspended sessions
+
+**Output**
+
+- Protected Student, Instructor, or Administrator landing page
+- Searchable Administrator user list
+- Updated Profile role or account status
+- Auditable role/status ActivityLog record
+- Safe success or authorization message
+- No deletion, bulk action, or fabricated business data
 
 ### Work
 
-- Add Student, Instructor, and Administrator enums
-- Add role assignment Action
-- Add `AssignUserRole` Administrator action
-- Add role and account-status middleware
-- Add baseline Policies
-- Add activity log model and migration
-- Add role-specific navigation
+- Reuse existing UserRole and UserAccountStatus enums
+- Add ActivityLog migration and model
+- Add AssignUserRole and UpdateAccountStatus Actions
+- Add UserPolicy
+- Add EnsureUserHasRole and EnsureAccountIsActive middleware
+- Add role-based login/password-change redirects
+- Add minimal Student, Instructor, and Administrator pages
+- Add Administrator user list, search, filters, and pagination
+- Add protected role and status mutation routes
+- Add read-only Administrator activity page
+- Add authorization, transaction, and browser tests
 
-### Tests
+### Task list and acceptance criteria
 
-- Student cannot open Instructor or Administrator routes
-- Instructor cannot open Administrator routes
-- Administrator role change requires Administrator access
-- A user cannot change own role
-- The final Administrator cannot be removed without a safe recovery rule
-- Every role change creates an activity record
+- [x] Task 1: Update Phase 3 data and authorization contracts
+  - Acceptance: ERD, flow, route rules, policy rules, and Input/Process/Output match the approved specification.
+  - Verify: documentation review and `git diff --check`.
+
+- [x] Task 2: Add activity-log schema and model
+  - Acceptance: `activity_logs` stores actor, target, event type, previous/new role or status, and timestamps. No secrets or request metadata are stored.
+  - Verify: migration, model, relationship, and constraint tests.
+
+- [x] Task 3: Add role and status Actions
+  - Acceptance: only an Administrator can change another verified user's role or status; self and last-admin changes fail; Profile and ActivityLog save atomically.
+  - Verify: focused Action tests on `lms_test`.
+
+- [x] Task 4: Add middleware, Policies, and role redirects
+  - Acceptance: role and active-account middleware protect routes; policies repeat authorization; login and password change redirect by role.
+  - Verify: role matrix and session tests.
+
+- [x] Task 5: Add Administrator user management and activity UI
+  - Acceptance: searchable/filterable/paginated user list and read-only activity page work on desktop and mobile.
+  - Verify: feature tests, build, and browser review.
+
+- [x] Task 6: Add minimal role landing pages
+  - Acceptance: each role sees only its authorized page and no fake courses, payments, or progress data.
+  - Verify: role matrix, view, accessibility, and responsive checks.
+
+- [ ] Checkpoint: Phase 3 strict security gate
+  - [x] Full test suite passes.
+  - [x] Build passes.
+  - [x] Composer and npm audits pass.
+  - [x] Role matrix tests pass.
+  - [x] Policy and self/last-admin tests pass.
+  - [x] ActivityLog transaction tests pass.
+  - [x] Desktop and mobile admin pages are usable.
+  - [ ] Human approval is recorded before Phase 4.
+
+### Phase 3 implementation evidence
+
+- ActivityLog migration, model, relationships, and read-only page are implemented.
+- Role/status Actions enforce active Administrator authorization, verified role targets, self-change protection, and last-Administrator safeguards.
+- Role and account-status updates use one database transaction.
+- Role and active-account middleware protect all Phase 3 routes.
+- Login and forced-password-change redirects use the current role.
+- Administrator user search, filters, role forms, status forms, and activity records are implemented.
+- Student, Instructor, and Administrator landing pages contain no fabricated business data.
+- The automated suite passes 41 tests and 195 assertions, including role matrix, policy, transaction, and activity-page tests.
+- Edge fallback review at 390px found the wide Administrator table caused page-level horizontal overflow; the user list now uses stacked mobile cards and passes the mobile width check.
+- Final Edge review confirmed role-based login redirect to `/admin`, desktop table layout, mobile card layout, 44px visible controls, no page-level overflow, and no password field on the activity page.
+
+### Security tests
+
+- Student cannot open Instructor or Administrator routes.
+- Instructor cannot open Administrator routes.
+- Administrator can open only Administrator routes.
+- A Student cannot change any role or status.
+- An Administrator cannot change their own role or status.
+- A role change requires a verified target email.
+- The final active Administrator cannot be demoted or suspended.
+- Suspended users cannot authenticate or continue an existing session.
+- Reactivation creates an activity record and allows later sign-in.
+- Role/status update and ActivityLog record succeed or fail together.
+- ActivityLog page contains no password, token, IP, or user-agent data.
+- Blade visibility cannot bypass server authorization.
+
+### Do not add
+
+- Instructor applications or invitations
+- Multi-role accounts
+- Hard deletion or archive states
+- Bulk role/status actions
+- Course management
+- Enrollment, quizzes, or certificates
+- Payment behavior
+- Production deployment
 
 ### Exit condition
 
-Role checks work on the server and are covered by tests.
+An Administrator can search users, assign an approved role, suspend or reactivate an account, and review a read-only activity record. Every protected role and account action is enforced on the server and covered by tests. No Phase 4 business feature has started.
 
 ## 8. Phase 4: database foundation
 

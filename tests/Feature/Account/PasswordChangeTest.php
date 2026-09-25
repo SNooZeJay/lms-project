@@ -49,7 +49,7 @@ class PasswordChangeTest extends TestCase
                 'password' => 'a new secure password',
                 'password_confirmation' => 'a new secure password',
             ])
-            ->assertRedirect('/account/profile');
+            ->assertRedirect('/student');
 
         $this->assertTrue(Hash::check('a new secure password', $user->fresh()->password));
         $this->assertFalse($user->fresh()->profile->must_change_password);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="overflow-x-hidden">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -33,7 +33,7 @@
         @vite(['resources/css/app.css'])
     @endif
 </head>
-<body class="min-h-screen bg-canvas font-sans text-ink antialiased">
+<body class="min-h-screen overflow-x-hidden bg-canvas font-sans text-ink antialiased">
     <a
         href="#main-content"
         class="fixed left-4 top-4 z-50 -translate-y-24 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-transform focus:translate-y-0"
@@ -55,7 +55,7 @@
             </div>
         </header>
 
-        <main id="main-content" class="flex-1" tabindex="-1">
+        <main id="main-content" class="min-w-0 flex-1" tabindex="-1">
             @yield('content')
         </main>
 

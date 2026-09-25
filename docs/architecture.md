@@ -2,7 +2,7 @@
 
 ## 1. Document status
 
-This document defines the approved target architecture for the BSIT Academic LMS. The Phase 1 Laravel foundation and Phase 2 authentication/profile slices are now implemented, while later business modules remain unbuilt. This document does not create hosted services or payment resources.
+This document defines the approved target architecture for the BSIT Academic LMS. The Phase 1 Laravel foundation and human-approved Phase 2 authentication/profile slice are implemented. Phase 3 roles and authorization is approved and in progress. This document does not create hosted services or payment resources.
 
 The approved stack is:
 
@@ -231,7 +231,22 @@ Every protected mutation repeats authorization inside the server workflow. Middl
 | GET | `/account/password` | Change temporary or current password | Authenticated |
 | POST | `/account/password` | Save a new password | Authenticated |
 
+### Phase 3 role routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| GET | `/student` | Minimal Student landing page | Student role and active account |
+| GET | `/instructor` | Minimal Instructor landing page | Instructor role and active account |
+| GET | `/admin` | Minimal Administrator landing page | Administrator role and active account |
+| GET | `/admin/users` | Searchable user management list | Administrator role and active account |
+| PATCH | `/admin/users/{user}/role` | Assign one approved role | Administrator Policy and verified target |
+| PATCH | `/admin/users/{user}/status` | Suspend or reactivate account | Administrator Policy and self/last-admin rules |
+| GET | `/admin/activity` | Read-only role and status activity | Administrator role and active account |
+
+Role routes use `auth`, `account.active`, `verified`, `password.change`, and `role` middleware. Controllers and Actions repeat authorization inside the server workflow.
+
 ### Student routes
+
 
 | Method | URI | Purpose |
 |---|---|---|
@@ -424,6 +439,31 @@ flowchart LR
     C --> R[Clear must_change_password]
 ```
 
+### Phase 3 role and status flow
+
+```mermaid
+sequenceDiagram
+    participant A as Administrator
+    participant C as Admin Controller
+    participant P as UserPolicy
+    participant W as Role/Status Action
+    participant D as MySQL
+    participant L as ActivityLog
+
+    A->>C: Submit role or status change
+    C->>P: Authorize Administrator and target
+    P-->>C: Allow or deny
+    C->>W: Validated role/status input
+    W->>D: Begin transaction
+    W->>D: Update Profile
+    W->>L: Insert sanitized ActivityLog
+    W->>D: Commit transaction
+    W-->>C: Updated target and activity record
+    C-->>A: Redirect with safe status message
+```
+
+A failed validation, policy denial, or last-Administrator safeguard rolls back both records.
+
 ## 8. Authorization
 
 Authorization answers what the user may do.
@@ -435,6 +475,21 @@ Use role middleware for broad route groups:
 - `role:student`
 - `role:instructor`
 - `role:administrator`
+
+Phase 3 also uses:
+
+- `account.active` to block suspended sessions
+- `UserPolicy` for Administrator-only user management
+- Server-side role and status actions
+- A transaction for each account change and its activity record
+
+A role or status change is rejected when:
+
+- The actor is not an Administrator
+- The target is the actor
+- The target email is not verified
+- A role or status value is outside the approved enum
+- The change would demote or suspend the final active Administrator
 
 ### Resource policies
 
@@ -541,6 +596,8 @@ Paginate Administrator tables and reports. Use `EXPLAIN` before adding or changi
 ```mermaid
 erDiagram
     USERS ||--|| PROFILES : has
+    USERS ||--o{ ACTIVITY_LOGS : acts
+    USERS ||--o{ ACTIVITY_LOGS : receives
     USERS ||--o{ COURSES : owns_as_instructor
     USERS ||--o{ ENROLLMENTS : owns_as_student
     COURSES ||--o{ MODULES : contains
@@ -873,15 +930,23 @@ Unique constraint:
 
 ### `activity_logs`
 
+Phase 3 stores only role and account-status changes.
+
 | Column | Type | Rules |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | Primary key |
-| `actor_id` | BIGINT UNSIGNED | Nullable foreign key |
-| `action` | VARCHAR | Required allow-listed value |
-| `entity_type` | VARCHAR | Required |
-| `entity_id` | VARCHAR | Required |
-| `metadata` | JSON | Sanitized, nullable |
+| `actor_id` | BIGINT UNSIGNED | Foreign key to users, required |
+| `target_user_id` | BIGINT UNSIGNED | Foreign key to users, required |
+| `event_type` | ENUM | `role_changed`, `account_status_changed` |
+| `previous_role` | ENUM | Previous Student, Instructor, or Administrator; nullable for status events |
+| `new_role` | ENUM | New Student, Instructor, or Administrator; nullable for status events |
+| `previous_status` | ENUM | Previous active or suspended; nullable for role events |
+| `new_status` | ENUM | New active or suspended; nullable for role events |
 | timestamps | TIMESTAMP | Required |
+
+Role and status changes write the Profile update and ActivityLog in one transaction. Activity records are read-only and are not deleted by Phase 3 user-management actions.
+
+
 
 ### `system_settings`
 
@@ -1161,6 +1226,11 @@ Use the database queue during early development. Select a production queue drive
 26. Store temporary bootstrap passwords with Windows DPAPI outside the repository.
 27. Require a password change before normal authenticated access when the profile flag is set.
 28. Refuse local owner bootstrap in production by default.
+29. Reject self-role and self-status changes.
+30. Reject demotion or suspension of the final active Administrator.
+31. Require verified target email before role assignment.
+32. Write role/status changes and ActivityLog records in one transaction.
+33. Keep Phase 3 ActivityLog data limited to role and account-status changes.
 
 ## 21. Error handling and observability
 
