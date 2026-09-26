@@ -22,6 +22,7 @@ use App\Policies\UserPolicy;
 use App\Services\Payments\PayMongoApiClient;
 use App\Support\WindowsDpapiSecretStore;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -45,6 +46,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->commands([CheckProductionReadiness::class]);
 
+        $this->forceHttpsWhenTheAppUrlIsHttps();
+
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(ActivityLog::class, ActivityLogPolicy::class);
         Gate::policy(Course::class, CoursePolicy::class);
@@ -52,5 +55,27 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Lesson::class, LessonPolicy::class);
         Gate::policy(LearningMaterial::class, LearningMaterialPolicy::class);
         Gate::policy(Enrollment::class, EnrollmentPolicy::class);
+    }
+
+    /**
+     * Generate https URLs when APP_URL says the site is served over https.
+     *
+     * A TLS-terminating proxy forwards plain HTTP, so the request looks like
+     * http unless the proxy sends X-Forwarded-Proto and the proxy address is
+     * trusted. Not every proxy does both, and when it does not, every generated
+     * URL carries http. A browser then refuses the stylesheet and the scripts
+     * as mixed content, and the page arrives unstyled.
+     *
+     * The decision comes from APP_URL rather than from the request, so it is
+     * explicit and cannot be influenced by a header. It is also why APP_URL has
+     * to be set to the real public address on a deployed server.
+     */
+    private function forceHttpsWhenTheAppUrlIsHttps(): void
+    {
+        $appUrl = (string) config('app.url');
+
+        if (str_starts_with($appUrl, 'https://')) {
+            URL::forceScheme('https');
+        }
     }
 }
