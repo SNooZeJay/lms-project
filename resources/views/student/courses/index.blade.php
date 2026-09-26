@@ -30,11 +30,18 @@
                 @foreach ($enrollments as $enrollment)
                     @php
                         $course = $enrollment->course;
+                        $paymentState = $paymentStates[$enrollment->id] ?? null;
+                        $toneClasses = [
+                            'success' => 'bg-success-surface text-success-text',
+                            'warning' => 'bg-accent-surface text-accent-text',
+                            'danger' => 'bg-danger-surface text-danger-text',
+                            'neutral' => 'bg-surface-muted text-ink',
+                        ][$paymentState?->tone ?? 'neutral'] ?? 'bg-surface-muted text-ink';
                     @endphp
                     <li class="flex flex-col border border-line bg-surface p-5 shadow-sm">
                         <div class="flex items-start justify-between gap-3">
                             <h2 class="text-lg font-semibold text-ink">{{ $course?->title ?? 'Removed course' }}</h2>
-                            <span class="shrink-0 rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-ink">{{ ucfirst($enrollment->status->value) }}</span>
+                            <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold {{ $toneClasses }}">{{ $paymentState?->label ?? 'Unknown' }}</span>
                         </div>
 
                         <p class="mt-2 text-sm text-ink-muted">{{ $course?->category ?: 'Uncategorized' }}</p>
@@ -64,19 +71,18 @@
                             </div>
                         </dl>
 
-                        @if ($enrollment->grantsAccess())
-                            <p class="mt-4 text-sm text-ink-muted">Open the course to read its published lessons.</p>
-                        @else
-                            <p class="mt-4 text-sm text-ink-muted">This enrollment does not grant access yet. Contact an administrator for help.</p>
+                        @if ($paymentState)
+                            <p class="mt-4 border-l-4 px-3 py-2 text-sm leading-6 text-ink {{ $paymentState->tone === 'danger' ? 'border-danger-text bg-danger-surface' : ($paymentState->tone === 'success' ? 'border-accent bg-success-surface' : 'border-line bg-surface-muted') }}">
+                                {{ $paymentState->message }}
+                            </p>
                         @endif
 
                         @if ($enrollment->grantsAccess() && $course)
                             <a href="{{ route('student.courses.show', $course) }}" class="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open course</a>
-                        @elseif ($enrollment->status === \App\Enums\EnrollmentStatus::PendingPayment && $course?->course_type === \App\Enums\CourseType::Paid)
-                            <p class="mt-4 border-l-4 border-line bg-surface-muted px-3 py-2 text-sm leading-6 text-ink-muted">Payment is still pending, so this course is not open yet.</p>
+                        @elseif ($paymentState?->offersPayment && $course)
                             <form method="POST" action="{{ route('student.payments.checkout', $course) }}" class="mt-3">
                                 @csrf
-                                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Pay {{ $course->currency }} {{ number_format($course->price_minor / 100, 2) }}</button>
+                                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">{{ $paymentState->actionLabel }}</button>
                             </form>
                         @endif
 

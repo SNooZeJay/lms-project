@@ -14,9 +14,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
+use App\Models\Payment;
 use App\Models\QuizAttempt;
 use App\Services\Learning\CourseCompletionChecker;
 use App\Services\ProgressCalculator;
+use App\Support\StudentPaymentState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,16 +43,33 @@ class EnrollmentController extends Controller
             ->paginate(15);
 
         $progressByEnrollment = [];
+        $paymentStates = [];
+
+        // The latest payment per enrollment, so the list can say whether money
+        // landed instead of showing a raw status the Student cannot act on.
+        $paymentsByEnrollment = Payment::query()
+            ->whereIn('enrollment_id', $enrollments->pluck('id'))
+            ->latest('id')
+            ->get()
+            ->groupBy('enrollment_id')
+            ->map(fn ($group) => $group->first());
 
         foreach ($enrollments as $enrollment) {
             $progressByEnrollment[$enrollment->id] = $this->progress->forEnrollment($enrollment) + [
                 'visible' => $enrollment->course !== null && $this->progress->isVisibleFor($enrollment->course),
             ];
+
+            $paymentStates[$enrollment->id] = StudentPaymentState::for(
+                $enrollment,
+                $paymentsByEnrollment->get($enrollment->id),
+                $enrollment->course,
+            );
         }
 
         return view('student.courses.index', [
             'enrollments' => $enrollments,
             'progressByEnrollment' => $progressByEnrollment,
+            'paymentStates' => $paymentStates,
         ]);
     }
 

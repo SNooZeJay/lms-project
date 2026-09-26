@@ -231,6 +231,7 @@ lms-project/
 │   │   ├── StudentCourseAccess.php
 │   │   ├── WindowsDpapiSecretStore.php
 │   │   ├── ContinueLearning.php
+│   │   ├── StudentPaymentState.php
 │   │   ├── MaterialFileRules.php
 │   │   └── StudentQuizAccess.php
 ├── bootstrap/
