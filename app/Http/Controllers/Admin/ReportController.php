@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\Role;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\Reporting\OperationsReport;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
-class AdministratorController extends Controller
+class ReportController extends Controller
 {
     public function __construct(private readonly OperationsReport $report) {}
 
-    public function __invoke(Request $request): View
+    public function index(Request $request): View
     {
-        return view('roles.administrator', [
-            'user' => $request->user()->load('profile'),
+        return view('admin.reports.index', [
+            'rows' => $this->report->enrollmentRows(),
             'stats' => $this->report->forAdministrator(),
         ]);
     }

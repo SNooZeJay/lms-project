@@ -2634,6 +2634,16 @@ A real test-mode payment activates one paid Enrollment once, and repeated delive
 
 ## 28. Phase 13: dashboards and reports
 
+### Status
+
+Built and tested. All three dashboards and the enrollment report use one report service.
+
+### Evidence
+
+- `php artisan test` gives 449 passed and 1585 assertions.
+- `./vendor/bin/pint --test` gives PASS on 224 files.
+- Cross-role tests prove a Student, an Instructor, and a guest cannot reach the report.
+
 ### Goal
 
 Add role-specific pages using real authorized data.

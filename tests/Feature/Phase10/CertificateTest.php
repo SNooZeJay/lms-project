@@ -437,11 +437,11 @@ class CertificateTest extends TestCase
             ->assertSee('Valid');
     }
 
-    public function test_phase_ten_adds_no_reporting_routes(): void
+    public function test_phase_ten_adds_no_certificate_bulk_routes(): void
     {
-        // Payments arrive in Phase 11 and reports in Phase 13, so this guard
-        // now checks the identifier that is still absent.
-        $this->assertFalse(Route::has('admin.reports.index'));
+        // Payments arrive in Phase 11 and reports in Phase 13. There is no
+        // bulk or export route in the approved scope, so that stays guarded.
+        $this->assertFalse(Route::has('admin.certificates.export'));
     }
 
     /**

@@ -4,6 +4,7 @@ use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\CertificateController as AdminCertificateController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Catalog\CourseCatalogController;
 use App\Http\Controllers\HomeController;
@@ -100,6 +101,7 @@ Route::middleware([...$authenticated, 'role:administrator'])->group(function ():
     Route::get('/admin', AdministratorController::class)->name('administrator.dashboard');
     Route::get('/admin/materials/{material}/download', [MaterialDownloadController::class, 'show'])->name('admin.materials.download');
     Route::get('/admin/certificates', [AdminCertificateController::class, 'index'])->name('admin.certificates.index');
+    Route::get('/admin/reports', [AdminReportController::class, 'index'])->name('admin.reports.index');
     Route::post('/admin/certificates/{certificate}/revoke', [AdminCertificateController::class, 'revoke'])->name('admin.certificates.revoke');
     Route::post('/admin/certificates/{certificate}/reissue', [AdminCertificateController::class, 'reissue'])->name('admin.certificates.reissue');
     Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users.index');

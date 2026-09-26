@@ -3,10 +3,29 @@
 @section('title', 'Student home')
 
 @section('content')
-    <div class="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
+    <div class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
         <p class="font-mono text-sm font-semibold text-primary-text">Student workspace</p>
         <h1 class="mt-3 text-3xl font-[650] tracking-tight text-ink">Welcome, {{ $user->name }}</h1>
         <p class="mt-3 max-w-2xl leading-7 text-ink-muted">Your account is ready. Browse published courses and enroll in free courses to build your learning record.</p>
+
+        <dl class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4" role="list">
+            <div class="border-t-4 border-primary bg-surface p-5">
+                <dt class="text-sm text-ink-muted">Courses enrolled</dt>
+                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['courses_enrolled'] }}</dd>
+            </div>
+            <div class="border-t-4 border-primary bg-surface p-5">
+                <dt class="text-sm text-ink-muted">Lessons completed</dt>
+                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['lessons_completed'] }}</dd>
+            </div>
+            <div class="border-t-4 border-accent bg-surface p-5">
+                <dt class="text-sm text-ink-muted">Quizzes passed</dt>
+                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['quizzes_passed'] }}</dd>
+            </div>
+            <div class="border-t-4 border-accent bg-surface p-5">
+                <dt class="text-sm text-ink-muted">Certificates earned</dt>
+                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['certificates_earned'] }}</dd>
+            </div>
+        </dl>
 
         @if ($continueLesson)
             <section class="mt-8 border-t-4 border-accent bg-surface p-6 shadow-sm" aria-labelledby="continue-learning-heading">
@@ -27,20 +46,21 @@
         @endif
 
         <div class="mt-8 grid gap-6 md:grid-cols-2">
-            <section class="border-t-4 border-primary bg-surface p-6 shadow-sm" aria-labelledby="account-summary-heading">
-                <h2 id="account-summary-heading" class="text-lg font-semibold text-ink">Account summary</h2>
+            <section class="border border-line bg-surface p-6" aria-labelledby="student-summary-heading">
+                <h2 id="student-summary-heading" class="text-lg font-semibold text-ink">Account summary</h2>
                 <dl class="mt-4 space-y-3 text-sm">
                     <div><dt class="text-ink-muted">Role</dt><dd class="font-medium text-ink">{{ ucfirst($user->profile->role->value) }}</dd></div>
                     <div><dt class="text-ink-muted">Status</dt><dd class="font-medium text-ink">{{ ucfirst($user->profile->account_status->value) }}</dd></div>
                     <div><dt class="text-ink-muted">Email</dt><dd class="break-words font-medium text-ink">{{ $user->email }}</dd></div>
                 </dl>
             </section>
-            <section class="border-t-4 border-accent bg-surface-muted p-6" aria-labelledby="student-next-heading">
+            <section class="border border-line bg-surface-muted p-6" aria-labelledby="student-next-heading">
                 <h2 id="student-next-heading" class="text-lg font-semibold text-ink">Available now</h2>
-                <p class="mt-3 leading-7 text-ink-muted">Your profile, the published course catalog, free course enrollment, lesson reading, and lesson progress are available.</p>
-                <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-                    <a href="{{ route('student.courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">My courses</a>
-                    <a href="{{ route('courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Browse catalog</a>
+                <p class="mt-3 leading-7 text-ink-muted">Your profile, the published course catalog, free course enrollment, lesson reading, quizzes, and lesson progress are available.</p>
+                <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    <a href="{{ route('student.courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open My courses</a>
+                    <a href="{{ route('student.certificates.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">My certificates</a>
+                    <a href="{{ route('courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Browse catalog</a>
                 </div>
             </section>
         </div>

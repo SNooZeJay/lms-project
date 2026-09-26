@@ -508,6 +508,16 @@ Phase 6E adds progress that is always visible and always honest:
 - While a Course is unpublished, the percentage is hidden and a note explains why
 - No percentage is ever accepted from the browser
 
+### Phase 13 dashboards and reports
+
+- Each dashboard opens with a row of real counts, one per concern, in a four-column band that wraps to two columns on mobile
+- Counts come from a single report service, so a number can never disagree with itself across pages
+- A label says exactly what is counted, in words, and never uses an unexplained abbreviation
+- Every dashboard has an empty state that names the next action instead of showing a blank grid
+- The Instructor dashboard lists only owned courses, so another instructor's work is never visible
+- The Administrator report is a real table with a screen-reader caption, and it scrolls horizontally inside its own container rather than widening the page
+- An amount is formatted as a currency and minor units are never printed raw
+
 ### Phase 11 and 12 payments
 
 - A pending enrollment shows a Pay button with the exact amount, never a generic "Buy"

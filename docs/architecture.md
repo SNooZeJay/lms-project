@@ -1117,6 +1117,23 @@ flowchart TD
 - A Lesson page with content and Learning Materials
 - No progress, no quiz, no payment, and no download
 
+### Phase 13 dashboard and report routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| GET | `/student` | Student dashboard | Student group |
+| GET | `/instructor` | Instructor dashboard | Instructor group |
+| GET | `/admin` | Administrator dashboard | Administrator group |
+| GET | `/admin/reports` | Enrollment report | Administrator group |
+
+### Dashboard rules
+
+- `App\Services\Reporting\OperationsReport` is the only place a dashboard or report number is produced. Every value is a real query over stored records.
+- The Instructor dashboard filters by `instructor_id`, so another instructor's courses and enrollment counts are never visible.
+- The Administrator report reads payment amounts from the stored record and never renders a credential.
+- Every dashboard has an empty state that names the next action instead of showing a blank grid.
+- The report table scrolls inside its own container, so a wide table never widens the page.
+
 ### Phase 11 and 12 payment routes
 
 | Method | URI | Purpose | Protection |

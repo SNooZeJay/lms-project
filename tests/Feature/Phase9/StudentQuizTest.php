@@ -426,12 +426,11 @@ class StudentQuizTest extends TestCase
             ->assertSee('Passed');
     }
 
-    public function test_phase_nine_adds_no_certificate_routes(): void
+    public function test_phase_nine_adds_no_quiz_admin_export_routes(): void
     {
-        // Certificates, payments, and reports all arrive in later phases and
-        // each has its own coverage, so this guard now checks the identifier
-        // that is still absent.
-        $this->assertFalse(Route::has('admin.reports.index'));
+        // Certificates, payments, and reports all arrive in later phases. There
+        // is no quiz export route in the approved scope, so that stays guarded.
+        $this->assertFalse(Route::has('instructor.courses.quizzes.export'));
     }
 
     /**
