@@ -20,7 +20,7 @@
         @if ($courses->isEmpty())
             <section class="mt-10 border-t border-line py-16 text-center" aria-labelledby="empty-courses-heading">
                 <h2 id="empty-courses-heading" class="text-lg font-semibold text-ink">No courses yet</h2>
-                <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-muted">Create your first Course as a private draft. Nothing becomes public in this phase.</p>
+                <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-muted">Create your first Course as a private draft, then publish it when it is ready.</p>
                 <a href="{{ route('instructor.courses.create') }}" class="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Create your first course</a>
             </section>
         @else

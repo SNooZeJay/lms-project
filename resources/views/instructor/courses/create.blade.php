@@ -7,7 +7,7 @@
         <a href="{{ route('instructor.courses.index') }}" class="inline-flex min-h-11 items-center text-sm font-semibold text-primary-text hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">← Back to courses</a>
         <p class="mt-8 font-mono text-sm font-semibold text-primary-text">Instructor workspace</p>
         <h1 class="mt-3 text-3xl font-[650] tracking-tight text-ink">Create course</h1>
-        <p class="mt-3 max-w-2xl leading-7 text-ink-muted">New Courses start as private drafts. Publication, enrollment, and payment actions are not enabled in this phase.</p>
+        <p class="mt-3 max-w-2xl leading-7 text-ink-muted">New Courses start as private drafts. Publish a Course after it has at least one Module and one Lesson.</p>
 
         <x-form-errors :errors="$errors" />
 

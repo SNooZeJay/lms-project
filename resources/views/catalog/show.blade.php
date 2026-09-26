@@ -46,7 +46,7 @@
             </dl>
 
             @if ($enrollmentState === 'enrolled')
-                <p class="mt-6 border-l-4 border-success-text bg-success-surface px-4 py-3 text-sm font-semibold text-success-text">Enrolled. Lesson content opens in a later release.</p>
+                <p class="mt-6 border-l-4 border-success-text bg-success-surface px-4 py-3 text-sm font-semibold text-success-text">Enrolled. Open the course to read its published lessons.</p>
             @elseif ($enrollmentState === 'can_enroll')
                 <div class="mt-6 flex flex-col gap-3 border-l-4 border-accent bg-success-surface px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <p class="text-sm leading-6 text-success-text">This course is free. Enroll to start your learning record.</p>

@@ -79,6 +79,6 @@ class EnrollmentController extends Controller
 
         return redirect()
             ->route('student.courses.index')
-            ->with('status', 'You are enrolled. Lesson content opens in a later release.');
+            ->with('status', 'You are enrolled. Open the course to read its published lessons.');
     }
 }

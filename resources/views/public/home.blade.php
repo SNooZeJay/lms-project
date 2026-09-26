@@ -41,7 +41,7 @@
                 <div class="mt-8 border-l-4 border-accent bg-surface px-5 py-4 sm:px-6">
                     <p class="text-sm font-semibold text-ink">Current boundary</p>
                     <p class="mt-1 max-w-xl leading-7 text-ink-muted">
-                        You can browse published courses. Enrollment, lesson content, progress, certificates, uploads, and payments remain later work.
+                        You can browse published courses, enroll in free ones, and read your lessons. Progress, quizzes, certificates, uploads, and payments remain later work.
                     </p>
                 </div>
             </div>

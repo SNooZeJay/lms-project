@@ -2211,6 +2211,36 @@ Cleanup: the temporary review course, modules, lessons, materials, enrollment, a
 
 Limitation: layout is verified by measurement and screenshots, not by an automated layout regression test, because this project has no browser test runner.
 
+### Phase 6C connected browser review evidence
+
+After the reviewer connected the OpenCode desktop browser, the Phase 6C flow was walked again in a real browser by typing into forms and clicking controls, with temporary fixtures that were deleted afterwards.
+
+Interactive results:
+
+- Sign in as a Student by typing email and password, then land on the Student home page.
+- The public course page offers `Enroll free` to the signed-in Student.
+- Clicking `Enroll free` creates the enrollment and lands on `My courses`.
+- `My courses` shows the course, the `Active` status, the enrolled date, the Instructor, `Open course`, and `Public page`.
+- `Open course` reaches the student course page, which lists the published Module and Lesson.
+- The Lesson link opens the lesson page with both content paragraphs, the text material, and the link material.
+- The lesson page shows no completion control, and no storage path, MIME type, or file path appears.
+- The theme toggle switches between light and dark, updates its accessible label, and persists in local storage.
+- An unenrolled Student opening the same lesson address gets `Access denied` with no lesson text.
+- An Instructor opening the same lesson address also gets `Access denied` with no lesson text.
+- The console shows no warnings and the network log shows no failed requests.
+
+Findings and fixes from this pass:
+
+- The enrollment success message still said lesson content opens in a later release, which stopped being true in Phase 6C. It now tells the Student to open the course.
+- The public course page `Enrolled` banner had the same stale wording and was corrected.
+- The home page still said enrollment and lesson content were later work. Corrected.
+- The Instructor course list empty state said nothing becomes public in this phase, which stopped being true in Phase 5E. Corrected.
+- The Create course page still said publication and enrollment were not enabled. Corrected.
+
+A copy audit then re-checked every "not available yet" string in the views against the built behavior. The remaining ones are accurate: file downloads, progress tracking, paid enrollment, quizzes, uploads, reordering, deletion, and archiving.
+
+Cleanup: the temporary course, module, lesson, two materials, enrollment, and three accounts were deleted. The database was verified back to three users, two courses, one enrollment, and two materials.
+
 ### Phase 6C security tests
 
 - A Student with a granting enrollment reads a published Lesson.
