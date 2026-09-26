@@ -312,6 +312,17 @@ These routes sit outside the authenticated middleware groups on purpose, because
 
 The catalog does not add an enrollment, payment, progress, certificate, download, upload, delete, or archive route.
 
+### Phase 6B free enrollment routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| GET | `/student/courses` | Student `My courses` page | Authenticated student group and EnrollmentPolicy |
+| POST | `/student/courses/{course}/enroll` | Enroll in a published free Course | Authenticated student group and EnrollmentPolicy |
+
+Both routes sit inside the standard authenticated group, so `auth`, `account.active`, `verified`, and `password.change` all apply, plus `role:student`. The enroll request carries no trusted fields: `student_id`, `status`, and every timestamp come from the session and the server.
+
+Phase 6B does not add a lesson access, progress, payment, cancel, refund, or download route.
+
 ### Student routes
 
 
@@ -871,6 +882,49 @@ flowchart TD
 - A public list of published Courses
 - A public details page with outline structure only
 - No Lesson content, no material data, no email address, no enrollment, and no payment
+
+### Phase 6B free enrollment flow
+
+```mermaid
+flowchart TD
+    S[Student submits the enroll form] --> M[Authenticated student middleware]
+    M --> P{Is the Course published?}
+    P -->|No| N[Return 404]
+    P -->|Yes| C[EnrollmentPolicy checks the student role]
+    C --> T{Is the Course free?}
+    T -->|No| M2[Return a clear message and create nothing]
+    T -->|Yes| E{Does an enrollment already exist?}
+    E -->|Yes and grants access| R[Reuse it and redirect]
+    E -->|Yes and no access| M3[Return a clear message]
+    E -->|No| W[Create one active enrollment in a transaction]
+    W --> U[Unique rule is the final duplicate guard]
+    U --> R2[Redirect to My courses]
+```
+
+### Phase 6B Input, Process, and Output
+
+**Input**
+
+- Student session with the student role
+- Published free Course
+
+**Process**
+
+- Apply `auth`, `account.active`, `verified`, `password.change`, and `role:student` middleware
+- Return `404` when the Course is not published
+- Run EnrollmentPolicy for the acting Student
+- Return a clear message when the Course is paid
+- Reuse an existing `active` or `completed` enrollment
+- Refuse a `cancelled` or `pending_payment` enrollment
+- Create one `active` enrollment with `activated_at` set by the server
+- Catch a duplicate key error and reuse the existing enrollment
+- Redirect to the Student `My courses` page
+
+**Output**
+
+- One active enrollment per Student and Course
+- A student-owned course list scoped to the signed-in Student
+- No lesson content, no progress, and no payment
 
 ## 8. Authorization
 

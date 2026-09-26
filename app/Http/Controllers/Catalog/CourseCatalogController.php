@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Catalog;
 
 use App\Enums\ContentStatus;
 use App\Enums\CourseStatus;
+use App\Enums\CourseType;
+use App\Enums\EnrollmentStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\CourseCatalogRequest;
 use App\Models\Course;
+use App\Models\Enrollment;
 use Illuminate\Contracts\View\View;
 
 class CourseCatalogController extends Controller
@@ -66,6 +70,40 @@ class CourseCatalogController extends Controller
 
         return view('catalog.show', [
             'course' => $course,
+            'enrollmentState' => $this->enrollmentState($course),
         ]);
+    }
+
+    /**
+     * Show the right enrollment control for the current viewer.
+     */
+    private function enrollmentState(Course $course): string
+    {
+        $viewer = auth()->user();
+
+        if ($viewer === null) {
+            return 'guest';
+        }
+
+        if ($viewer->profile?->role !== UserRole::Student) {
+            return 'other_role';
+        }
+
+        if ($course->course_type !== CourseType::Free) {
+            return 'paid';
+        }
+
+        $enrollment = Enrollment::query()
+            ->where('student_id', $viewer->id)
+            ->where('course_id', $course->id)
+            ->first();
+
+        if ($enrollment === null) {
+            return 'can_enroll';
+        }
+
+        return in_array($enrollment->status, [EnrollmentStatus::Active, EnrollmentStatus::Completed], true)
+            ? 'enrolled'
+            : 'inactive';
     }
 }

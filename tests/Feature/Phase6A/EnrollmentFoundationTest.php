@@ -213,10 +213,10 @@ class EnrollmentFoundationTest extends TestCase
         $this->assertSame(CourseType::Free, $enrollment->course->course_type);
     }
 
-    public function test_phase_six_a_adds_no_enrollment_ui_or_payment_routes(): void
+    public function test_phase_six_a_adds_no_lesson_access_or_payment_routes(): void
     {
-        $this->assertFalse(Route::has('student.enrollments.store'));
-        $this->assertFalse(Route::has('student.courses.index'));
+        $this->assertFalse(Route::has('student.lessons.show'));
+        $this->assertFalse(Route::has('student.progress.index'));
         $this->assertFalse(Route::has('student.payments.checkout'));
         $this->assertFalse(Schema::hasTable('payments'));
         $this->assertFalse(Schema::hasTable('lesson_progress'));

@@ -5,12 +5,14 @@ namespace App\Providers;
 use App\Contracts\LocalSecretStore;
 use App\Models\ActivityLog;
 use App\Models\Course;
+use App\Models\Enrollment;
 use App\Models\LearningMaterial;
 use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\User;
 use App\Policies\ActivityLogPolicy;
 use App\Policies\CoursePolicy;
+use App\Policies\EnrollmentPolicy;
 use App\Policies\LearningMaterialPolicy;
 use App\Policies\LessonPolicy;
 use App\Policies\ModulePolicy;
@@ -40,5 +42,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Module::class, ModulePolicy::class);
         Gate::policy(Lesson::class, LessonPolicy::class);
         Gate::policy(LearningMaterial::class, LearningMaterialPolicy::class);
+        Gate::policy(Enrollment::class, EnrollmentPolicy::class);
     }
 }

@@ -11,6 +11,7 @@ use App\Http\Controllers\Instructor\CurriculumController;
 use App\Http\Controllers\Role\AdministratorController;
 use App\Http\Controllers\Role\InstructorController;
 use App\Http\Controllers\Role\StudentController;
+use App\Http\Controllers\Student\EnrollmentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -29,6 +30,8 @@ Route::middleware($authenticated)->group(function (): void {
 
 Route::middleware([...$authenticated, 'role:student'])->group(function (): void {
     Route::get('/student', StudentController::class)->name('student.dashboard');
+    Route::get('/student/courses', [EnrollmentController::class, 'index'])->name('student.courses.index');
+    Route::post('/student/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('student.enrollments.store');
 });
 
 Route::middleware([...$authenticated, 'role:instructor'])->group(function (): void {

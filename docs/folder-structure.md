@@ -127,12 +127,14 @@ lms-project/
 │   │   │   ├── Instructor/
 │   │   │   │   ├── CourseController.php
 │   │   │   │   └── CurriculumController.php
-│   │   │   ├── Public/
+│   │   │   ├── Catalog/
+│   │   │   │   └── CourseCatalogController.php
 │   │   │   ├── Role/
 │   │   │   │   ├── AdministratorController.php
 │   │   │   │   ├── InstructorController.php
 │   │   │   │   └── StudentController.php
 │   │   │   ├── Student/
+│   │   │   │   └── EnrollmentController.php
 │   │   │   └── Webhook/
 │   │   │       └── PayMongoWebhookController.php
 │   │   ├── Requests/
@@ -143,6 +145,8 @@ lms-project/
 │   │   │   │   ├── UpdateAccountStatusRequest.php
 │   │   │   │   └── UpdateUserRoleRequest.php
 │   │   │   ├── Auth/
+│   │   │   ├── Catalog/
+│   │   │   │   └── CourseCatalogRequest.php
 │   │   │   ├── Catalog/
 │   │   │   │   └── CourseCatalogRequest.php
 │   │   │   ├── Courses/
@@ -275,7 +279,8 @@ lms-project/
 │       ├── payments/
 │       ├── quizzes/
 │       ├── roles/
-│       └── student/
+│       ├── student/
+│       │   └── courses/
 ├── routes/
 │   ├── web.php
 │   ├── public.php
@@ -310,6 +315,7 @@ lms-project/
 │   │   ├── Phase5E/
 │   │   ├── Phase5F/
 │   │   ├── Phase6A/
+│   │   ├── Phase6B/
 │   │   ├── Role/
 │   │   ├── Student/
 │   │   └── Webhooks/

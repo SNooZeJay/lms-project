@@ -29,11 +29,12 @@ The current project includes:
 - Instructor publish and unpublish for owned courses
 - A public course catalog and public course details pages
 - An enrollment database record with four documented states
+- Free course enrollment and a student `My courses` page
 
 The following features are not built yet:
 
-- The student enrollment page
 - Reading lesson content and materials after enrolling
+- Paid enrollment and checkout
 - Reordering, deleting, or archiving curriculum content
 - File uploads and material downloads
 - Full role-specific business dashboards
@@ -521,7 +522,28 @@ This slice adds no page. It adds a database table, so review it with commands.
 7. Run `php artisan migrate:rollback --step=1` and confirm the table is removed.
 8. Run `php artisan migrate` and confirm the table is created again.
 
-## 15. Create a Student account
+## 15. Review the free enrollment
+
+Use a private window as a Student. You need a published **free** course first.
+
+1. Sign in as the Instructor, open `/instructor/courses`, and confirm at least one free course is published.
+2. Sign out. Open the Student account you created earlier and verify the email if needed.
+3. Open `/student`. Confirm the **My courses** and **Browse catalog** buttons.
+4. Open `/courses` and select the published free course.
+5. Confirm the page shows an **Enroll free** button.
+6. Select **Enroll free**. Confirm you land on `/student/courses`.
+7. Confirm your course appears with the status `Active` and today's date.
+8. Select the course in the catalog again. Confirm the button changed to **Enrolled**.
+9. Press the enroll button again by reloading the page. Confirm only one record exists.
+10. Create a second Student account and confirm that Student does not see your course in **My courses**.
+11. Open a paid course while signed in. Confirm it shows that paid enrollment opens later and has no enroll button.
+12. Sign in as the Instructor and open a public course page. Confirm no enroll control appears.
+13. Ask an Administrator to suspend your Student account, then try to enroll. Confirm you are signed out.
+14. Check `/student/courses` and the course page at 390px width.
+
+Lesson content still does not open after enrolling. That is the next phase.
+
+## 16. Create a Student account
 
 Use a separate browser or private window if you want to keep the Administrator session.
 
@@ -534,7 +556,7 @@ Use a separate browser or private window if you want to keep the Administrator s
 
 The registration form has no role selector. Public registration cannot create an Administrator.
 
-## 16. Find email verification and reset links
+## 17. Find email verification and reset links
 
 The local development environment uses Laravel's log mailer.
 
@@ -556,7 +578,7 @@ Copy the local link into the browser.
 
 The log is local. Do not upload or share `storage/logs/laravel.log` because it can contain private links and account details.
 
-## 17. Run the frontend development server
+## 18. Run the frontend development server
 
 Use this when you are changing CSS or JavaScript.
 
@@ -581,7 +603,7 @@ For normal work, you can stop Vite with `Ctrl + C`. You can also build the final
 npm run build
 ```
 
-## 18. Run the automated checks
+## 19. Run the automated checks
 
 Run these commands from the project folder.
 
@@ -634,7 +656,7 @@ This shows all registered URLs and their controller or action.
 php artisan optimize:clear
 ```
 
-## 19. Useful commands
+## 20. Useful commands
 
 | Command | What it does |
 |---|---|
@@ -649,7 +671,7 @@ php artisan optimize:clear
 | `npm run dev` | Starts the Vite development server |
 | `npm run build` | Builds frontend assets |
 
-## 20. Troubleshooting
+## 21. Troubleshooting
 
 ### `composer` is not recognized
 
@@ -771,7 +793,7 @@ php artisan owner:bootstrap --show-password
 
 If you no longer need the local Administrator, ask before removing the protected file or changing the account.
 
-## 21. Project folder guide
+## 22. Project folder guide
 
 These are the folders you will use most often:
 
@@ -793,7 +815,7 @@ Do not edit files in `vendor/`, `node_modules/`, or `public/build/` by hand. The
 
 `FOR_UI/adminator (FOR USER DASHBOARD)` is a read-only visual reference. It is not the application source code.
 
-## 22. Security rules
+## 23. Security rules
 
 Keep these rules in mind:
 
@@ -805,7 +827,7 @@ Keep these rules in mind:
 - Keep `MAIL_MAILER=log` for local demonstrations.
 - Do not use a real payment secret until the payment architecture phase is approved.
 
-## 23. Recommended beginner order
+## 24. Recommended beginner order
 
 When you are learning the project, use this order:
 
@@ -824,7 +846,8 @@ When you are learning the project, use this order:
 13. Publish the Course, then unpublish it.
 14. Open `/courses` in a private window and browse the published Course.
 15. Run `php artisan migrate:status` and confirm the enrollment migration ran.
-16. Read the relevant test before changing a feature.
-17. Run `php artisan test` before and after your change.
+16. Enroll in a published free course as a Student and check `/student/courses`.
+17. Read the relevant test before changing a feature.
+18. Run `php artisan test` before and after your change.
 
 You do not need to understand the whole Laravel framework before running the application. Start with the commands in this tutorial, then inspect one small feature at a time.

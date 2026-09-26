@@ -1822,7 +1822,7 @@ Create the canonical enrollment record before any enrollment UI or payment work.
 
 ### Status
 
-Approved on September 26, 2026. The foundation is implemented and passes 183 tests. Human review of the schema and migration evidence is the open checkpoint.
+Approved on September 26, 2026. The foundation is implemented and passes 183 tests. Human review of the schema and migration evidence is complete.
 
 ### Confirmed scope
 
@@ -1900,6 +1900,10 @@ Indexes and constraints:
 - `database/factories/EnrollmentFactory.php`
 - `tests/Feature/Phase6A/EnrollmentFoundationTest.php`
 
+### Phase 6A checkpoint
+
+Human approval received on September 26, 2026. The reviewer reviews browser pages and skipped the manual table walkthrough, so the approval rests on the automated schema evidence: migration, rollback, and 15 foundation tests that prove the columns, the unique rule, both restrict-on-delete rules, and the status values.
+
 ### Phase 6A automated evidence
 
 - `php artisan test` passes with 183 tests and 743 assertions
@@ -1933,36 +1937,47 @@ Let a Student enroll once in a published free Course and see their own enrollmen
 
 ### Status
 
-Waiting for Phase 6A approval. Paid enrollment and payment stay out of this phase.
+Approved on September 26, 2026. Free enrollment is implemented and passes 200 tests. Human browser review is the open checkpoint. Paid enrollment and payment stay out of this phase.
 
 ### Confirmed scope
 
 - Enroll action for a published free Course
 - Student `My courses` page
 - `EnrollmentPolicy` for student-owned records
-- Duplicate prevention that reuses the existing enrollment
+- Duplicate prevention that reuses an existing enrollment
+- Enroll, Enrolled, and Sign in states on the public Course details page
 - No payment and no PayMongo behavior
 
 ### Explicitly not included
 
 - No paid enrollment, no `pending_payment` activation, and no payment record
 - No lesson content delivery and no progress
-- No cancel, refund, or delete behavior
+- No cancel, refund, reactivation, or delete behavior
+
+### Rules
+
+- Only the student role can enroll, and only through the authenticated student group.
+- A draft or archived Course returns `404` so its existence is not confirmed.
+- A published paid Course shows a clear message that paid enrollment opens later. It is not a `404`, because the Course is public.
+- An existing `active` or `completed` enrollment is reused and never duplicated.
+- An existing `cancelled` or `pending_payment` enrollment is refused with a clear message. Reactivation is not built yet.
+- The unique database rule is the final duplicate guard, so a double click cannot create two records.
+- `student_id`, `status`, and every timestamp come from the session and the server, never from the request.
 
 ### Input, Process, and Output
 
 **Input**
 
 - Student session with the student role
-- Published free Course slug
+- Published free Course
 
 **Process**
 
-- Run `EnrollmentPolicy` and re-check the student role
-- Reject a draft, archived, or paid Course
-- Reuse an existing enrollment instead of creating a duplicate
+- Run `EnrollmentPolicy` for the acting Student
+- Return `404` when the Course is not published
+- Return a clear message when the Course is paid
+- Reuse an existing access-granting enrollment
 - Create one `active` enrollment with `activated_at` set on the server
-- Never accept `student_id`, `status`, or timestamps from the request
 - Redirect to the Student `My courses` page
 
 **Output**
@@ -1971,13 +1986,59 @@ Waiting for Phase 6A approval. Paid enrollment and payment stay out of this phas
 - A student-owned course list that no other Student can read
 - No payment, no lesson access, and no progress
 
-### Tests
+### Task list
+
+- [x] Task 1: Update Phase 6B requirements, routes, policies, and flow
+- [x] Task 2: Add failing free enrollment tests
+- [x] Task 3: Add EnrollmentPolicy and the EnrollStudent Action
+- [x] Task 4: Add controller, routes, My courses page, and catalog Enroll states
+- [x] Task 5: Run test, build, and security gates
+- [ ] Task 6: Human browser review of free enrollment
+
+### Phase 6B implementation evidence
+
+- `app/Policies/EnrollmentPolicy.php`
+- `app/Actions/Enrollment/EnrollStudent.php`
+- `app/Http/Controllers/Student/EnrollmentController.php`
+- `resources/views/student/courses/index.blade.php`
+- `resources/views/catalog/show.blade.php`
+- `resources/views/roles/student.blade.php`
+- `app/Providers/AppServiceProvider.php`
+- `tests/Feature/Phase6B/FreeEnrollmentTest.php`
+
+### Phase 6B automated evidence
+
+- `php artisan test` passes with 200 tests and 807 assertions
+- `./vendor/bin/pint --test` passes on 142 files
+- `npm run build` succeeds
+- `composer validate`, `composer audit`, and `npm audit` pass
+- Route, config, and view cache checks pass
+- No database migration was needed for Phase 6B
+- Six earlier guards that blocked the enrollment routes now check the still-absent lesson access, progress, cancel, and payment routes
+
+### Phase 6B security notes
+
+- The student route group keeps `auth`, `account.active`, `verified`, and `password.change` middleware
+- The controller hides an unpublished Course with `404` before any message
+- `student_id`, `status`, and every timestamp come from the session and the server
+- The unique database rule plus a caught duplicate error makes a double submit harmless
+- The My courses query is scoped to the signed-in Student id
+- A cancelled or pending enrollment is refused instead of silently reactivated
+- A paid Course returns a clear message and creates nothing
+- The public page only reveals enrollment state to the signed-in Student
+
+### Phase 6B security tests
 
 - A published free Course creates one active enrollment
 - Repeated requests reuse the same enrollment
-- A draft, archived, or paid Course cannot be enrolled
-- One Student cannot read another Student's enrollment
-- A suspended Student cannot enroll
+- A draft or archived Course cannot be enrolled
+- A published paid Course shows a clear message and creates nothing
+- Injected `student_id`, `status`, and timestamp fields are ignored
+- One Student cannot see another Student's enrollment
+- A suspended or unverified Student cannot enroll
+- An Instructor or Administrator cannot enroll
+- The public details page shows Sign in, Enroll, or Enrolled correctly
+- No payment, lesson access, or progress route exists
 
 ### Exit condition
 

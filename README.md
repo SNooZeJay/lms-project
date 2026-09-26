@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, and Phase 5F public Course catalog are human-approved. Phase 6A enrollment foundation is implemented and awaiting schema review.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, Phase 5F public Course catalog, and Phase 6A enrollment foundation are human-approved. Phase 6B free enrollment is implemented and awaiting browser review.
 
 The repository currently contains:
 
@@ -184,20 +184,18 @@ npm audit
 npm run build
 ```
 
-## Phase 6A checkpoint
+## Phase 6B checkpoint
 
-Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, and Phase 5F public Course catalog are human-approved. The Phase 6A slice adds:
+Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, Phase 5F public Course catalog, and Phase 6A enrollment foundation are human-approved. The Phase 6B slice adds:
 
-- An `enrollments` table that matches the documented design
-- A unique `(student_id, course_id)` rule so a Student has one canonical enrollment per Course
-- Restrict on delete for both foreign keys, so student history cannot be lost
-- An `EnrollmentStatus` enum with `pending_payment`, `active`, `completed`, and `cancelled`
-- An `Enrollment` model, an Enrollment factory, and User and Course relationships
-- No enrollment page, no payment, no progress, and no lesson access
+- A free enrollment Action and `EnrollmentPolicy` for student-owned records
+- A Student `My courses` page that only ever shows the signed-in Student's enrollments
+- Enroll, Enrolled, Sign in, and paid states on the public Course page
+- Reuse of an existing enrollment instead of a duplicate, backed by the unique database rule
+- A refusal for a cancelled or pending enrollment instead of a silent reactivation
+- No lesson content, progress, paid enrollment, payment, cancel, refund, upload, or download behavior
 
-This phase changes the database schema, so the schema needs human review before the enrollment page is built.
-
-The Phase 6A schema review checkpoint is open.
+The Phase 6B browser review checkpoint is open.
 
 The local Administrator is provisioned with:
 

@@ -6,7 +6,7 @@
     <div class="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
         <p class="font-mono text-sm font-semibold text-primary-text">Student workspace</p>
         <h1 class="mt-3 text-3xl font-[650] tracking-tight text-ink">Welcome, {{ $user->name }}</h1>
-        <p class="mt-3 max-w-2xl leading-7 text-ink-muted">Your account is ready. Course access will be added in a later approved phase.</p>
+        <p class="mt-3 max-w-2xl leading-7 text-ink-muted">Your account is ready. Browse published courses and enroll in free courses to build your learning record.</p>
 
         <div class="mt-8 grid gap-6 md:grid-cols-2">
             <section class="border-t-4 border-primary bg-surface p-6 shadow-sm" aria-labelledby="account-summary-heading">
@@ -19,8 +19,11 @@
             </section>
             <section class="border-t-4 border-accent bg-surface-muted p-6" aria-labelledby="student-next-heading">
                 <h2 id="student-next-heading" class="text-lg font-semibold text-ink">Available now</h2>
-                <p class="mt-3 leading-7 text-ink-muted">Your profile and account security tools are available.</p>
-                <a href="{{ route('account.profile') }}" class="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open profile</a>
+                <p class="mt-3 leading-7 text-ink-muted">Your profile, published course catalog, and free course enrollment are available.</p>
+                <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+                    <a href="{{ route('student.courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">My courses</a>
+                    <a href="{{ route('courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Browse catalog</a>
+                </div>
             </section>
         </div>
     </div>

@@ -215,7 +215,7 @@ class CurriculumAuthoringTest extends TestCase
     {
         $this->assertFalse(Route::has('instructor.courses.materials.upload'));
         $this->assertFalse(Route::has('student.materials.download'));
-        $this->assertFalse(Route::has('student.courses.index'));
+        $this->assertFalse(Route::has('student.lessons.show'));
     }
 
     private function makeInstructor(): User

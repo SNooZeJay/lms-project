@@ -207,7 +207,7 @@ class InstructorCoursePageTest extends TestCase
     {
         $this->assertFalse(Route::has('payments.index'));
         $this->assertFalse(Route::has('student.enrollments.index'));
-        $this->assertFalse(Route::has('student.courses.index'));
+        $this->assertFalse(Route::has('student.lessons.show'));
     }
 
     private function makeInstructor(): User

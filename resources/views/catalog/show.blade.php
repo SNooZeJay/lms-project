@@ -45,7 +45,25 @@
                 </div>
             </dl>
 
-            <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">Enrollment is not open yet. Lesson content and materials unlock after you enroll in a later release.</p>
+            @if ($enrollmentState === 'enrolled')
+                <p class="mt-6 border-l-4 border-success-text bg-success-surface px-4 py-3 text-sm font-semibold text-success-text">Enrolled. Lesson content opens in a later release.</p>
+            @elseif ($enrollmentState === 'can_enroll')
+                <div class="mt-6 flex flex-col gap-3 border-l-4 border-accent bg-success-surface px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p class="text-sm leading-6 text-success-text">This course is free. Enroll to start your learning record.</p>
+                    <form method="POST" action="{{ route('student.enrollments.store', $course) }}">
+                        @csrf
+                        <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Enroll free</button>
+                    </form>
+                </div>
+            @elseif ($enrollmentState === 'guest')
+                <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted"><a href="{{ route('login') }}" class="font-semibold text-primary-text underline underline-offset-4 hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Sign in to enroll</a> and open Lesson content after enrollment.</p>
+            @elseif ($enrollmentState === 'paid')
+                <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">Paid enrollment opens in a later release. Lesson content and materials stay locked until then.</p>
+            @elseif ($enrollmentState === 'inactive')
+                <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">This enrollment does not grant access yet. Contact an administrator for help.</p>
+            @else
+                <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">Lesson content and materials unlock after a student enrolls.</p>
+            @endif
         </header>
 
         @if ($course->learning_objectives)

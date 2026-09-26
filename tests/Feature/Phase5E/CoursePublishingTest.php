@@ -212,7 +212,7 @@ class CoursePublishingTest extends TestCase
     {
         $this->assertFalse(Route::has('instructor.courses.archive'));
         $this->assertFalse(Route::has('instructor.courses.destroy'));
-        $this->assertFalse(Route::has('student.enrollments.store'));
+        $this->assertFalse(Route::has('student.enrollments.cancel'));
         $this->assertFalse(Route::has('student.payments.checkout'));
     }
 

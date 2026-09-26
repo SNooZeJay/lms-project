@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Policies;
+
+use App\Enums\CourseStatus;
+use App\Enums\EnrollmentStatus;
+use App\Enums\UserAccountStatus;
+use App\Enums\UserRole;
+use App\Models\Course;
+use App\Models\Enrollment;
+use App\Models\User;
+
+class EnrollmentPolicy
+{
+    public function viewAny(User $actor): bool
+    {
+        return $this->isActiveStudent($actor);
+    }
+
+    public function view(User $actor, Enrollment $enrollment): bool
+    {
+        return $this->isActiveStudent($actor)
+            && $enrollment->student_id === $actor->id;
+    }
+
+    public function create(User $actor, Course $course): bool
+    {
+        return $this->isActiveStudent($actor)
+            && $course->status === CourseStatus::Published;
+    }
+
+    public function isActiveStudent(User $actor): bool
+    {
+        return $actor->profile?->role === UserRole::Student
+            && $actor->profile?->account_status === UserAccountStatus::Active;
+    }
+
+    public function grantsAccess(Enrollment $enrollment, User $actor): bool
+    {
+        return $this->view($actor, $enrollment)
+            && in_array($enrollment->status, [EnrollmentStatus::Active, EnrollmentStatus::Completed], true);
+    }
+}

@@ -466,6 +466,18 @@ Phase 5E adds two state controls to the Instructor workspace:
 - A blocked publish explains what is missing, such as a missing Lesson
 - No archive, delete, or public preview control appears
 
+### Phase 6B free enrollment
+
+Phase 6B adds the first student-owned records and pages:
+
+- The public Course page shows one clear state: `Sign in to enroll`, `Enroll free`, `Enrolled`, or a paid-course note
+- A guest never sees enrollment details
+- **My courses** lists only the signed-in Student's enrollments with status, enrolled date, and Instructor name
+- The empty state links to the catalog
+- Each enrollment card links back to the public Course page
+- A refused enrollment shows the shared error summary
+- No lesson content, progress, payment, or cancel control appears
+
 ### Course catalog
 
 - Search by course title
