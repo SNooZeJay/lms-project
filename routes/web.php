@@ -30,18 +30,6 @@ Route::post('/webhooks/paymongo', PayMongoWebhookController::class)
     ->middleware('throttle:120,1')
     ->name('webhooks.paymongo');
 
-// TEMPORARY. The dashboard will not accept an edited endpoint URL while it
-// still has deliveries queued, and the queued ones are addressed to the
-// placeholder path from its own example, which is /webhook. This alias lets
-// those in-flight deliveries land while the dashboard is sorted out.
-//
-// Remove this once the saved endpoint URL is /webhooks/paymongo and the queue
-// has drained. It is a shim for a dashboard limitation, not a second
-// supported address.
-Route::post('/webhook', PayMongoWebhookController::class)
-    ->middleware('throttle:120,1')
-    ->name('webhooks.paymongo.placeholder_path');
-
 Route::get('/courses', [CourseCatalogController::class, 'index'])->name('courses.index');
 Route::get('/courses/{course:slug}', [CourseCatalogController::class, 'show'])->name('courses.show');
 
