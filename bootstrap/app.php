@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Middleware\ConfineDebugOutput;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\RequirePasswordChange;
+use App\Http\Middleware\SecureSessionCookies;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,6 +23,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'password.change' => RequirePasswordChange::class,
             'role' => EnsureUserHasRole::class,
         ]);
+
+        // Order matters. Debug output is confined first, so a failure anywhere
+        // later in the stack already renders without it. The cookie flag has to
+        // be set before the session starts, and the headers are added last so
+        // they survive a response that replaces the body.
+        $middleware->prepend(ConfineDebugOutput::class);
+        $middleware->prepend(SecureSessionCookies::class);
+        $middleware->append(SecurityHeaders::class);
 
         // Behind a reverse proxy the application must trust the proxy headers,
         // otherwise every generated URL would be http and a secure cookie

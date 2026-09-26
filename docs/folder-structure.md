@@ -144,6 +144,8 @@ lms-project/
 │   │   ├── Middleware/
 │   │   │   ├── RequirePasswordChange.php
 │   │   │   ├── EnsureAccountIsActive.php
+│   │   │   ├── ConfineDebugOutput.php
+│   │   │   ├── SecurityHeaders.php
 │   │   │   └── EnsureUserHasRole.php
 │   │   ├── Requests/
 │   │   │   ├── Account/
@@ -233,6 +235,9 @@ lms-project/
 │   │   ├── ContinueLearning.php
 │   │   ├── StudentPaymentState.php
 │   │   ├── MaterialFileRules.php
+│   │   ├── Money.php
+│   │   ├── Navigation.php
+│   │   ├── StatusLabel.php
 │   │   └── StudentQuizAccess.php
 ├── bootstrap/
 │   ├── app.php

@@ -81,7 +81,7 @@
 
 @push('scripts')
     @unless ($paid)
-        <script>
+        <script nonce="{{ $cspNonce ?? '' }}">
             // The provider confirms by webhook, not by the browser coming back,
             // so the page reloads itself until the state changes. A student
             // should not have to guess whether anything happened.

@@ -20,6 +20,7 @@ use App\Policies\LessonPolicy;
 use App\Policies\ModulePolicy;
 use App\Policies\UserPolicy;
 use App\Services\Payments\PayMongoApiClient;
+use App\Support\PublicHttps;
 use App\Support\WindowsDpapiSecretStore;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
@@ -58,7 +59,7 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Generate https URLs when APP_URL says the site is served over https.
+     * Generate https URLs when the public address is https.
      *
      * A TLS-terminating proxy forwards plain HTTP, so the request looks like
      * http unless the proxy sends X-Forwarded-Proto and the proxy address is
@@ -68,13 +69,12 @@ class AppServiceProvider extends ServiceProvider
      *
      * The decision comes from APP_URL rather than from the request, so it is
      * explicit and cannot be influenced by a header. It is also why APP_URL has
-     * to be set to the real public address on a deployed server.
+     * to be set to the real public address on a deployed server. The transport
+     * security header reads the same answer through PublicHttps.
      */
     private function forceHttpsWhenTheAppUrlIsHttps(): void
     {
-        $appUrl = (string) config('app.url');
-
-        if (str_starts_with($appUrl, 'https://')) {
+        if (PublicHttps::isEnabled()) {
             URL::forceScheme('https');
         }
     }
