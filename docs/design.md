@@ -431,6 +431,19 @@ Phase 5B adds two safe Instructor mutations to the Course outline:
 - Forms are usable on desktop and mobile
 - No upload, download, public, or payment controls appear
 
+### Phase 5C content editing
+
+Phase 5C adds three edit forms and Edit links on the Course outline:
+
+- **Edit course** changes title, description, objectives, category, level, type, and price
+- **Edit module** changes Module title and description
+- **Edit lesson** changes title, summary, content, required state, and estimated minutes
+- Each edit page shows the current values before saving
+- Each form has a visible `Cancel` link back to the outline
+- Failed edits keep the typed text and show the shared error summary
+- Read-only facts stay visible: slug, position, status, and price rule help text
+- No delete, archive, reorder, publish, or upload control appears
+
 ### Course catalog
 
 - Search by course title

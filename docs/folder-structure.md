@@ -62,9 +62,12 @@ lms-project/
 │   │   │   ├── CreateCourse.php
 │   │   │   ├── Curriculum/
 │   │   │   │   ├── CreateLesson.php
-│   │   │   │   └── CreateModule.php
+│   │   │   │   ├── CreateModule.php
+│   │   │   │   ├── UpdateLesson.php
+│   │   │   │   └── UpdateModule.php
 │   │   │   ├── PublishCourse.php
-│   │   │   └── UnpublishCourse.php
+│   │   │   ├── UnpublishCourse.php
+│   │   │   └── UpdateCourse.php
 │   │   ├── Enrollment/
 │   │   │   ├── EnrollStudent.php
 │   │   │   ├── ActivatePaidEnrollment.php
@@ -141,7 +144,10 @@ lms-project/
 │   │   │   ├── Courses/
 │   │   │   │   ├── CreateCourseRequest.php
 │   │   │   │   ├── CreateLessonRequest.php
-│   │   │   │   └── CreateModuleRequest.php
+│   │   │   │   ├── CreateModuleRequest.php
+│   │   │   │   ├── UpdateCourseRequest.php
+│   │   │   │   ├── UpdateLessonRequest.php
+│   │   │   │   └── UpdateModuleRequest.php
 │   │   │   ├── Enrollment/
 │   │   │   ├── Learning/
 │   │   │   ├── Payments/
@@ -199,6 +205,7 @@ lms-project/
 │   │   └── Storage/
 │   │       └── LearningMaterialStorage.php
 │   ├── Support/
+│   │   ├── CoursePrice.php
 │   │   ├── RoleBasedDestination.php
 │   │   └── WindowsDpapiSecretStore.php
 │   ├── View/Components/
@@ -289,6 +296,7 @@ lms-project/
 │   │   ├── Phase4B/
 │   │   ├── Phase5A/
 │   │   ├── Phase5B/
+│   │   ├── Phase5C/
 │   │   ├── Role/
 │   │   ├── Student/
 │   │   └── Webhooks/

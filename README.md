@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, and Phase 5A Instructor Course Outline UI are human-approved. Phase 5B Module and Lesson authoring is implemented and awaiting browser review.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, and Phase 5B curriculum authoring are human-approved. Phase 5C content editing is implemented and awaiting browser review.
 
 The repository currently contains:
 
@@ -184,18 +184,19 @@ npm audit
 npm run build
 ```
 
-## Phase 5B checkpoint
+## Phase 5C checkpoint
 
-Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, and Phase 5A Instructor Course Outline UI are human-approved. The Phase 5B slice adds:
+Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, and Phase 5B curriculum authoring are human-approved. The Phase 5C slice adds:
 
-- Instructor-owned Module and Lesson creation on the Course outline
-- Server-assigned Module and Lesson order
-- Server-generated unique Lesson slugs
-- `ModulePolicy` and `LessonPolicy` ownership checks
-- Private draft content only
-- No public catalog, enrollment, payment, upload, download, edit, reorder, or publish behavior
+- Instructor-owned edit forms for Course, Module, and Lesson
+- Server-owned owner, parent, position, status, currency, and slug fields
+- Shared free and paid price rules for create and update
+- `CoursePolicy`, `ModulePolicy`, and `LessonPolicy` checks on every edit
+- No delete, archive, reorder, publish, upload, enrollment, or payment behavior
 
-The Phase 5B browser review checkpoint is open.
+Delete is deferred on purpose. A later phase will use status-based archiving so student progress and payment history stay intact.
+
+The Phase 5C browser review checkpoint is open.
 
 The local Administrator is provisioned with:
 

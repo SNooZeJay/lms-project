@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Instructor;
 
 use App\Actions\Courses\CreateCourse;
+use App\Actions\Courses\UpdateCourse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Courses\CreateCourseRequest;
+use App\Http\Requests\Courses\UpdateCourseRequest;
 use App\Models\Course;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -59,5 +61,28 @@ class CourseController extends Controller
         return view('instructor.courses.show', [
             'course' => $course,
         ]);
+    }
+
+    public function edit(Request $request, Course $course): View
+    {
+        Gate::authorize('update', $course);
+
+        return view('instructor.courses.edit', [
+            'course' => $course,
+        ]);
+    }
+
+    public function update(
+        UpdateCourseRequest $request,
+        Course $course,
+        UpdateCourse $updateCourse,
+    ): RedirectResponse {
+        Gate::authorize('update', $course);
+
+        $updateCourse->handle($request->user(), $course, $request->validated());
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Course details updated.');
     }
 }

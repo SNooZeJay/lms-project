@@ -31,7 +31,10 @@
                     </div>
                 </dl>
             </div>
-            <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">You can add draft Modules and Lessons here. Editing, reordering, uploads, and public publishing will be added in later approved slices.</p>
+            <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">You can add and edit draft Modules and Lessons here. Reordering, uploads, deletion, and public publishing are not enabled yet.</p>
+                <a href="{{ route('instructor.courses.edit', $course) }}" class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Edit course details</a>
+            </div>
         </header>
 
         @forelse ($course->modules as $module)
@@ -41,7 +44,10 @@
                         <p class="text-xs font-semibold uppercase tracking-wide text-primary-text">Module {{ $module->position }}</p>
                         <h2 id="module-{{ $module->id }}" class="mt-1 text-lg font-semibold text-ink">{{ $module->title }}</h2>
                     </div>
-                    <span class="text-sm font-medium text-ink-muted">{{ ucfirst($module->status->value) }}</span>
+                    <div class="flex items-center gap-4">
+                        <span class="text-sm font-medium text-ink-muted">{{ ucfirst($module->status->value) }}</span>
+                        <a href="{{ route('instructor.courses.modules.edit', [$course, $module]) }}" class="inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Edit module</a>
+                    </div>
                 </div>
 
                 @forelse ($module->lessons as $lesson)
@@ -54,9 +60,10 @@
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">{{ $lesson->summary }}</p>
                                 @endif
                             </div>
-                            <div class="flex flex-wrap gap-2 text-xs font-semibold text-ink-muted">
+                            <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-muted">
                                 <span class="rounded-full bg-surface-muted px-2.5 py-1">{{ ucfirst($lesson->status->value) }}</span>
                                 <span class="rounded-full bg-surface-muted px-2.5 py-1">{{ $lesson->is_required ? 'Required' : 'Optional' }}</span>
+                                <a href="{{ route('instructor.courses.modules.lessons.edit', [$course, $module, $lesson]) }}" class="inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Edit lesson</a>
                             </div>
                         </div>
 

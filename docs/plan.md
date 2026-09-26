@@ -323,6 +323,39 @@ Phase 5B rules:
 - New Modules and Lessons are private drafts.
 - Phase 5B does not add public catalog, enrollment, payment, upload, or download behavior.
 
+### Phase 5C content editing
+
+Phase 5C lets an Instructor correct owned content that Phase 5A and Phase 5B created.
+
+Phase 5C includes:
+
+- Edit Course metadata form and action
+- Edit Module form and action
+- Edit Lesson form and action
+- Server-owned owner, parent, position, status, currency, and slug fields
+- Course, Module, and Lesson ownership checks on every edit
+
+Phase 5C rules:
+
+- Only the owning Instructor can edit content.
+- An edit never changes the owner, parent, order, status, or slug.
+- A Course keeps its slug when the title changes so links stay stable.
+- Free Courses must still use a price of `0` and paid Courses a positive price.
+- Phase 5C does not add delete, archive, reorder, publish, upload, enrollment, or payment behavior.
+
+### Deferred: delete and archive
+
+Delete is deliberately not part of Phase 5C.
+
+Reason: once progress, grades, or payment records exist, removing a Course, Module, or Lesson row would silently destroy student history.
+
+Planned safe default for a later phase:
+
+- Use status-based archiving, for example an `archived` status.
+- Keep archived content hidden from the public catalog.
+- Keep paid records and certificates readable for audit.
+- Add hard delete only if a later approved phase proves it is needed.
+
 ## 6. Enrollment
 
 Enrollment is the canonical record for Student access to a Course.

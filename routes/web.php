@@ -33,8 +33,14 @@ Route::middleware([...$authenticated, 'role:instructor'])->group(function (): vo
     Route::get('/instructor/courses/new', [CourseController::class, 'create'])->name('instructor.courses.create');
     Route::post('/instructor/courses', [CourseController::class, 'store'])->name('instructor.courses.store');
     Route::get('/instructor/courses/{course}', [CourseController::class, 'show'])->name('instructor.courses.show');
+    Route::get('/instructor/courses/{course}/edit', [CourseController::class, 'edit'])->name('instructor.courses.edit');
+    Route::patch('/instructor/courses/{course}', [CourseController::class, 'update'])->name('instructor.courses.update');
     Route::post('/instructor/courses/{course}/modules', [CurriculumController::class, 'storeModule'])->name('instructor.courses.modules.store');
+    Route::patch('/instructor/courses/{course}/modules/{module}', [CurriculumController::class, 'updateModule'])->name('instructor.courses.modules.update');
+    Route::get('/instructor/courses/{course}/modules/{module}/edit', [CurriculumController::class, 'editModule'])->name('instructor.courses.modules.edit');
     Route::post('/instructor/courses/{course}/modules/{module}/lessons', [CurriculumController::class, 'storeLesson'])->name('instructor.courses.modules.lessons.store');
+    Route::get('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/edit', [CurriculumController::class, 'editLesson'])->name('instructor.courses.modules.lessons.edit');
+    Route::patch('/instructor/courses/{course}/modules/{module}/lessons/{lesson}', [CurriculumController::class, 'updateLesson'])->name('instructor.courses.modules.lessons.update');
 });
 
 Route::middleware([...$authenticated, 'role:administrator'])->group(function (): void {

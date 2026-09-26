@@ -4,7 +4,7 @@
 
 This roadmap turns the approved LMS plan into small, testable steps.
 
-Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, and Phase 5A are human-approved. Phase 5B Module and Lesson authoring is implemented and awaiting human browser review. No later business phase has started.
+Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, and Phase 5B are human-approved. Phase 5C content editing is the active slice. No later business phase has started.
 
 Do not skip directly to payment processing or dashboard polish.
 
@@ -1286,7 +1286,7 @@ Let an Instructor add ordered Module and Lesson records to an owned Course from 
 
 ### Status
 
-Approved on September 26, 2026. Module and Lesson authoring is implemented and passes 104 tests. Human browser review is the open checkpoint.
+Approved on September 26, 2026. Module and Lesson authoring is implemented, tested, and human-approved.
 
 ### Confirmed scope
 
@@ -1372,7 +1372,113 @@ Approved on September 26, 2026. Module and Lesson authoring is implemented and p
 - Draft content is not public.
 - No upload, download, payment, or enrollment route exists.
 
-## 13. Phase 5C: course catalog
+### Phase 5B checkpoint
+
+Human review approved Module and Lesson authoring on September 26, 2026.
+
+## 13. Phase 5C: Instructor content editing
+
+### Goal
+
+Let an Instructor correct an owned Course, Module, or Lesson after it is created.
+
+### Status
+
+Approved on September 26, 2026. Editing is implemented and passes 120 tests. Human browser review is the open checkpoint.
+
+### Confirmed scope
+
+- Edit Course title, description, learning objectives, category, level, type, and price
+- Edit Module title and description
+- Edit Lesson title, summary, content, required state, and estimated minutes
+- Keep owner, parent, position, status, currency, and slugs server-owned
+- Ownership checks on every edit page and every update
+- No delete, archive, reorder, publish, upload, enrollment, or payment behavior
+
+### Explicitly not included
+
+Delete is not part of this phase. Hard delete can remove student progress, grades, and payment links that do not exist yet. A later phase will use status-based archiving instead of row deletion.
+
+### Input, Process, and Output
+
+**Input**
+
+- Owned Course, Module, or Lesson ID
+- Course title, description, learning objectives, category, level, type, and price
+- Module title and description
+- Lesson title, summary, content, required state, and estimated minutes
+
+**Process**
+
+- Run CoursePolicy, ModulePolicy, or LessonPolicy
+- Validate the Form Request
+- Reject owner, parent, position, status, currency, and slug fields
+- Re-check the free and paid price rules
+- Save only the editable fields
+- Keep the existing slug so links stay stable
+- Redirect to the owned Course outline
+
+**Output**
+
+- Corrected Course, Module, or Lesson records
+- Updated owned Course outline
+- Unchanged owner, order, status, and slugs
+- No delete, public, upload, enrollment, or payment behavior
+
+### Task list
+
+- [x] Task 1: Update Phase 5C requirements, routes, policies, and flow
+- [x] Task 2: Add failing Course, Module, and Lesson editing tests
+- [x] Task 3: Add Update Form Requests and Actions
+- [x] Task 4: Add controller edit and update methods with routes
+- [x] Task 5: Add accessible edit forms and outline edit links
+- [x] Task 6: Run test, build, and security gates
+- [ ] Task 7: Human browser review of editing
+
+### Phase 5C implementation evidence
+
+- `app/Support/CoursePrice.php`
+- `app/Http/Requests/Courses/UpdateCourseRequest.php`
+- `app/Http/Requests/Courses/UpdateModuleRequest.php`
+- `app/Http/Requests/Courses/UpdateLessonRequest.php`
+- `app/Actions/Courses/UpdateCourse.php`
+- `app/Actions/Courses/Curriculum/UpdateModule.php`
+- `app/Actions/Courses/Curriculum/UpdateLesson.php`
+- `app/Http/Controllers/Instructor/CourseController.php`
+- `app/Http/Controllers/Instructor/CurriculumController.php`
+- `resources/views/instructor/courses/edit.blade.php`
+- `resources/views/instructor/courses/modules/edit.blade.php`
+- `resources/views/instructor/courses/lessons/edit.blade.php`
+- `tests/Feature/Phase5C/ContentEditingTest.php`
+
+### Phase 5C automated evidence
+
+- `php artisan test` passes with 120 tests and 499 assertions
+- `./vendor/bin/pint --test` passes on 121 files
+- `npm run build` succeeds
+- `composer validate`, `composer audit`, and `npm audit` pass
+- Route, config, and view cache checks pass
+- No database migration was needed for Phase 5C
+
+### Phase 5C security notes
+
+- Owner, parent, position, status, currency, publication time, thumbnail, and slug fields are prohibited
+- `CoursePrice` keeps the free and paid price rules identical for create and update
+- Update Actions re-check authorization and only fill editable fields
+- `abort_unless` stops a Module from another Course and a Lesson from another Module
+- Edit pages and update routes both run Policies
+- A Course or Lesson slug never changes on edit
+
+### Phase 5C security tests
+
+- An Instructor can edit only owned content.
+- Students and other Instructors receive `403`.
+- Owner, parent, position, status, currency, and slug fields are rejected.
+- A Course slug does not change when the title changes.
+- Free and paid price rules still apply on update.
+- No delete, upload, download, payment, or enrollment route exists.
+
+## 14. Phase 5D: course catalog
 
 ### Goal
 
@@ -1402,7 +1508,7 @@ Publish safe public Course metadata.
 
 An Instructor can create and publish a Course, and a guest can view safe public details.
 
-## 14. Phase 6: curriculum and materials
+## 15. Phase 6: curriculum and materials
 
 ### Goal
 
@@ -1432,7 +1538,7 @@ Manage ordered Modules, Lessons, and protected Learning Materials.
 
 An Instructor can build a complete Course outline with authorized material access.
 
-## 15. Phase 7: free enrollment
+## 16. Phase 7: free enrollment
 
 ### Goal
 
@@ -1460,7 +1566,7 @@ Prove the first complete learning access workflow before payment work.
 
 A Student can enroll once in a free Course and open authorized published Lessons.
 
-## 16. Phase 8: lesson access and progress
+## 17. Phase 8: lesson access and progress
 
 ### Goal
 
@@ -1488,7 +1594,7 @@ Persist Lesson activity and calculate progress from records.
 
 A Student can complete Lessons and see database-backed progress.
 
-## 17. Phase 9: quizzes
+## 18. Phase 9: quizzes
 
 ### Goal
 
@@ -1519,7 +1625,7 @@ Deliver safe Questions and enforce server-side grading.
 
 A Student can complete a Quiz and receive a correct server-calculated result.
 
-## 18. Phase 10: completion and certificates
+## 19. Phase 10: completion and certificates
 
 ### Goal
 
@@ -1547,7 +1653,7 @@ Verify Course completion and issue one certificate.
 
 An eligible Student receives one printable certificate with safe authenticated access.
 
-## 19. Phase 11: payment architecture
+## 20. Phase 11: payment architecture
 
 ### Goal
 
@@ -1576,7 +1682,7 @@ Finalize payment behavior before calling PayMongo.
 
 Payment state transitions are fully specified and testable without live credentials.
 
-## 20. Phase 12: PayMongo integration
+## 21. Phase 12: PayMongo integration
 
 ### Goal
 
@@ -1602,7 +1708,7 @@ Run the approved webhook scenarios from `plan.md` and `architecture.md`.
 
 A real test-mode payment activates one paid Enrollment once, and repeated delivery causes no duplicate.
 
-## 21. Phase 13: dashboards and reports
+## 22. Phase 13: dashboards and reports
 
 ### Goal
 
@@ -1629,7 +1735,7 @@ Add role-specific pages using real authorized data.
 
 All dashboards work with real authorized data and approved empty states.
 
-## 22. Phase 14: quality and accessibility
+## 23. Phase 14: quality and accessibility
 
 ### Goal
 
@@ -1674,7 +1780,7 @@ php artisan route:list
 
 Every acceptance criterion in `plan.md` passes with recorded evidence.
 
-## 23. Phase 15: deployment and defense
+## 24. Phase 15: deployment and defense
 
 ### Goal
 
@@ -1710,7 +1816,7 @@ Deploy a tested release and prepare the SIA1 presentation.
 
 The deployed application works, the team can explain the architecture, and critical workflows remain testable.
 
-## 24. Commands after scaffolding
+## 25. Commands after scaffolding
 
 Use the commands generated by the selected Laravel starter kit.
 
@@ -1730,7 +1836,7 @@ npm run build
 
 Do not run `migrate:fresh` against a shared or production database.
 
-## 25. Definition of ready
+## 26. Definition of ready
 
 A task is ready when:
 
@@ -1742,7 +1848,7 @@ A task is ready when:
 - Documentation impact is known
 - No unresolved product decision remains
 
-## 26. Definition of done
+## 27. Definition of done
 
 A task is done when:
 
@@ -1756,8 +1862,8 @@ A task is done when:
 - No unrelated file changed
 - The team can explain the change
 
-## 27. Current next action
+## 28. Current next action
 
-The current next action is Phase 5A Instructor Course Outline UI implementation.
+The current next action is Phase 5C Instructor content editing.
 
-Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, the human-approved Phase 4A Course foundation, and Phase 4B curriculum metadata are complete. Do not add public catalog, enrollment, payment, upload, or curriculum mutation behavior.
+Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Course outline UI, and Phase 5B curriculum authoring are complete and human-approved. Do not add public catalog, enrollment, payment, upload, delete, or publish behavior.

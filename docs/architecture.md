@@ -265,6 +265,19 @@ Phase 5A does not expose the later Course edit, publish, curriculum action, uplo
 
 Phase 5B assigns positions, status, parent IDs, and Lesson slugs on the server. It does not add public content, upload, download, enrollment, or payment routes.
 
+### Phase 5C content editing routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| GET | `/instructor/courses/{course}/edit` | Show the Course edit form | Instructor role and CoursePolicy |
+| PATCH | `/instructor/courses/{course}` | Save Course metadata | Instructor role and CoursePolicy |
+| GET | `/instructor/courses/{course}/modules/{module}/edit` | Show the Module edit form | Instructor role and ModulePolicy |
+| PATCH | `/instructor/courses/{course}/modules/{module}` | Save Module metadata | Instructor role and ModulePolicy |
+| GET | `/instructor/courses/{course}/modules/{module}/lessons/{lesson}/edit` | Show the Lesson edit form | Instructor role and LessonPolicy |
+| PATCH | `/instructor/courses/{course}/modules/{module}/lessons/{lesson}` | Save Lesson metadata | Instructor role and LessonPolicy |
+
+Phase 5C keeps owner, parent, position, status, currency, and slugs server-owned. It does not add delete, archive, reorder, publish, upload, download, enrollment, or payment routes.
+
 ### Student routes
 
 
@@ -662,6 +675,42 @@ flowchart TD
 - Ordered Module and Lesson records
 - Updated owned Course outline
 - No public content, upload, download, enrollment, or payment behavior
+
+### Phase 5C content editing flow
+
+```mermaid
+flowchart TD
+    O[Open an edit page] --> P[Run CoursePolicy, ModulePolicy, or LessonPolicy]
+    P --> V[Validate the Update Form Request]
+    V --> R[Reject owner, parent, position, status, currency, and slug fields]
+    R --> C[Re-check free and paid price rules for a Course]
+    C --> S[Save only the editable fields]
+    S --> B[Redirect to the owned Course outline]
+```
+
+### Phase 5C Input, Process, and Output
+
+**Input**
+
+- Owned Course, Module, or Lesson ID
+- Course title, description, learning objectives, category, level, type, and price
+- Module title and description
+- Lesson title, summary, content, required state, and estimated minutes
+
+**Process**
+
+- Run the matching Policy for the acting Instructor
+- Validate the Update Form Request
+- Reject `instructor_id`, `course_id`, `module_id`, `position`, `status`, `currency`, `published_at`, `thumbnail_path`, and `slug`
+- Re-check the free and paid price rules for a Course
+- Keep the stored slug, position, status, and owner unchanged
+- Save only the editable fields
+
+**Output**
+
+- Corrected Course, Module, or Lesson records
+- Updated owned Course outline
+- No delete, archive, reorder, publish, upload, enrollment, or payment behavior
 
 ## 8. Authorization
 

@@ -24,12 +24,13 @@ The current project includes:
 - Course database foundation with Instructor ownership and safe defaults
 - Instructor Course list, create form, and Course outline
 - Instructor Module and Lesson authoring with server-assigned order
+- Instructor editing for Course, Module, and Lesson
 
 The following features are not built yet:
 
 - Public course catalog
 - Enrollment
-- Editing, reordering, or publishing curriculum content
+- Reordering, publishing, deleting, or archiving curriculum content
 - Learning Material authoring and file uploads
 - Full role-specific business dashboards
 - Quizzes
@@ -423,7 +424,26 @@ Sign in as the Instructor and open one of your Courses.
 
 Every Module and Lesson starts as a private draft. Order, status, and Lesson slugs are always set by the server.
 
-## 10. Create a Student account
+## 10. Review the Instructor editing
+
+Sign in as the Instructor and open a Course you own.
+
+1. Open `/instructor/courses` and select a Course.
+2. Select **Edit course details**.
+3. Change the title, description, category, level, or price.
+4. Select **Save course details** and confirm the outline shows the new values.
+5. Confirm the course address in the read-only box did not change.
+6. Select **Edit module** on a Module, change the title, and save.
+7. Confirm the Module kept its position and `Draft` status.
+8. Select **Edit lesson** on a Lesson, change the content, minutes, or required state, and save.
+9. Confirm the Lesson kept its position, status, and address.
+10. Try to set a price above `0` on a `Free` Course and confirm the page shows an error.
+11. Submit an empty title and confirm the page shows an error and keeps your typed text.
+12. Check each edit page at 390px width.
+
+There is no delete, archive, reorder, publish, or upload control. Deleting content is on purpose for a later phase.
+
+## 11. Create a Student account
 
 Use a separate browser or private window if you want to keep the Administrator session.
 
@@ -436,7 +456,7 @@ Use a separate browser or private window if you want to keep the Administrator s
 
 The registration form has no role selector. Public registration cannot create an Administrator.
 
-## 11. Find email verification and reset links
+## 12. Find email verification and reset links
 
 The local development environment uses Laravel's log mailer.
 
@@ -458,7 +478,7 @@ Copy the local link into the browser.
 
 The log is local. Do not upload or share `storage/logs/laravel.log` because it can contain private links and account details.
 
-## 12. Run the frontend development server
+## 13. Run the frontend development server
 
 Use this when you are changing CSS or JavaScript.
 
@@ -483,7 +503,7 @@ For normal work, you can stop Vite with `Ctrl + C`. You can also build the final
 npm run build
 ```
 
-## 13. Run the automated checks
+## 14. Run the automated checks
 
 Run these commands from the project folder.
 
@@ -536,7 +556,7 @@ This shows all registered URLs and their controller or action.
 php artisan optimize:clear
 ```
 
-## 14. Useful commands
+## 15. Useful commands
 
 | Command | What it does |
 |---|---|
@@ -551,7 +571,7 @@ php artisan optimize:clear
 | `npm run dev` | Starts the Vite development server |
 | `npm run build` | Builds frontend assets |
 
-## 15. Troubleshooting
+## 16. Troubleshooting
 
 ### `composer` is not recognized
 
@@ -673,7 +693,7 @@ php artisan owner:bootstrap --show-password
 
 If you no longer need the local Administrator, ask before removing the protected file or changing the account.
 
-## 16. Project folder guide
+## 17. Project folder guide
 
 These are the folders you will use most often:
 
@@ -695,7 +715,7 @@ Do not edit files in `vendor/`, `node_modules/`, or `public/build/` by hand. The
 
 `FOR_UI/adminator (FOR USER DASHBOARD)` is a read-only visual reference. It is not the application source code.
 
-## 17. Security rules
+## 18. Security rules
 
 Keep these rules in mind:
 
@@ -707,7 +727,7 @@ Keep these rules in mind:
 - Keep `MAIL_MAILER=log` for local demonstrations.
 - Do not use a real payment secret until the payment architecture phase is approved.
 
-## 18. Recommended beginner order
+## 19. Recommended beginner order
 
 When you are learning the project, use this order:
 
@@ -721,7 +741,8 @@ When you are learning the project, use this order:
 8. Read `docs/architecture.md` for the technical design.
 9. Review the Instructor Course pages as an Instructor.
 10. Add one Module and one Lesson to your own Course.
-11. Read the relevant test before changing a feature.
-12. Run `php artisan test` before and after your change.
+11. Edit the Course, the Module, and the Lesson.
+12. Read the relevant test before changing a feature.
+13. Run `php artisan test` before and after your change.
 
 You do not need to understand the whole Laravel framework before running the application. Start with the commands in this tutorial, then inspect one small feature at a time.
