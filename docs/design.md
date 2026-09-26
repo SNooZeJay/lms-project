@@ -451,7 +451,7 @@ Phase 5D adds material metadata to each Lesson on the outline:
 - **Add material** uses a title, a type select, and a matching content or link field
 - Only `Text`, `Code`, `Video link`, and `External link` appear in the type select
 - File types are not offered because uploads are not built yet
-- Each material row shows its type and position and links to its edit page
+- Each material row uses the same `Material 1` numbering wording as Module and Lesson, shows its type, and links to its edit page
 - Failed submits keep the typed text and reopen the same form
 - No upload, download, delete, or publish control appears
 

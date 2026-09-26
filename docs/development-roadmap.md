@@ -1566,7 +1566,7 @@ Approved on September 26, 2026. Material metadata authoring is implemented and p
 
 ### Phase 5D automated evidence
 
-- `php artisan test` passes with 136 tests and 572 assertions
+- `php artisan test` passes with 136 tests and 574 assertions
 - `./vendor/bin/pint --test` passes on 127 files
 - `npm run build` succeeds
 - `composer validate`, `composer audit`, and `npm audit` pass
@@ -1583,6 +1583,7 @@ Approved on September 26, 2026. Material metadata authoring is implemented and p
 - Storage metadata stays empty and is never accepted from a request
 - `lessonBelongsToCourse` and a Lesson ownership check stop cross-lesson and cross-course edits
 - Earlier Phase 4B and Phase 5B guards were updated to check the new upload route name instead of the now-approved material store route
+- Human review fixed the material row label from `Position 1` to `Material 1` so it matches Module and Lesson wording
 
 ### Phase 5D security tests
 

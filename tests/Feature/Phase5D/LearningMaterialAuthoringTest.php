@@ -330,13 +330,18 @@ class LearningMaterialAuthoringTest extends TestCase
     {
         $instructor = $this->makeInstructor();
         [$course, $module, $lesson] = $this->makeLesson($instructor);
-        $material = LearningMaterial::factory()->for($lesson, 'lesson')->create(['title' => 'Outline Material']);
+        $material = LearningMaterial::factory()->for($lesson, 'lesson')->create([
+            'title' => 'Outline Material',
+            'position' => 1,
+        ]);
 
         $this->actingAs($instructor)
             ->get(route('instructor.courses.show', $course))
             ->assertOk()
             ->assertSee('Outline Material')
             ->assertSee('Add material')
+            ->assertSee('Material 1')
+            ->assertSee('Material '.$material->position)
             ->assertSee(route('instructor.courses.materials.edit', [$course, $module, $lesson, $material]), false);
     }
 

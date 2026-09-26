@@ -72,7 +72,7 @@
                                 @foreach ($lesson->learningMaterials as $material)
                                     <li class="border-l-2 border-line px-3 py-2 text-sm">
                                         <span class="font-medium text-ink">{{ $material->title }}</span>
-                                        <span class="block text-xs text-ink-muted">{{ ucfirst(str_replace('_', ' ', $material->material_type->value)) }} · Position {{ $material->position }}</span>
+                                        <span class="block text-xs text-ink-muted">Material {{ $material->position }} · {{ ucfirst(str_replace('_', ' ', $material->material_type->value)) }}</span>
                                         <a href="{{ route('instructor.courses.materials.edit', [$course, $module, $lesson, $material]) }}" class="mt-2 inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Edit material</a>
                                     </li>
                                 @endforeach

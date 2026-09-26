@@ -451,14 +451,14 @@ Sign in as the Instructor and open a Course with a Lesson.
 1. Open `/instructor/courses` and select a Course that has a Lesson.
 2. Inside the Lesson, select **Add material**.
 3. Choose `Text`, enter a title, and type the material content.
-4. Select **Add material** and confirm the new material shows as `Material 1`.
+4. Select **Add material** and confirm the new material shows as `Material 1 · Text`.
 5. Repeat with `Code` and confirm the content is kept.
 6. Repeat with `External link` and a full link such as `https://www.php.net/manual/en/`.
 7. Try `Video link` with an empty link. Confirm the page shows an error.
 8. Try `Text` with empty content. Confirm the page shows an error.
 9. Confirm the type list only offers Text, Code, Video link, and External link.
 10. Select **Edit material**, change the title or link, and save.
-11. Confirm the position and uploader stayed the same on the edit page.
+11. Confirm the material number, position, and uploader stayed the same on the edit page.
 12. Submit an empty title and confirm the error summary appears and your text is kept.
 13. Check the Lesson area at 390px width.
 
