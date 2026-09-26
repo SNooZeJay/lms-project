@@ -444,9 +444,30 @@ When an Instructor unpublishes a Course that a Student already enrolled in:
 - The public Course address returns `404` for everyone, so an unpublished Course is never confirmed to exist.
 - New enrollment is blocked with `404`.
 - The Student `My courses` page still lists the enrollment and explains that the Course is no longer published. No dead link is shown.
+- The Student keeps access through the student-owned course pages, which are authorized by the enrollment instead of by publication.
 - Learning history and any later progress stay intact.
 
-Reading learning content for an already enrolled Student belongs to the student-owned course area, which is authorized by the enrollment instead of by publication. That page is part of the lesson access phase.
+### Phase 6C lesson access for enrolled students
+
+Phase 6C lets an enrolled Student open a published Lesson and read its content and Learning Materials.
+
+Phase 6C rules:
+
+- Access is decided by enrollment, not by publication. An enrollment with status `active` or `completed` grants access.
+- A `pending_payment` or `cancelled` enrollment grants nothing.
+- The Lesson and its Module must both be `published` to be readable.
+- Only text, code, and link materials are readable. File downloads stay unavailable.
+- Material storage details never reach a Student page.
+- Phase 6C adds no progress, quiz, payment, cancel, refund, upload, or download behavior.
+
+### Reported conflict and the chosen reading
+
+Two approved rules disagree about unpublishing:
+
+- `plan.md` says unpublishing "preserves existing active or completed access".
+- Phase 5E, which was approved, also returns Modules and Lessons to `draft` when a Course is unpublished.
+
+Phase 6C follows this reading: the enrollment, the history, and the progress are preserved, so re-publishing restores full access with no data loss, while unpublished content stays hidden until then. The alternative reading, where content stays readable after unpublishing, needs the Phase 5E cascade removed and is a small reversible change.
 
 ### Phase 6B free enrollment UI
 

@@ -4,7 +4,7 @@
 
 This roadmap turns the approved LMS plan into small, testable steps.
 
-Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, Phase 5B, Phase 5C, Phase 5D, Phase 5E, and Phase 5F are human-approved. Phase 6A enrollment foundation is implemented and awaiting human schema review. Phase 6B free enrollment UI has not started.
+Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, Phase 5B, Phase 5C, Phase 5D, Phase 5E, Phase 5F, Phase 6A, and Phase 6B are human-approved. Phase 6C lesson access is the active slice.
 
 Do not skip directly to payment processing or dashboard polish.
 
@@ -1937,7 +1937,7 @@ Let a Student enroll once in a published free Course and see their own enrollmen
 
 ### Status
 
-Approved on September 26, 2026. Free enrollment is implemented and passes 200 tests. Human browser review is the open checkpoint. Paid enrollment and payment stay out of this phase.
+Approved on September 26, 2026. Free enrollment is implemented and human-approved. Paid enrollment and payment stay out of this phase.
 
 ### Confirmed scope
 
@@ -2073,7 +2073,136 @@ Finish curriculum management and protected file delivery.
 
 An Instructor can build a complete Course outline with authorized material access.
 
-## 21. Phase 8: lesson access and progress
+## 21. Phase 6C: lesson access for enrolled students
+
+### Goal
+
+Let an enrolled Student open a published Lesson and read its content and Learning Materials.
+
+### Status
+
+Approved on September 26, 2026. Lesson access is implemented and passes 218 tests. Human browser review is the open checkpoint.
+
+### Confirmed scope
+
+- Student-owned Course page at `/student/courses/{course}`
+- Student Lesson page at `/student/courses/{course}/lessons/{lesson}`
+- Lesson content, summary, required state, and estimated minutes
+- Learning Material titles, text and code content, and safe link materials
+- `LessonPolicy` student access checks
+- Enrollment-based authorization instead of publication-based authorization
+
+### Explicitly not included
+
+- No `Mark as complete`, no progress record, and no progress percentage
+- No quiz, certificate, payment, upload, or download behavior
+- No file material download, because uploads are not built
+- No Instructor or Administrator version of these pages
+
+### Access rule
+
+Access is decided in this order:
+
+1. The viewer must be an active, verified Student.
+2. The Student must have an enrollment for that Course with a status of `active` or `completed`.
+3. The Lesson and its Module must be `published`.
+
+Publication is not part of the gate. A Student keeps access through an enrollment, so the student-owned pages still work after an Instructor unpublishes. Only published content is readable, which is the documented interpretation of the unpublish rule.
+
+### Reported conflict
+
+Two approved rules pull in different directions:
+
+- `plan.md` says unpublishing "preserves existing active or completed access".
+- Phase 5E, which was approved, also returns Modules and Lessons to `draft` when a Course is unpublished.
+
+This slice follows the reading above: the enrollment and the history are preserved, and unpublished content is not readable until the Instructor publishes again. The alternative, decoupling the Phase 5E cascade so content stays readable, is a small reversible change.
+
+### Input, Process, and Output
+
+**Input**
+
+- Student session with the student role
+- Enrolled Course ID
+- Lesson ID inside that Course
+
+**Process**
+
+- Apply `auth`, `account.active`, `verified`, `password.change`, and `role:student` middleware
+- Run `LessonPolicy` against the Student's enrollment
+- Return `403` when the Student has no enrollment that grants access
+- Return `404` when the Lesson or Module does not belong to the Course in the URL
+- Return `403` when the Lesson or its Module is not `published`
+- Load only Learning Materials for that Lesson
+- Render text and code material content and safe `http` or `https` links
+- Never render material storage paths or file bytes
+
+**Output**
+
+- A Student Course page with published Lesson titles
+- A Lesson page with content and Learning Materials
+- No progress, no quiz, no payment, and no download
+
+### Task list
+
+- [x] Task 1: Update Phase 6C requirements, routes, policy, and flow
+- [x] Task 2: Add failing student lesson access tests
+- [x] Task 3: Add LessonPolicy student abilities and the shared access rule
+- [x] Task 4: Add controller, routes, Course page, and Lesson page
+- [x] Task 5: Link My courses to the student Course page
+- [x] Task 6: Run test, build, and security gates
+- [ ] Task 7: Human browser review of lesson access
+
+### Phase 6C implementation evidence
+
+- `app/Support/StudentCourseAccess.php`
+- `app/Policies/LessonPolicy.php` gained `viewForStudent`
+- `app/Policies/CoursePolicy.php` gained `viewCourseForStudent`
+- `app/Http/Controllers/Student/EnrollmentController.php`
+- `resources/views/student/courses/show.blade.php`
+- `resources/views/student/lessons/show.blade.php`
+- `resources/views/student/courses/index.blade.php`
+- `tests/Feature/Phase6C/StudentLessonAccessTest.php`
+
+### Phase 6C automated evidence
+
+- `php artisan test` passes with 218 tests and 867 assertions
+- `./vendor/bin/pint --test` passes on 144 files
+- `npm run build` succeeds
+- `composer validate`, `composer audit`, and `npm audit` pass
+- Route, config, and view cache checks pass
+- No database migration was needed for Phase 6C
+- Six earlier guards that blocked `student.lessons.show` now check the still-absent `student.lessons.complete` and progress routes
+
+### Phase 6C security notes
+
+- The authenticated student group applies, so `auth`, `account.active`, `verified`, and `password.change` all run
+- `StudentCourseAccess` is the single shared rule for "may this Student read this Course"
+- Access needs an enrollment with status `active` or `completed`, so `pending_payment` and `cancelled` grant nothing
+- Publication is not part of the gate, so an enrolled Student keeps access after an Instructor unpublishes
+- The Lesson and its Module must both be `published`
+- A Lesson from another Course in the URL returns `404` before any content is loaded
+- Material storage disk, path, MIME type, and byte size are never rendered
+- Link materials open in a new tab with `rel="noopener noreferrer"`
+- Lesson text is escaped by Blade and paragraphs are split on blank lines only
+
+### Phase 6C security tests
+
+- A Student with a granting enrollment reads a published Lesson.
+- A Student with no enrollment receives `403`.
+- A Student enrolled in another Course receives `403`.
+- A draft Lesson or a Lesson in a draft Module receives `403`.
+- A Lesson from another Course in the URL receives `404`.
+- A guest is redirected to sign in, and a suspended or unverified Student is blocked.
+- An Instructor and an Administrator receive `403` on the student pages.
+- Material storage paths and file bytes never appear on a student page.
+- No progress, quiz, payment, or download route exists.
+
+### Exit condition
+
+An enrolled Student can open a published Lesson and read its content and materials.
+
+## 22. Phase 8: lesson access and progress
 
 ### Goal
 
@@ -2081,7 +2210,6 @@ Persist Lesson activity and calculate progress from records.
 
 ### Work
 
-- Add Lesson access checks
 - Add LessonProgress model and Action
 - Add Mark as Complete interaction
 - Add Continue Learning
@@ -2090,7 +2218,6 @@ Persist Lesson activity and calculate progress from records.
 
 ### Tests
 
-- Unauthorized Lesson access fails
 - Opening a Lesson records activity without completion
 - Valid Mark as Complete updates one progress record
 - Repeated completion requests remain idempotent
@@ -2101,7 +2228,7 @@ Persist Lesson activity and calculate progress from records.
 
 A Student can complete Lessons and see database-backed progress.
 
-## 22. Phase 9: quizzes
+## 23. Phase 9: quizzes
 
 ### Goal
 
@@ -2132,7 +2259,7 @@ Deliver safe Questions and enforce server-side grading.
 
 A Student can complete a Quiz and receive a correct server-calculated result.
 
-## 23. Phase 10: completion and certificates
+## 24. Phase 10: completion and certificates
 
 ### Goal
 
@@ -2160,7 +2287,7 @@ Verify Course completion and issue one certificate.
 
 An eligible Student receives one printable certificate with safe authenticated access.
 
-## 24. Phase 11: payment architecture
+## 25. Phase 11: payment architecture
 
 ### Goal
 
@@ -2189,7 +2316,7 @@ Finalize payment behavior before calling PayMongo.
 
 Payment state transitions are fully specified and testable without live credentials.
 
-## 25. Phase 12: PayMongo integration
+## 26. Phase 12: PayMongo integration
 
 ### Goal
 
@@ -2215,7 +2342,7 @@ Run the approved webhook scenarios from `plan.md` and `architecture.md`.
 
 A real test-mode payment activates one paid Enrollment once, and repeated delivery causes no duplicate.
 
-## 26. Phase 13: dashboards and reports
+## 27. Phase 13: dashboards and reports
 
 ### Goal
 
@@ -2242,7 +2369,7 @@ Add role-specific pages using real authorized data.
 
 All dashboards work with real authorized data and approved empty states.
 
-## 27. Phase 14: quality and accessibility
+## 28. Phase 14: quality and accessibility
 
 ### Goal
 
@@ -2287,7 +2414,7 @@ php artisan route:list
 
 Every acceptance criterion in `plan.md` passes with recorded evidence.
 
-## 28. Phase 15: deployment and defense
+## 29. Phase 15: deployment and defense
 
 ### Goal
 
@@ -2323,7 +2450,7 @@ Deploy a tested release and prepare the SIA1 presentation.
 
 The deployed application works, the team can explain the architecture, and critical workflows remain testable.
 
-## 29. Commands after scaffolding
+## 30. Commands after scaffolding
 
 Use the commands generated by the selected Laravel starter kit.
 
@@ -2343,7 +2470,7 @@ npm run build
 
 Do not run `migrate:fresh` against a shared or production database.
 
-## 30. Definition of ready
+## 31. Definition of ready
 
 A task is ready when:
 
@@ -2355,7 +2482,7 @@ A task is ready when:
 - Documentation impact is known
 - No unresolved product decision remains
 
-## 31. Definition of done
+## 32. Definition of done
 
 A task is done when:
 
@@ -2369,8 +2496,8 @@ A task is done when:
 - No unrelated file changed
 - The team can explain the change
 
-## 32. Current next action
+## 33. Current next action
 
-The current next action is human review of the Phase 6A enrollment foundation, then Phase 6B free enrollment UI.
+The current next action is Phase 6C lesson access for enrolled students.
 
-Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Course outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D material authoring, Phase 5E publishing, and Phase 5F public catalog are complete and human-approved. Do not add payment, progress, upload, download, delete, or archive behavior.
+Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Course outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D material authoring, Phase 5E publishing, Phase 5F public catalog, Phase 6A enrollment foundation, and Phase 6B free enrollment are complete and human-approved. Do not add progress, quiz, payment, upload, download, delete, or archive behavior.

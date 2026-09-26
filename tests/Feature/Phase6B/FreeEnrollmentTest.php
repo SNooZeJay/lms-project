@@ -309,10 +309,10 @@ class FreeEnrollmentTest extends TestCase
             ->assertDontSee(route('courses.show', $course), false);
     }
 
-    public function test_phase_six_b_adds_no_payment_lesson_access_or_progress_routes(): void
+    public function test_phase_six_b_adds_no_payment_or_progress_routes(): void
     {
         $this->assertFalse(Route::has('student.payments.checkout'));
-        $this->assertFalse(Route::has('student.lessons.show'));
+        $this->assertFalse(Route::has('student.lessons.complete'));
         $this->assertFalse(Route::has('student.progress.index'));
         $this->assertFalse(Route::has('student.materials.download'));
         $this->assertFalse(Route::has('student.enrollments.cancel'));

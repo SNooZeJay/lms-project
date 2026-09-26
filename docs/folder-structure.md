@@ -217,6 +217,7 @@ lms-project/
 │   ├── Support/
 │   │   ├── CoursePrice.php
 │   │   ├── RoleBasedDestination.php
+│   │   ├── StudentCourseAccess.php
 │   │   └── WindowsDpapiSecretStore.php
 │   ├── View/Components/
 │   │   ├── Alert.php
@@ -280,7 +281,8 @@ lms-project/
 │       ├── quizzes/
 │       ├── roles/
 │       ├── student/
-│       │   └── courses/
+│       │   ├── courses/
+│       │   └── lessons/
 ├── routes/
 │   ├── web.php
 │   ├── public.php
@@ -316,6 +318,7 @@ lms-project/
 │   │   ├── Phase5F/
 │   │   ├── Phase6A/
 │   │   ├── Phase6B/
+│   │   ├── Phase6C/
 │   │   ├── Role/
 │   │   ├── Student/
 │   │   └── Webhooks/

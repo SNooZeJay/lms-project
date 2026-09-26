@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, Phase 5F public Course catalog, and Phase 6A enrollment foundation are human-approved. Phase 6B free enrollment is implemented and awaiting browser review.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, Phase 5F public Course catalog, Phase 6A enrollment foundation, and Phase 6B free enrollment are human-approved. Phase 6C lesson access is implemented and awaiting browser review.
 
 The repository currently contains:
 
@@ -184,18 +184,17 @@ npm audit
 npm run build
 ```
 
-## Phase 6B checkpoint
+## Phase 6C checkpoint
 
-Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, Phase 5F public Course catalog, and Phase 6A enrollment foundation are human-approved. The Phase 6B slice adds:
+Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, Phase 5F public Course catalog, Phase 6A enrollment foundation, and Phase 6B free enrollment are human-approved. The Phase 6C slice adds:
 
-- A free enrollment Action and `EnrollmentPolicy` for student-owned records
-- A Student `My courses` page that only ever shows the signed-in Student's enrollments
-- Enroll, Enrolled, Sign in, and paid states on the public Course page
-- Reuse of an existing enrollment instead of a duplicate, backed by the unique database rule
-- A refusal for a cancelled or pending enrollment instead of a silent reactivation
-- No lesson content, progress, paid enrollment, payment, cancel, refund, upload, or download behavior
+- A Student Course page and a Student Lesson page under `/student/courses`
+- Access decided by enrollment with status `active` or `completed`, not by publication
+- Lesson content, text and code material content, and safe link materials
+- `StudentCourseAccess` as one shared rule for "may this Student read this Course"
+- No progress, quiz, paid enrollment, payment, cancel, upload, or download behavior
 
-The Phase 6B browser review checkpoint is open.
+The Phase 6C browser review checkpoint is open.
 
 The local Administrator is provisioned with:
 

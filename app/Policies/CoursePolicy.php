@@ -6,6 +6,7 @@ use App\Enums\UserAccountStatus;
 use App\Enums\UserRole;
 use App\Models\Course;
 use App\Models\User;
+use App\Support\StudentCourseAccess;
 
 class CoursePolicy
 {
@@ -28,6 +29,16 @@ class CoursePolicy
     public function update(User $actor, Course $course): bool
     {
         return $this->view($actor, $course);
+    }
+
+    /**
+     * Student course reading is decided by enrollment, not by publication.
+     */
+    public function viewCourseForStudent(User $actor, Course $course): bool
+    {
+        return $actor->profile?->role === UserRole::Student
+            && $actor->profile?->account_status === UserAccountStatus::Active
+            && StudentCourseAccess::allows($actor, $course);
     }
 
     public function publish(User $actor, Course $course): bool

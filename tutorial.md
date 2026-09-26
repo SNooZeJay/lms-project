@@ -30,10 +30,11 @@ The current project includes:
 - A public course catalog and public course details pages
 - An enrollment database record with four documented states
 - Free course enrollment and a student `My courses` page
+- Student course and lesson reading for enrolled students
 
 The following features are not built yet:
 
-- Reading lesson content and materials after enrolling
+- Marking lessons complete and progress tracking
 - Paid enrollment and checkout
 - Reordering, deleting, or archiving curriculum content
 - File uploads and material downloads
@@ -543,7 +544,28 @@ Use a private window as a Student. You need a published **free** course first.
 
 Lesson content still does not open after enrolling. That is the next phase.
 
-## 16. Create a Student account
+## 16. Review the student lesson reading
+
+Use the Student account that is already enrolled in a published free course.
+
+1. Open `/student/courses`. Confirm your course card shows **Open course**.
+2. Select **Open course**. Confirm you see the course title, description, and Instructor.
+3. Confirm the outline lists the published Modules and Lessons with `Required` or `Optional` and minutes.
+4. Open a Lesson. Confirm you see the title, summary, and the lesson content.
+5. Confirm the **Learning materials** section shows any text, code, and link materials.
+6. Open a link material and confirm it opens in a new tab.
+7. Copy a lesson address, then sign out and open it. Confirm you are asked to sign in.
+8. Sign in as a different Student with no enrollment and open that address. Confirm a `403` page.
+9. Sign in as the Instructor and open the same student address. Confirm a `403` page.
+10. Sign in as the Student again, open the lesson, then ask the Instructor to unpublish the course.
+11. Confirm **My courses** shows the course with the note that it is not published.
+12. Confirm **Open course** still works, while the public page returns `404`.
+13. Ask the Instructor to publish again and confirm the public page returns.
+14. Check the course and lesson pages at 390px width.
+
+Progress tracking is not built yet, so nothing is marked complete.
+
+## 17. Create a Student account
 
 Use a separate browser or private window if you want to keep the Administrator session.
 
@@ -556,7 +578,7 @@ Use a separate browser or private window if you want to keep the Administrator s
 
 The registration form has no role selector. Public registration cannot create an Administrator.
 
-## 17. Find email verification and reset links
+## 18. Find email verification and reset links
 
 The local development environment uses Laravel's log mailer.
 
@@ -578,7 +600,7 @@ Copy the local link into the browser.
 
 The log is local. Do not upload or share `storage/logs/laravel.log` because it can contain private links and account details.
 
-## 18. Run the frontend development server
+## 19. Run the frontend development server
 
 Use this when you are changing CSS or JavaScript.
 
@@ -603,7 +625,7 @@ For normal work, you can stop Vite with `Ctrl + C`. You can also build the final
 npm run build
 ```
 
-## 19. Run the automated checks
+## 20. Run the automated checks
 
 Run these commands from the project folder.
 
@@ -656,7 +678,7 @@ This shows all registered URLs and their controller or action.
 php artisan optimize:clear
 ```
 
-## 20. Useful commands
+## 21. Useful commands
 
 | Command | What it does |
 |---|---|
@@ -671,7 +693,7 @@ php artisan optimize:clear
 | `npm run dev` | Starts the Vite development server |
 | `npm run build` | Builds frontend assets |
 
-## 21. Troubleshooting
+## 22. Troubleshooting
 
 ### `composer` is not recognized
 
@@ -793,7 +815,7 @@ php artisan owner:bootstrap --show-password
 
 If you no longer need the local Administrator, ask before removing the protected file or changing the account.
 
-## 22. Project folder guide
+## 23. Project folder guide
 
 These are the folders you will use most often:
 
@@ -815,7 +837,7 @@ Do not edit files in `vendor/`, `node_modules/`, or `public/build/` by hand. The
 
 `FOR_UI/adminator (FOR USER DASHBOARD)` is a read-only visual reference. It is not the application source code.
 
-## 23. Security rules
+## 24. Security rules
 
 Keep these rules in mind:
 
@@ -827,7 +849,7 @@ Keep these rules in mind:
 - Keep `MAIL_MAILER=log` for local demonstrations.
 - Do not use a real payment secret until the payment architecture phase is approved.
 
-## 24. Recommended beginner order
+## 25. Recommended beginner order
 
 When you are learning the project, use this order:
 
@@ -847,7 +869,8 @@ When you are learning the project, use this order:
 14. Open `/courses` in a private window and browse the published Course.
 15. Run `php artisan migrate:status` and confirm the enrollment migration ran.
 16. Enroll in a published free course as a Student and check `/student/courses`.
-17. Read the relevant test before changing a feature.
-18. Run `php artisan test` before and after your change.
+17. Open an enrolled lesson and read its content and materials.
+18. Read the relevant test before changing a feature.
+19. Run `php artisan test` before and after your change.
 
 You do not need to understand the whole Laravel framework before running the application. Start with the commands in this tutorial, then inspect one small feature at a time.

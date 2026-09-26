@@ -323,6 +323,23 @@ Both routes sit inside the standard authenticated group, so `auth`, `account.act
 
 Phase 6B does not add a lesson access, progress, payment, cancel, refund, or download route.
 
+### Phase 6C lesson access routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| GET | `/student/courses/{course}` | Student Course page with published Lessons | Authenticated student group and CoursePolicy `viewCourseForStudent` |
+| GET | `/student/courses/{course}/lessons/{lesson}` | Student Lesson page with content and materials | Authenticated student group and LessonPolicy `viewForStudent` |
+
+Access is decided by enrollment, not by publication:
+
+1. The viewer must be an active, verified Student.
+2. `App\Support\StudentCourseAccess` must find an enrollment with status `active` or `completed` for the Course.
+3. The Lesson and its Module must both be `published`.
+
+Because publication is not part of the gate, an enrolled Student keeps access after an Instructor unpublishes. A Lesson that belongs to another Course in the URL returns `404` before any content loads.
+
+Phase 6C does not add a progress, complete, quiz, payment, cancel, or download route.
+
 ### Student routes
 
 
@@ -925,6 +942,48 @@ flowchart TD
 - One active enrollment per Student and Course
 - A student-owned course list scoped to the signed-in Student
 - No lesson content, no progress, and no payment
+
+### Phase 6C lesson access flow
+
+```mermaid
+flowchart TD
+    S[Student opens a lesson address] --> M[Authenticated student middleware]
+    M --> B{Does the lesson belong to the course in the URL?}
+    B -->|No| N[Return 404]
+    B -->|Yes| P[LessonPolicy viewForStudent]
+    P --> R{Is the viewer an active Student?}
+    R -->|No| F[Return 403]
+    R -->|Yes| E{Is the lesson and its module published?}
+    E -->|No| F
+    E -->|Yes| A{Does StudentCourseAccess find a granting enrollment?}
+    A -->|No| F
+    A -->|Yes| L[Load the lesson and its materials]
+    L --> V[Render content, text materials, and safe links]
+```
+
+### Phase 6C Input, Process, and Output
+
+**Input**
+
+- Student session with the student role
+- Enrolled Course ID
+- Lesson ID inside that Course
+
+**Process**
+
+- Apply `auth`, `account.active`, `verified`, `password.change`, and `role:student` middleware
+- Return `404` when the Lesson does not belong to the Course in the URL
+- Run LessonPolicy `viewForStudent`
+- Require an active Student, a published Lesson, a published Module, and a granting enrollment
+- Load Learning Materials for that Lesson ordered by position
+- Render text and code material content and `http` or `https` links only
+- Never render storage disk, storage path, MIME type, or byte size
+
+**Output**
+
+- A Student Course page with published Lesson titles
+- A Lesson page with content and Learning Materials
+- No progress, no quiz, no payment, and no download
 
 ## 8. Authorization
 

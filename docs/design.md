@@ -478,6 +478,20 @@ Phase 6B adds the first student-owned records and pages:
 - A refused enrollment shows the shared error summary
 - No lesson content, progress, payment, or cancel control appears
 
+### Phase 6C lesson access
+
+Phase 6C completes the Student reading flow:
+
+- **My courses** leads to a Course page, then to a Lesson page
+- The Course page lists published Modules and Lessons with `Required` or `Optional` and minutes
+- The Lesson page shows title, summary, content, then Learning Materials below it
+- Blank lines in lesson content become separate paragraphs
+- Text and code materials render in a readable block
+- Link materials show the full address and open in a new tab
+- A note explains that file downloads and progress tracking are not built yet
+- An unpublished course explains that the enrollment is kept
+- No `Mark as complete` control appears
+
 ### Course catalog
 
 - Search by course title

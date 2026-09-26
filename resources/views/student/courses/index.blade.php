@@ -55,15 +55,19 @@
                         </dl>
 
                         @if ($enrollment->grantsAccess())
-                            <p class="mt-4 text-sm text-ink-muted">Lesson content opens in a later release.</p>
+                            <p class="mt-4 text-sm text-ink-muted">Open the course to read its published lessons.</p>
                         @else
                             <p class="mt-4 text-sm text-ink-muted">This enrollment does not grant access yet. Contact an administrator for help.</p>
                         @endif
 
+                        @if ($enrollment->grantsAccess() && $course)
+                            <a href="{{ route('student.courses.show', $course) }}" class="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open course</a>
+                        @endif
+
                         @if ($course?->status === \App\Enums\CourseStatus::Published)
-                            <a href="{{ route('courses.show', $course) }}" class="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">View course</a>
+                            <a href="{{ route('courses.show', $course) }}" class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Public page</a>
                         @else
-                            <p class="mt-5 border-l-4 border-line bg-surface-muted px-3 py-2 text-sm leading-6 text-ink-muted">This course is no longer published. Your enrollment is kept.</p>
+                            <p class="mt-3 border-l-4 border-line bg-surface-muted px-3 py-2 text-sm leading-6 text-ink-muted">This course is no longer published. Your enrollment is kept.</p>
                         @endif
                     </li>
                 @endforeach

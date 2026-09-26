@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Student;
 
 use App\Actions\Enrollment\EnrollStudent;
+use App\Enums\ContentStatus;
 use App\Enums\CourseStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\Lesson;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,6 +29,42 @@ class EnrollmentController extends Controller
 
         return view('student.courses.index', [
             'enrollments' => $enrollments,
+        ]);
+    }
+
+    public function show(Request $request, Course $course): View
+    {
+        Gate::authorize('viewCourseForStudent', $course);
+
+        $course->load([
+            'instructor:id,name',
+            'modules' => fn ($query) => $query
+                ->where('modules.status', ContentStatus::Published)
+                ->orderBy('modules.position'),
+            'modules.lessons' => fn ($query) => $query
+                ->where('lessons.status', ContentStatus::Published)
+                ->orderBy('lessons.position'),
+        ]);
+
+        return view('student.courses.show', [
+            'course' => $course,
+        ]);
+    }
+
+    public function showLesson(Request $request, Course $course, Lesson $lesson): View
+    {
+        abort_unless($lesson->module->course_id === $course->id, 404);
+
+        Gate::authorize('viewForStudent', $lesson);
+
+        $lesson->load([
+            'module',
+            'learningMaterials' => fn ($query) => $query->orderBy('position'),
+        ]);
+
+        return view('student.lessons.show', [
+            'course' => $course,
+            'lesson' => $lesson,
         ]);
     }
 
