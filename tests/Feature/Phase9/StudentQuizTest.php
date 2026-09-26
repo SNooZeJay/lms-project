@@ -426,9 +426,9 @@ class StudentQuizTest extends TestCase
             ->assertSee('Passed');
     }
 
-    public function test_phase_nine_adds_no_certificate_or_payment_routes(): void
+    public function test_phase_nine_adds_no_payment_routes(): void
     {
-        $this->assertFalse(Route::has('student.certificates.index'));
+        // certificates arrive in Phase 10 and are covered there.
         $this->assertFalse(Route::has('student.payments.checkout'));
     }
 

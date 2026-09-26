@@ -508,6 +508,14 @@ Phase 6E adds progress that is always visible and always honest:
 - While a Course is unpublished, the percentage is hidden and a note explains why
 - No percentage is ever accepted from the browser
 
+### Phase 10 certificates
+
+- The Student course page shows a Certificate panel with either the certificate, a claim button, or the exact list of what is still missing
+- The certificate list states lessons and quizzes as `x of y`, so nothing is a mystery
+- A certificate uses a double-ruled frame and a monospace code, and never claims to be an accredited document
+- A revoked certificate states the reason and the date in words
+- The certificate page says plainly that it is visible only while the Student is enrolled
+
 ### Phase 9 quizzes
 
 - The Student course page lists each Quiz with `Not attempted`, `Not passed`, or `Passed`

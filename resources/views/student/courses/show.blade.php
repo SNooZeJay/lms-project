@@ -43,6 +43,27 @@
                 @endif
             </div>
 
+            <div class="mt-3 border-l-4 border-line bg-surface-muted px-4 py-3">
+                <p class="text-sm font-semibold text-ink">Certificate</p>
+                @if ($certificate)
+                    <p class="mt-1 text-sm leading-6 text-ink-muted">You completed this course on {{ $certificate->completion_date->format('M j, Y') }}.</p>
+                    <a href="{{ route('student.certificates.show', $certificate) }}" class="mt-3 inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">View certificate</a>
+                @elseif ($completion['eligible'])
+                    <p class="mt-1 text-sm leading-6 text-ink-muted">You meet every requirement for this course.</p>
+                    <form method="POST" action="{{ route('student.courses.complete', $course) }}" class="mt-3">
+                        @csrf
+                        <button type="submit" class="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Claim certificate</button>
+                    </form>
+                @else
+                    <p class="mt-1 text-sm leading-6 text-ink-muted">Still to do before you can claim a certificate:</p>
+                    <ul class="mt-1 space-y-1" role="list">
+                        @foreach ($completion['reasons'] as $reason)
+                            <li class="text-sm leading-6 text-ink-muted">{{ $reason }}</li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+
             @if ($course->status !== \App\Enums\CourseStatus::Published)
                 <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">This course is not published right now. Your enrollment is kept, and published lessons stay available.</p>
             @endif

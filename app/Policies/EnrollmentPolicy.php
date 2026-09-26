@@ -29,6 +29,14 @@ class EnrollmentPolicy
             && $course->status === CourseStatus::Published;
     }
 
+    /**
+     * Only the Student who owns the Enrollment may complete it.
+     */
+    public function complete(User $actor, Enrollment $enrollment): bool
+    {
+        return $this->grantsAccess($enrollment, $actor);
+    }
+
     public function isActiveStudent(User $actor): bool
     {
         return $actor->profile?->role === UserRole::Student

@@ -1117,6 +1117,31 @@ flowchart TD
 - A Lesson page with content and Learning Materials
 - No progress, no quiz, no payment, and no download
 
+### Phase 10 completion and certificate routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| GET | `/student/certificates` | Certificate list with a live completion summary | Student group |
+| GET | `/student/certificates/{certificate}` | Printable certificate | CertificatePolicy `view` |
+| POST | `/student/courses/{course}/complete` | Complete a Course and claim a certificate | Student group and EnrollmentPolicy `complete` |
+| GET | `/admin/certificates` | Administrator certificate list | Administrator group |
+| POST | `/admin/certificates/{certificate}/revoke` | Revoke with a reason | Administrator group and CertificatePolicy `revoke` |
+| POST | `/admin/certificates/{certificate}/reissue` | Reissue as a linked replacement | Administrator group and CertificatePolicy `reissue` |
+
+### Completion and certificate rules
+
+- `App\Services\Learning\CourseCompletionChecker` is the only definition of "finished". It reads stored Lesson progress and Quiz attempts.
+- Default requirements: every required published Lesson, plus a pass on every required published Quiz. Draft content never blocks a Student.
+- `certificate_enabled` on `course_requirements` turns issuance off for a Course without touching completion.
+- Issuance is idempotent. A second call returns the existing certificate, and `CompleteCourse` runs inside a transaction.
+- Exactly one valid certificate per enrollment is enforced by the database through `active_slot`: it is `1` while the certificate is valid and `NULL` once revoked. MySQL ignores NULLs in a unique index, so any number of revoked rows is allowed but only one valid certificate can exist.
+- Revoking records the reason and the time. Nothing is deleted.
+- Reissue re-runs the full eligibility check first, so a revoked certificate is not replaced after new requirements appear.
+- The student and course names are stored as snapshots, so a later rename never rewrites history.
+- `certificate_code` is server-generated and unique. A Student cannot submit one.
+- Only the Student who owns the enrollment can complete it, and only while the enrollment still grants access. Another Student receives `404` because the controller resolves the acting Student's own enrollment.
+- A certificate page is visible only to its owner and only while the Student can still read the Course. It is not a public document.
+
 ### Phase 9 quiz routes
 
 Instructor:

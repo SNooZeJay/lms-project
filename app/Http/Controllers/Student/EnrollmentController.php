@@ -15,6 +15,7 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\QuizAttempt;
+use App\Services\Learning\CourseCompletionChecker;
 use App\Services\ProgressCalculator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,10 @@ use Illuminate\Support\Facades\Gate;
 
 class EnrollmentController extends Controller
 {
-    public function __construct(private readonly ProgressCalculator $progress) {}
+    public function __construct(
+        private readonly ProgressCalculator $progress,
+        private readonly CourseCompletionChecker $completionChecker,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -66,6 +70,8 @@ class EnrollmentController extends Controller
 
         $enrollment = $this->grantingEnrollment($request, $course);
 
+        $completion = $this->completionChecker->check($enrollment);
+
         $quizzes = $course->quizzes()
             ->where('quizzes.status', QuizStatus::Published)
             ->orderBy('quizzes.position')
@@ -97,6 +103,8 @@ class EnrollmentController extends Controller
             'completedLessonIds' => $this->progress->completedLessonIds($enrollment),
             'quizzes' => $quizzes,
             'quizState' => $quizState,
+            'completion' => $completion,
+            'certificate' => $enrollment->certificate()->first(),
         ]);
     }
 

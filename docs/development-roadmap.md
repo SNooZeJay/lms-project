@@ -2516,6 +2516,17 @@ A Student can complete a Quiz and receive a correct server-calculated result.
 
 ## 25. Phase 10: completion and certificates
 
+### Status
+
+Built and tested. Eligibility, issuance, revocation, and reissue are in place.
+
+### Evidence
+
+- `php artisan test` gives 392 passed and 1445 assertions.
+- `./vendor/bin/pint --test` gives PASS on 207 files.
+- `php artisan migrate`, `php artisan migrate:rollback --step=1`, and `php artisan migrate` all succeed.
+- One valid certificate per enrollment is enforced by the database, not only by the Action.
+
 ### Goal
 
 Verify Course completion and issue one certificate.

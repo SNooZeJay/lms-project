@@ -3,6 +3,7 @@
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\CertificateController as AdminCertificateController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Catalog\CourseCatalogController;
 use App\Http\Controllers\HomeController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\MaterialDownloadController;
 use App\Http\Controllers\Role\AdministratorController;
 use App\Http\Controllers\Role\InstructorController;
 use App\Http\Controllers\Role\StudentController;
+use App\Http\Controllers\Student\CertificateController as StudentCertificateController;
 use App\Http\Controllers\Student\EnrollmentController;
 use App\Http\Controllers\Student\QuizController as StudentQuizController;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +45,9 @@ Route::middleware([...$authenticated, 'role:student'])->group(function (): void 
     Route::get('/student/courses/{course}/quizzes/{quiz}/attempts/{attempt}', [StudentQuizController::class, 'attempt'])->name('student.quizzes.attempts.show');
     Route::post('/student/courses/{course}/quizzes/{quiz}/attempts/{attempt}/submit', [StudentQuizController::class, 'submit'])->name('student.quizzes.attempts.submit');
     Route::get('/student/courses/{course}/quizzes/{quiz}/attempts/{attempt}/result', [StudentQuizController::class, 'result'])->name('student.quizzes.attempts.result');
+    Route::get('/student/certificates', [StudentCertificateController::class, 'index'])->name('student.certificates.index');
+    Route::get('/student/certificates/{certificate}', [StudentCertificateController::class, 'show'])->name('student.certificates.show');
+    Route::post('/student/courses/{course}/complete', [StudentCertificateController::class, 'complete'])->name('student.courses.complete');
     Route::post('/student/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('student.enrollments.store');
 });
 
@@ -84,6 +89,9 @@ Route::middleware([...$authenticated, 'role:instructor'])->group(function (): vo
 Route::middleware([...$authenticated, 'role:administrator'])->group(function (): void {
     Route::get('/admin', AdministratorController::class)->name('administrator.dashboard');
     Route::get('/admin/materials/{material}/download', [MaterialDownloadController::class, 'show'])->name('admin.materials.download');
+    Route::get('/admin/certificates', [AdminCertificateController::class, 'index'])->name('admin.certificates.index');
+    Route::post('/admin/certificates/{certificate}/revoke', [AdminCertificateController::class, 'revoke'])->name('admin.certificates.revoke');
+    Route::post('/admin/certificates/{certificate}/reissue', [AdminCertificateController::class, 'reissue'])->name('admin.certificates.reissue');
     Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users.index');
     Route::patch('/admin/users/{user}/role', [UserController::class, 'updateRole'])->name('admin.users.role.update');
     Route::patch('/admin/users/{user}/status', [UserController::class, 'updateStatus'])->name('admin.users.status.update');
