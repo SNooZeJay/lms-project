@@ -2,11 +2,17 @@
 
 ## 1. Audit status
 
-Audit date: September 25, 2026
+Audit date: September 26, 2026
 
 This document describes the repository as it exists now.
 
-The Laravel foundation, Phase 2 authentication/profile slice, Phase 3 roles and authorization slice, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A through Phase 5F, Phase 6A enrollment foundation, Phase 6B free enrollment, and Phase 6C lesson access are human-approved. Phase 6D lesson progress foundation is implemented and awaiting human schema confirmation. Later LMS business modules remain unbuilt.
+V1 is built. Every phase in `development-roadmap.md` from the Laravel foundation
+through Phase 15 is implemented, tested, and committed. The approved feature
+scope in `plan.md` is complete.
+
+Two things remain outside the repository, and both are human steps rather than
+code: placing the release on a hosting account, and confirming one real
+test-mode payment with live PayMongo credentials.
 
 ## 2. Current repository state
 
@@ -14,7 +20,9 @@ The repository is an implementation-stage IT Learning Hub for a BSIT Academic LM
 
 It contains the Laravel 13 foundation, documentation, project support files, and a compiled static dashboard reference.
 
-The foundation is runnable. The product display name is now `IT Learning Hub`. Phase 2 contains the Fortify package, User and Profile records, authentication screens, verified email access, own-profile editing, the forced temporary-password gate, the local Administrator owner, and the completed automated/browser evidence checkpoint. Phase 3 now contains ActivityLog records, role/status Actions, Policies, active-account middleware, role pages, and Administrator user management. Phase 4A now contains the Course table, enums, model, Instructor relationship, factory, and constraint tests. Phase 4B now contains the Module, Lesson, and Learning Material tables, enums, models, factories, and constraint tests. Phase 5A now contains the Instructor Course list, create form, and read-only outline. Phase 5B now contains Instructor Module and Lesson authoring on the outline page. Phase 5C now contains Instructor editing for Course, Module, and Lesson. Phase 5D now contains Instructor Learning Material metadata authoring for text, code, video link, and external link materials. Phase 5E now contains Instructor publish and unpublish actions for owned Courses. Phase 5F now contains the public Course catalog and public Course details pages. Phase 6A now contains the `enrollments` table, the `EnrollmentStatus` enum, the `Enrollment` model, and Enrollment factory. Phase 6B now contains the Student `My courses` page, the free enrollment Action, `EnrollmentPolicy`, and Enroll states on the public Course page. Phase 6C now contains the Student Course page, the Student Lesson page with content and materials, `LessonPolicy` student access, and `StudentCourseAccess`. Phase 6D now contains the `lesson_progress` table, the `LessonProgressStatus` enum, the `LessonProgress` model, and Enrollment, Lesson, and User progress relationships. The application does not yet contain a progress interface, file uploads, downloads, delete or archive, quizzes, certificates, paid enrollment, or PayMongo.
+The foundation is runnable. The product display name is now `IT Learning Hub`. Phase 2 contains the Fortify package, User and Profile records, authentication screens, verified email access, own-profile editing, the forced temporary-password gate, the local Administrator owner, and the completed automated/browser evidence checkpoint. Phase 3 now contains ActivityLog records, role/status Actions, Policies, active-account middleware, role pages, and Administrator user management. Phase 4A now contains the Course table, enums, model, Instructor relationship, factory, and constraint tests. Phase 4B now contains the Module, Lesson, and Learning Material tables, enums, models, factories, and constraint tests. Phase 5A now contains the Instructor Course list, create form, and read-only outline. Phase 5B now contains Instructor Module and Lesson authoring on the outline page. Phase 5C now contains Instructor editing for Course, Module, and Lesson. Phase 5D now contains Instructor Learning Material metadata authoring for text, code, video link, and external link materials. Phase 5E now contains Instructor publish and unpublish actions for owned Courses. Phase 5F now contains the public Course catalog and public Course details pages. Phase 6A now contains the `enrollments` table, the `EnrollmentStatus` enum, the `Enrollment` model, and Enrollment factory. Phase 6B now contains the Student `My courses` page, the free enrollment Action, `EnrollmentPolicy`, and Enroll states on the public Course page. Phase 6C now contains the Student Course page, the Student Lesson page with content and materials, `LessonPolicy` student access, and `StudentCourseAccess`. Phase 6D now contains the `lesson_progress` table, the `LessonProgressStatus` enum, the `LessonProgress` model, and Enrollment, Lesson, and User progress relationships. Phase 6E added the progress interface. Phase 7 added curriculum reorder, Course/Module/Lesson archive, and private file upload with authorized download. Phase 8 added Continue Learning on the Student dashboard. Phase 9 added Instructor quiz authoring and server-graded Student attempts. Phase 10 added Course completion and certificates with revocation and reissue. Phase 11 added the payment architecture with a fake provider. Phase 12 added the live PayMongo client behind the `PayMongoClient` contract. Phase 13 added the three role dashboards and the enrollment report. Phase 14 audited every page in a real browser and fixed the two stale notices it found. Phase 15 added a production pre-flight check, trust proxy configuration, a deployment runbook, and the defense evidence pack.
+
+The application now contains the whole approved V1 scope. It does not contain delete, course requirements editing, a quiz timer, multiple correct answers, file antivirus scanning, or bulk report export, because none of those are in the approved scope.
 
 ## 3. Root contents
 
@@ -483,24 +491,28 @@ Phase 3 now includes these controls:
 - One transaction for each account change and audit record
 - Read-only Administrator activity page
 
-These later controls remain unimplemented until their approved phases:
+Phases 4 through 15 added these controls:
 
-- Policies and Gates for LMS resources
-- Form Request validation for business forms
-- Database constraints and transactions for later LMS workflows
-- Private file disks
-- Safe upload validation
-- PayMongo signature verification
-- Idempotent webhook processing
-- Sanitized activity records for later domains
+- Ten Policies covering every protected resource action
+- Form Request validation for every business form, with server-owned fields `prohibited`
+- Database constraints and one transaction per state change
+- A private file disk with generated paths and no public symlink
+- Upload validation by extension allow-list and by real file content
+- PayMongo signature verification with a constant-time comparison
+- Idempotent webhook processing keyed on the provider event id
+- One valid certificate per enrollment enforced by a database index
+- Server-only payment credentials that never reach a body, a log, or a row
+- A production pre-flight command that fails with a non-zero exit code
+- A committed-secret scan that is proven by a planted-leak test
 
-`APP_DEBUG=true` is limited to the local `.env`. Production must use `APP_DEBUG=false`.
+`APP_DEBUG=true` is limited to the local `.env`. Production must use
+`APP_DEBUG=false`, and `php artisan lms:check-production` fails if it is on.
 
 The browser theme preference uses browser storage for display preference only. It does not store roles, prices, payment state, scores, completion, or ownership.
 
 ## 10. Quality posture
 
-Phase 1, Phase 2, Phase 3, and Phase 4A quality checks exist:
+These quality checks exist and all pass:
 
 - `php artisan test` with MySQL-backed feature tests
 - `vendor/bin/pint --test`
@@ -508,16 +520,78 @@ Phase 1, Phase 2, Phase 3, and Phase 4A quality checks exist:
 - `npm audit`
 - `npm run build`
 - `php artisan route:list`
-- Local MySQL migrations
-- Blade, route, and configuration cache checks
+- Local MySQL migrations, including a rollback and re-apply cycle
+- Blade, route, and configuration cache builds that serve real requests
+- `php artisan lms:check-production`, which must fail on a development server
+- A committed-secret scan, proven by planting a key-shaped string and
+  confirming the suite fails, then removing it and confirming it passes
 
-The first full foundation run passed 7 tests and 26 assertions. After the Fortify dependency and identity slice, the suite passed 9 tests and 45 assertions. The completed Phase 2 authentication and profile slice passes 28 tests and 141 assertions, including a real Windows DPAPI round trip. The Phase 3 role and authorization slice passed 41 tests and 195 assertions. The Phase 4A Course foundation slice passed 55 tests and 235 assertions. The Phase 4B curriculum and material foundation slice passed 80 tests and 308 assertions. The Phase 5A Instructor Course Outline UI slice passed 93 tests and 359 assertions. The Phase 5B Module and Lesson authoring slice passed 104 tests and 406 assertions. The Phase 5C content editing slice passed 120 tests and 499 assertions. The Phase 5D Learning Material authoring slice passed 136 tests and 574 assertions. The Phase 5E publishing slice passed 149 tests and 633 assertions. The Phase 5F public catalog slice passed 168 tests and 713 assertions. The Phase 6A enrollment foundation slice passed 183 tests and 743 assertions. The Phase 6B free enrollment slice passed 202 tests and 816 assertions. The Phase 6C lesson access slice passed 218 tests and 867 assertions. The Phase 6D lesson progress foundation slice passes 232 tests and 897 assertions. The Phase 6E lesson progress interface slice passes 253 tests and 987 assertions. Eight earlier guards that blocked `student.lessons.complete` now check identifiers that are still absent. A first Phase 6E build lost the `Controller` base-class import in `EnrollmentController`, which returned `Class App\Http\Controllers\Student\Controller not found`; the import was restored and `php -l` was run after every write. A Blade `@use App\Enums\CourseStatus` directive in `student/courses/index.blade.php` compiled to `<?php use \; ?>` and broke the page, so the controller now passes a `visible` flag and the view compares no enum. A first Phase 6C test asserted the word `local` never appears on a student page, which failed on the theme script; the assertion now checks only the storage path and MIME type. Six earlier guards that blocked `student.lessons.show` now check the still-absent `student.lessons.complete` route. Five earlier guards that blocked the `lesson_progress` table now check the still-absent `quizzes` table. The progress factory derives `student_id` from its enrollment through an `afterMaking` hook so a test can never create a mismatched record.
+### Test progression
+
+| Slice | Tests | Assertions |
+|---|---|---|
+| Foundation | 7 | 26 |
+| Phase 2 authentication and profile | 28 | 141 |
+| Phase 3 roles and authorization | 41 | 195 |
+| Phase 4A Course foundation | 55 | 235 |
+| Phase 4B curriculum and material foundation | 80 | 308 |
+| Phase 5A Instructor Course outline | 93 | 359 |
+| Phase 5B Module and Lesson authoring | 104 | 406 |
+| Phase 5C content editing | 120 | 499 |
+| Phase 5D Learning Material authoring | 136 | 574 |
+| Phase 5E publishing | 149 | 633 |
+| Phase 5F public catalog | 168 | 713 |
+| Phase 6A enrollment foundation | 183 | 743 |
+| Phase 6B free enrollment | 202 | 816 |
+| Phase 6C lesson access | 218 | 867 |
+| Phase 6D lesson progress foundation | 232 | 897 |
+| Phase 6E lesson progress interface | 253 | 987 |
+| Phase 7A curriculum reorder | 271 | 1045 |
+| Phase 7B archive | 289 | 1118 |
+| Phase 7C private files | 308 | 1186 |
+| Phase 8 Continue Learning | 323 | 1228 |
+| Phase 9 quizzes | 365 | 1376 |
+| Phase 10 completion and certificates | 392 | 1445 |
+| Phases 11 and 12 payments | 434 | 1529 |
+| Phase 13 dashboards and reports | 449 | 1585 |
+| Phase 14 quality and accessibility | 450 | 1618 |
+| Phase 15 deployment and defense | 464 | 1665 |
+
+### Browser audit
+
+Every page was measured in a real browser at 390, 768, and 1440 pixels. Zero
+horizontal overflow, zero WCAG AA contrast failures in both the light and dark
+themes, zero tap targets under 44 pixels, no unlabelled inputs, no links
+without a destination, no images without alt text, and exactly one `h1` per
+page. The full Student flow was clicked through with a clean console and no
+failed request. The theme toggle was verified with a real trusted mouse click.
+
+### Defects found and fixed by the audits
+
+- A Blade `@use App\Enums\CourseStatus` directive in `student/courses/index.blade.php` compiled to `<?php use \; ?>` and broke the page, so the controller now passes a flag and the view compares no enum.
+- A missing `Controller` base-class import in `EnrollmentController` returned `Class App\Http\Controllers\Student\Controller not found`.
+- A `finfo_buffer` call passed an integer where a `finfo` object is required, which threw a `TypeError` on every upload.
+- The `LearningMaterialStorage` namespace drifted to `App\Support` while the file lived in `app/Services/Storage`, which broke autoloading and surfaced as an opaque process crash.
+- A material download read its parent identifiers from the route but compared them against bound models that were no longer bound, so a mismatched address passed the check. The identifiers are now read and compared as integers.
+- `QuizGrader::studentProjection` was rewritten after a convoluted relation dance made the hidden-key guarantee hard to read.
+- `QuizAnswer` server-owned foreign keys were dropped by `updateOrCreate` because the model is not mass assignable, so answers silently failed to write.
+- Gate resolves a Policy by model class, so attempt and completion rules placed on the wrong Policy were denied. The rules moved to `QuizAttemptPolicy` and `EnrollmentPolicy`.
+- The first certificate schema used a unique constraint on enrollment and course, which made reissue impossible. The constraint was replaced with a nullable `active_slot`, so any number of revoked rows can exist and only one valid one can.
+- The reorder action violated the unique owner-and-position constraint mid-update. Rows are now parked in a temporary range before the final renumber.
+- Two pages still claimed quizzes and certificates were not built. Both are fixed, and a guard test now fails if any page claims a built feature is missing.
+- The `test_student_sees_a_published_quiz` guard asserted the literal string `is_correct` never appears, which was correct but weak. The key is now hidden on the loaded models rather than filtered out of a string.
+- Guards from earlier phases that blocked a table or route a later phase created were each rewritten to assert an identifier that is genuinely still absent.
+
+CI is implemented through the repository commands. A hosted continuous
+integration workflow is not configured, which is a deployment decision rather
+than a code gap.
 
 An assisted browser review of Phase 6C ran a 17-check HTTP walkthrough and measured six pages at 390 and 1440 pixels through headless Edge. It found three defects: the shared header could not shrink below about 440 pixels, the catalog filter buttons could not wrap, and the footer still claimed enrollment and lesson content were unavailable. All three are fixed, and no page overflows after the fixes. Every temporary review record and account was deleted and the database was verified back to its original state.
 
 A second review used the connected OpenCode desktop browser and walked the flow by typing and clicking. Authorization held in a real browser: an unenrolled Student and an Instructor both received `Access denied` with no lesson text. The console was clean and no request failed. That pass found five stale messages that still described enrollment and lesson content as unavailable, plus two Instructor pages that still claimed publication was disabled. All seven are corrected, and a copy audit re-checked every remaining "not available yet" string against the built behavior. A reviewer question about unpublishing an already enrolled Course exposed a dead link on the `My courses` card, which linked to a public address that returns `404` after unpublishing. The card now explains that the Course is no longer published, keeps the enrollment, and shows no link. Two tests now lock the unpublish rule: the enrollment record survives and the public pages stay closed. A first Phase 6B run returned `403` instead of `404` for an unpublished Course, because the Policy check ran before the publication check; the controller now hides an unpublished Course first, and the Policy keeps role and publication as defense in depth. One Phase 6B test also used a verified factory user while expecting an unverified redirect, and the factory state was corrected. The first Phase 6A test expected a database error for an unknown enrollment status, but the enum cast rejects it first, so the coverage was split into a model-level and a database-level check. Four earlier guards that blocked the `enrollments` table were updated to check the still-absent `lesson_progress` table. A first Phase 5F test file had one mangled closing bracket that broke parsing, and it was repaired before the tests ran. A first catalog query used an unqualified `status` column, which MySQL rejected as ambiguous once the lesson count subquery joined Modules; the columns are now qualified. Four earlier guards that blocked the public catalog route were updated to check still-absent enrollment, payment, and student routes. A first Phase 5E run exposed a missing `Course::lessons()` relation, so a `HasManyThrough` relation was added and retested. One earlier Phase 5C guard that blocked the publish route was updated to block the future archive route instead, because publishing is now approved. Human review found the material row said `Position 1` while Module and Lesson rows said `Module 1` and `Lesson 1`; the label and the tutorial wording were corrected and a test now pins the `Material 1` wording. A first Phase 5D run exposed dropped controller imports that returned HTTP 500; the controller was rewritten in one pass and retested. Two earlier guards that blocked the material store route were updated to block the future upload route instead, because material metadata authoring is now approved. A first Phase 5C run exposed controller imports that were dropped while the methods were added, which returned HTTP 500; the imports were restored and retested. The free and paid price rules moved into `App\Support\CoursePrice` so create and update cannot drift apart. A first Phase 5B run exposed a missing policy import that returned HTTP 500 instead of creating a Module, and the import was fixed and retested. A first Phase 5B form check also showed that a failed lesson form lost its typed text, so the failed form now keeps its input and reopens. The first dependency pass found a missing PHP Fileinfo extension, which was enabled and retested. The Administrator user list now marks unverified accounts and explains that role changes unlock after email verification; the server-side rejection remains enforced. The shared authenticated header now exposes a visible Sign out form; the missing Administrator logout control was reproduced and fixed. A later cached-config run exposed a test database selection defect, which was fixed and retested. A first-run Blade check exposed an unconditional Vite manifest dependency, which was fixed and retested. A local `.env` owner-name value needed quoting and was fixed before the Phase 2 tests passed. Fortifyâ€™s default unknown-email reset response initially exposed account state, so a safe generic response was added and retested. The password-change middleware initially allowed the GET route but not the POST route, and the fix was retested. The owner test initially reused the real local secret path, so it now uses a unique temporary path. Registration normalization initially assumed missing fields were present, so missing-field validation now returns safe errors. Edge fallback review confirmed responsive auth layout, theme persistence, and keyboard-safe controls. The Phase 3 Administrator table initially caused mobile page overflow; stacked mobile cards fixed it and the 390px browser check was rerun. The first Phase 4A factory test exposed an array value in a text column; the factory now joins sentences before insertion. The Phase 5A Course list initially used an unsupported nested `withCount` relation; the controller now uses a supported Module count and the browser page passes.
 
-CI and production deployment checks are not implemented yet.
+CI and production deployment checks are implemented. The pre-flight command is
+`php artisan lms:check-production`, and the runbook is `docs/deployment.md`.
 
 ## 11. Main risks
 
@@ -533,6 +607,10 @@ CI and production deployment checks are not implemented yet.
 | Payment assumptions | Broken integration | Check current official PayMongo documentation |
 | Hidden business rules | Inconsistent code | Keep actions small and covered by tests |
 | Unverified completion | Weak defense | Record tests, diagrams, and real screenshots |
+| Unverified live payment | Broken release | Run one real test-mode payment before launch |
+| Undocumented `active_slot` column | Future breakage | The column carries a comment and the tradeoff is in `defense.md` |
+| Fake provider passing while PayMongo breaks | False confidence | The runbook makes a real payment a release blocker |
+| No antivirus on uploads | Stored malware | The allow-list stops executables and scripts only |
 
 ## 12. Current approved decisions
 
@@ -571,14 +649,34 @@ Each deferred item has a safe planning default in `plan.md` and `architecture.md
 
 ## 14. Next approved milestone
 
-The next milestone is Phase 7 curriculum reorder, archive, and private uploads.
+V1 is complete. Every phase through Phase 15 is built, tested, and committed.
 
-Phase 5B through Phase 6E automated, build, migration, and audit evidence is recorded. Phase 6C was reviewed twice: first with a scripted HTTP walkthrough plus headless Edge over the DevTools protocol, then with the connected OpenCode desktop browser. Phase 6E was reviewed the same way. A 71-check scripted walkthrough passed with no failures, five pages were measured at 390, 768, and 1440 pixels with no overflow, and the connected browser confirmed the mark-as-complete flow by typing and clicking with an empty console and no failed request. The review found three stale messages that still described progress as missing, in the shared footer, the public home page, and the Student dashboard. All three are corrected and a test now fails if any page claims progress is missing. Every temporary review record and account was deleted and the database is verified back to its original state.
+The remaining work is not a coding phase. It is two human steps:
 
-Progress, quizzes, paid enrollment, payments, uploads, downloads, delete, and archive remain separate approved boundaries.
+1. Place the release on a hosting account and run
+   `php artisan lms:check-production` on the server.
+2. Configure live PayMongo credentials and confirm one real test-mode payment
+   activates one enrollment.
+
+Both steps are written up in `docs/deployment.md`. The automated suite proves
+the payment state machine with a fake provider, so a real payment is the only
+thing that can prove the credentials and the provider contract.
+
+The defense evidence is assembled in `docs/defense.md`.
 
 ## 15. Audit conclusion
 
-The repository now has a runnable Laravel 13 foundation, human-approved Phase 2 through Phase 6D slices, and a browser-reviewed Phase 6E lesson progress interface for IT Learning Hub.
+The repository holds a complete, tested, demo-ready IT Learning Hub. The
+approved V1 scope in `plan.md` is implemented: authentication, roles,
+authorization, the course catalog, curriculum authoring with reorder and
+archive, private files, enrollment, lesson reading and progress, quizzes with
+server-side grading, completion and certificates, payments with a verified
+idempotent webhook, role dashboards, and reports.
 
-The safe next step is Phase 7. Quizzes, paid enrollment, uploads, and payment work remain later phases.
+The evidence is recorded rather than asserted: 464 tests, a clean style check,
+clean dependency audits, zero browser defects, and a production pre-flight
+command that fails loudly.
+
+The honest gaps are written down in `docs/defense.md` rather than hidden. The
+largest is that no real payment has been made, because that needs credentials
+this repository must never contain.

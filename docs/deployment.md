@@ -67,7 +67,7 @@ DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=lms_production
 DB_USERNAME=lms_production
-DB_PASSWORD=<a long random password>
+DB_PASSWORD=                # paste a long random password from your provider
 ```
 
 Set production session and cache values:
@@ -97,8 +97,8 @@ Set payments only when a paid course is on sale:
 
 ```dotenv
 PAYMONGO_ENABLED=true
-PAYMONGO_SECRET_KEY=<live secret key>
-PAYMONGO_WEBHOOK_SECRET=<live webhook secret>
+PAYMONGO_SECRET_KEY=       # paste the live secret key from the PayMongo dashboard
+PAYMONGO_WEBHOOK_SECRET=   # paste the webhook signing secret from the dashboard
 ```
 
 When `PAYMONGO_ENABLED=false`, leave both secret values empty. A half
