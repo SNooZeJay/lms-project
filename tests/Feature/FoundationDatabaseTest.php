@@ -93,9 +93,8 @@ class FoundationDatabaseTest extends TestCase
         $this->assertFalse(Schema::hasColumn('activity_logs', 'ip_address'));
         $this->assertFalse(Schema::hasColumn('activity_logs', 'user_agent'));
 
-        $this->assertFalse(Schema::hasTable('lesson_progress'));
-        $this->assertFalse(Schema::hasTable('payments'));
         $this->assertFalse(Schema::hasTable('quizzes'));
         $this->assertFalse(Schema::hasTable('certificates'));
+        $this->assertFalse(Schema::hasTable('payments'));
     }
 }

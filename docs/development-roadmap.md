@@ -4,7 +4,7 @@
 
 This roadmap turns the approved LMS plan into small, testable steps.
 
-Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, Phase 5B, Phase 5C, Phase 5D, Phase 5E, Phase 5F, Phase 6A, and Phase 6B are human-approved. Phase 6C lesson access is the active slice.
+Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A through Phase 5F, Phase 6A, Phase 6B, and Phase 6C are human-approved. Phase 6D lesson progress foundation is implemented and awaiting human schema confirmation.
 
 Do not skip directly to payment processing or dashboard polish.
 
@@ -2045,35 +2045,8 @@ Approved on September 26, 2026. Free enrollment is implemented and human-approve
 
 A Student can enroll once in a free Course and see only their own enrollments.
 
-## 19. Phase 7: curriculum reorder, archive, and private uploads
+## 19. Phase 6C: lesson access for enrolled students
 
-### Goal
-
-Finish curriculum management and protected file delivery.
-
-### Work
-
-- Add Module and Lesson reorder
-- Add Module, Lesson, and Course archive
-- Add private file upload on a private Storage disk
-- Add approved external link handling
-- Add an authorized material download controller
-- Add safe file validation
-
-### Tests
-
-- Module and Lesson positions remain unique after a reorder
-- Archived content stays out of the public catalog
-- A Student without enrollment cannot download a material
-- An Instructor can manage material for an owned Course
-- An Administrator can manage approved material
-- Executable and unsafe file types fail validation
-
-### Exit condition
-
-An Instructor can build a complete Course outline with authorized material access.
-
-## 21. Phase 6C: lesson access for enrolled students
 
 ### Goal
 
@@ -2257,33 +2230,209 @@ Cleanup: the temporary course, module, lesson, two materials, enrollment, and th
 
 An enrolled Student can open a published Lesson and read its content and materials.
 
-## 22. Phase 8: lesson access and progress
+## 20. Phase 6D: lesson progress foundation
 
 ### Goal
 
-Persist Lesson activity and calculate progress from records.
+Create the Lesson progress record before any progress interface.
 
-### Work
+### Status
 
-- Add LessonProgress model and Action
-- Add Mark as Complete interaction
-- Add Continue Learning
-- Add ProgressCalculator
-- Add module and course progress queries
+Approved on September 26, 2026 with Option A for unpublishing. The foundation is implemented and passes 232 tests. Human confirmation of the schema and migration evidence is the open checkpoint.
+
+### Confirmed scope
+
+- `lesson_progress` table exactly as documented in `architecture.md`
+- `LessonProgressStatus` enum with `not_started`, `in_progress`, and `completed`
+- `LessonProgress` model with Enrollment, Student, and Lesson relationships
+- `Enrollment::lessonProgress()`, `Lesson::progressRecords()`, and `User::lessonProgress()`
+- Lesson progress factory with `inProgress` and `completed` states
+- Migration and model tests
+
+### Unpublish decision, Option A
+
+When an Instructor unpublishes a Course:
+
+- Progress rows are kept. Nothing is deleted.
+- Percentages are hidden while the Course is not published.
+- Publishing again restores the recorded progress.
+
+This keeps learning history intact and matches the enrollment decision from Phase 6B.
+
+### Explicitly not included
+
+- No Mark as Complete control
+- No percentage display
+- No Continue Learning
+- No quiz or certificate behavior
+- No instructor progress report
+
+### Input, Process, and Output
+
+**Input**
+
+- No user input. This phase creates the data foundation only.
+
+**Process**
+
+- Create the `lesson_progress` table with the documented columns
+- Add the unique rule on `(enrollment_id, lesson_id)`
+- Index `lesson_id` and `student_id`
+- Add three restrict-on-delete foreign keys so history cannot be lost
+- Add the enum, model, relationships, and factory
+
+**Output**
+
+- A `lesson_progress` table that matches the documented design
+- A tested model and enum
+- No interface and no progress calculation
+
+### Task list
+
+- [x] Task 1: Add failing lesson progress foundation tests
+- [x] Task 2: Add the migration and enum
+- [x] Task 3: Add the model, relationships, and factory
+- [x] Task 4: Run test, build, and migration gates
+- [ ] Task 5: Human confirmation of the schema and migration evidence
+
+### Phase 6D implementation evidence
+
+- `database/migrations/0001_01_01_000009_create_lesson_progress_table.php`
+- `app/Enums/LessonProgressStatus.php`
+- `app/Models/LessonProgress.php`
+- `app/Models/Enrollment.php` gained `lessonProgress()`
+- `app/Models/Lesson.php` gained `progressRecords()`
+- `app/Models/User.php` gained `lessonProgress()`
+- `database/factories/LessonProgressFactory.php`
+- `tests/Feature/Phase6D/LessonProgressFoundationTest.php`
+
+### Phase 6D automated evidence
+
+- `php artisan test` passes with 232 tests and 897 assertions
+- `./vendor/bin/pint --test` passes on 149 files
+- `php artisan migrate`, `php artisan migrate:rollback --step=1`, and `php artisan migrate` all succeed on the local database
+- `npm run build`, `composer validate`, `composer audit`, and `npm audit` pass
+- Route, config, and view cache checks pass
+- Five earlier guards that blocked the `lesson_progress` table now check the still-absent `quizzes` table
+
+### Phase 6D security notes
+
+- The unique `(enrollment_id, lesson_id)` rule makes a duplicate progress row impossible
+- All three foreign keys restrict deletion, so learning history cannot be lost
+- The enum cast rejects an unknown status before it reaches the database, and MySQL rejects it too
+- `status`, `started_at`, `completed_at`, and `last_viewed_at` are only written by Actions in Phase 6E
+- The factory keeps `student_id` consistent with the enrollment through an `afterMaking` hook
+- A test proves unpublishing a Course keeps the progress rows and the active enrollment, which is Option A
+- No progress, quiz, or certificate route exists yet
+
+### Phase 6D security tests
+
+- One progress row per enrollment and lesson, enforced by the database.
+- All three foreign keys reject deletion, so history is preserved.
+- Status accepts only the three documented values.
+- Timestamps stay nullable and server-owned.
+- Unpublishing a Course keeps progress records.
+- No progress, quiz, or certificate route exists.
+
+## 21. Phase 6E: lesson progress interface
+
+### Goal
+
+Let a Student mark a Lesson complete and see a real completion percentage.
+
+### Status
+
+Waiting for Phase 6D. Progress calculation must come from records only.
+
+### Confirmed scope
+
+- `Mark as complete` on the Lesson page
+- Recording lesson activity when a Lesson is opened
+- A completion percentage on the Student course page and in `My courses`
+- Required and Completed markers on the Lesson list
+- A `ProgressCalculator` service that reads records
+
+### Progress rules
+
+- Percentage equals completed required published Lessons divided by total required published Lessons.
+- Optional Lessons never affect the percentage.
+- A Course with no required published Lessons shows `0%`, never a division error.
+- Marking complete is idempotent.
+- A browser-supplied percentage is always ignored.
+- While a Course is unpublished, the percentage is hidden and the records are kept. This is Option A.
+
+### Explicitly not included
+
+- No Continue Learning, quiz, certificate, or instructor report
+- No progress on optional Lessons
+- No payment behavior
 
 ### Tests
 
-- Opening a Lesson records activity without completion
-- Valid Mark as Complete updates one progress record
-- Repeated completion requests remain idempotent
-- Course percentage uses required published Lessons
-- Browser-supplied percentages are ignored
+- Opening a Lesson records activity without completing it
+- Mark as complete sets the status and `completed_at` on the server
+- Repeated completion requests keep one record
+- The percentage uses required published Lessons only
+- A browser-supplied percentage changes nothing
+- An unpublished Course hides the percentage and keeps the records
+- Another Student cannot see or change this progress
 
 ### Exit condition
 
-A Student can complete Lessons and see database-backed progress.
+A Student can mark Lessons complete and sees a database-backed percentage.
 
-## 23. Phase 9: quizzes
+## 22. Phase 7: curriculum reorder, archive, and private uploads
+
+### Goal
+
+Finish curriculum management and protected file delivery.
+
+### Work
+
+- Add Module and Lesson reorder
+- Add Module, Lesson, and Course archive
+- Add private file upload on a private Storage disk
+- Add approved external link handling
+- Add an authorized material download controller
+- Add safe file validation
+
+### Tests
+
+- Module and Lesson positions remain unique after a reorder
+- Archived content stays out of the public catalog
+- A Student without enrollment cannot download a material
+- An Instructor can manage material for an owned Course
+- An Administrator can manage approved material
+- Executable and unsafe file types fail validation
+
+### Exit condition
+
+An Instructor can build a complete Course outline with authorized material access.
+
+## 23. Phase 8: continue learning
+
+### Goal
+
+Surface where a Student left off using the `last_viewed_at` column recorded in Phase 6D.
+
+### Work
+
+- Add a Continue Learning card to the Student dashboard
+- Query the most recent `last_viewed_at` for the Student
+- Keep the record server-owned
+
+### Tests
+
+- Continue Learning shows the most recent readable Lesson
+- A Student with no history sees an empty state
+- One Student cannot see another Student's history
+- An unpublished Course is not offered
+
+### Exit condition
+
+A returning Student lands on the Lesson they last opened.
+
+## 24. Phase 9: quizzes
 
 ### Goal
 
@@ -2314,7 +2463,7 @@ Deliver safe Questions and enforce server-side grading.
 
 A Student can complete a Quiz and receive a correct server-calculated result.
 
-## 24. Phase 10: completion and certificates
+## 25. Phase 10: completion and certificates
 
 ### Goal
 
@@ -2342,7 +2491,7 @@ Verify Course completion and issue one certificate.
 
 An eligible Student receives one printable certificate with safe authenticated access.
 
-## 25. Phase 11: payment architecture
+## 26. Phase 11: payment architecture
 
 ### Goal
 
@@ -2371,7 +2520,7 @@ Finalize payment behavior before calling PayMongo.
 
 Payment state transitions are fully specified and testable without live credentials.
 
-## 26. Phase 12: PayMongo integration
+## 27. Phase 12: PayMongo integration
 
 ### Goal
 
@@ -2397,7 +2546,7 @@ Run the approved webhook scenarios from `plan.md` and `architecture.md`.
 
 A real test-mode payment activates one paid Enrollment once, and repeated delivery causes no duplicate.
 
-## 27. Phase 13: dashboards and reports
+## 28. Phase 13: dashboards and reports
 
 ### Goal
 
@@ -2424,7 +2573,7 @@ Add role-specific pages using real authorized data.
 
 All dashboards work with real authorized data and approved empty states.
 
-## 28. Phase 14: quality and accessibility
+## 29. Phase 14: quality and accessibility
 
 ### Goal
 
@@ -2469,7 +2618,7 @@ php artisan route:list
 
 Every acceptance criterion in `plan.md` passes with recorded evidence.
 
-## 29. Phase 15: deployment and defense
+## 30. Phase 15: deployment and defense
 
 ### Goal
 
@@ -2505,7 +2654,7 @@ Deploy a tested release and prepare the SIA1 presentation.
 
 The deployed application works, the team can explain the architecture, and critical workflows remain testable.
 
-## 30. Commands after scaffolding
+## 31. Commands after scaffolding
 
 Use the commands generated by the selected Laravel starter kit.
 
@@ -2525,7 +2674,7 @@ npm run build
 
 Do not run `migrate:fresh` against a shared or production database.
 
-## 31. Definition of ready
+## 32. Definition of ready
 
 A task is ready when:
 
@@ -2537,7 +2686,7 @@ A task is ready when:
 - Documentation impact is known
 - No unresolved product decision remains
 
-## 32. Definition of done
+## 33. Definition of done
 
 A task is done when:
 
@@ -2551,8 +2700,8 @@ A task is done when:
 - No unrelated file changed
 - The team can explain the change
 
-## 33. Current next action
+## 34. Current next action
 
-The current next action is Phase 6C lesson access for enrolled students.
+The current next action is human confirmation of the Phase 6D lesson progress schema, then Phase 6E progress interface.
 
-Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Course outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D material authoring, Phase 5E publishing, Phase 5F public catalog, Phase 6A enrollment foundation, and Phase 6B free enrollment are complete and human-approved. Do not add progress, quiz, payment, upload, download, delete, or archive behavior.
+Environment preflight, the Laravel foundation, Phase 2 identity and authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A through Phase 5F, Phase 6A enrollment foundation, Phase 6B free enrollment, and Phase 6C lesson access are complete and human-approved. Do not add quiz, payment, upload, download, delete, or archive behavior.

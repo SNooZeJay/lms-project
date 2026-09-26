@@ -148,7 +148,7 @@ class LearningMaterialFoundationTest extends TestCase
     {
         $this->assertFalse(Route::has('instructor.courses.materials.upload'));
         $this->assertFalse(Route::has('student.materials.download'));
-        $this->assertFalse(Schema::hasTable('lesson_progress'));
+        $this->assertFalse(Schema::hasTable('quizzes'));
         $this->assertFalse(Schema::hasTable('payments'));
     }
 

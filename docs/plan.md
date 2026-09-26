@@ -481,6 +481,43 @@ Phase 6B rules:
 - A new enrollment is `active` with `activated_at` set by the server.
 - No payment, no PayMongo behavior, no lesson content, and no progress.
 
+### Phase 6D lesson progress foundation
+
+Phase 6D creates the Lesson progress record before any progress interface.
+
+Phase 6D includes:
+
+- `lesson_progress` table
+- `LessonProgressStatus` enum
+- `LessonProgress` model with Enrollment, Student, and Lesson relationships
+- `Enrollment::lessonProgress()`, `Lesson::progressRecords()`, and `User::lessonProgress()`
+- Lesson progress factory
+- Migration and model tests
+
+Phase 6D rules:
+
+- One progress row per enrollment and lesson, enforced by a unique database rule.
+- All three foreign keys reject deletion, so learning history cannot be lost.
+- Status accepts only `not_started`, `in_progress`, or `completed`.
+- `status`, `started_at`, `completed_at`, and `last_viewed_at` stay server-owned.
+- Phase 6D adds no interface, no percentage, and no calculation.
+
+Unpublish decision, Option A: when an Instructor unpublishes a Course, progress rows are kept and percentages are hidden. Publishing again restores the recorded progress. Nothing is deleted.
+
+### Phase 6E lesson progress interface
+
+Phase 6E lets a Student mark a Lesson complete and see a real completion percentage.
+
+Phase 6E rules:
+
+- Percentage equals completed required published Lessons divided by total required published Lessons.
+- Optional Lessons never affect the percentage.
+- A Course with no required published Lessons shows `0%`.
+- Marking complete is idempotent.
+- A browser-supplied percentage is always ignored.
+- While a Course is unpublished, the percentage is hidden and the records are kept.
+- Phase 6E adds no Continue Learning, quiz, certificate, or instructor report.
+
 ### Deferred: delete and archive
 
 Delete is deliberately not part of Phase 5C.

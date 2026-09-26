@@ -297,6 +297,10 @@ Phase 5D accepts only `text`, `code`, `video_link`, and `external_link` material
 
 Phase 5E sends a POST with no trusted body fields. It does not add a public catalog route, archive, delete, reorder, upload, download, enrollment, or payment route.
 
+### Phase 6D lesson progress foundation
+
+Phase 6D adds no route. It creates the `lesson_progress` table, the `LessonProgressStatus` enum, the `LessonProgress` model, and the Enrollment, Lesson, and User progress relationships. The progress interface is Phase 6E.
+
 ### Phase 6A enrollment foundation
 
 Phase 6A adds no route. It creates the `enrollments` table, the `EnrollmentStatus` enum, the `Enrollment` model, and the `User::enrollments()` and `Course::enrollments()` relationships. The free enrollment UI is Phase 6B.
@@ -1357,16 +1361,18 @@ Server rules:
 
 ### `lesson_progress`
 
+Status: built in Phase 6D. Migration `0001_01_01_000009_create_lesson_progress_table.php`.
+
 | Column | Type | Rules |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | Primary key |
-| `enrollment_id` | BIGINT UNSIGNED | Foreign key to enrollments |
-| `student_id` | BIGINT UNSIGNED | Foreign key to users |
-| `lesson_id` | BIGINT UNSIGNED | Foreign key to lessons |
-| `status` | ENUM | `not_started`, `in_progress`, `completed` |
-| `started_at` | TIMESTAMP | Nullable |
-| `completed_at` | TIMESTAMP | Nullable |
-| `last_viewed_at` | TIMESTAMP | Nullable |
+| `enrollment_id` | BIGINT UNSIGNED | Foreign key to enrollments, restrict on delete |
+| `student_id` | BIGINT UNSIGNED | Foreign key to users, restrict on delete |
+| `lesson_id` | BIGINT UNSIGNED | Foreign key to lessons, restrict on delete |
+| `status` | ENUM | `not_started`, `in_progress`, `completed`; default `not_started` |
+| `started_at` | TIMESTAMP | Nullable, server-owned |
+| `completed_at` | TIMESTAMP | Nullable, server-owned |
+| `last_viewed_at` | TIMESTAMP | Nullable, server-owned |
 | timestamps | TIMESTAMP | Required |
 
 Unique constraint:
@@ -1374,6 +1380,17 @@ Unique constraint:
 ```text
 (enrollment_id, lesson_id)
 ```
+
+Indexes:
+
+- `lesson_id` for per-lesson lookups
+- `student_id` for per-student history
+
+Server rules:
+
+- Every column except the three foreign keys is written by Actions, never by a request.
+- Restrict on delete keeps learning history intact.
+- Unpublishing a Course keeps the rows and hides the percentage. This is Option A, approved on September 26, 2026.
 
 ### `quizzes`
 

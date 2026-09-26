@@ -6,7 +6,7 @@ Audit date: September 25, 2026
 
 This document describes the repository as it exists now.
 
-The Laravel foundation, Phase 2 authentication/profile slice, Phase 3 roles and authorization slice, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, Phase 5F public Course catalog, Phase 6A enrollment foundation, and Phase 6B free enrollment are human-approved. Phase 6C lesson access is implemented and awaiting human browser review. Later LMS business modules remain unbuilt.
+The Laravel foundation, Phase 2 authentication/profile slice, Phase 3 roles and authorization slice, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A through Phase 5F, Phase 6A enrollment foundation, Phase 6B free enrollment, and Phase 6C lesson access are human-approved. Phase 6D lesson progress foundation is implemented and awaiting human schema confirmation. Later LMS business modules remain unbuilt.
 
 ## 2. Current repository state
 
@@ -14,7 +14,7 @@ The repository is an implementation-stage IT Learning Hub for a BSIT Academic LM
 
 It contains the Laravel 13 foundation, documentation, project support files, and a compiled static dashboard reference.
 
-The foundation is runnable. The product display name is now `IT Learning Hub`. Phase 2 contains the Fortify package, User and Profile records, authentication screens, verified email access, own-profile editing, the forced temporary-password gate, the local Administrator owner, and the completed automated/browser evidence checkpoint. Phase 3 now contains ActivityLog records, role/status Actions, Policies, active-account middleware, role pages, and Administrator user management. Phase 4A now contains the Course table, enums, model, Instructor relationship, factory, and constraint tests. Phase 4B now contains the Module, Lesson, and Learning Material tables, enums, models, factories, and constraint tests. Phase 5A now contains the Instructor Course list, create form, and read-only outline. Phase 5B now contains Instructor Module and Lesson authoring on the outline page. Phase 5C now contains Instructor editing for Course, Module, and Lesson. Phase 5D now contains Instructor Learning Material metadata authoring for text, code, video link, and external link materials. Phase 5E now contains Instructor publish and unpublish actions for owned Courses. Phase 5F now contains the public Course catalog and public Course details pages. Phase 6A now contains the `enrollments` table, the `EnrollmentStatus` enum, the `Enrollment` model, and Enrollment factory. Phase 6B now contains the Student `My courses` page, the free enrollment Action, `EnrollmentPolicy`, and Enroll states on the public Course page. Phase 6C now contains the Student Course page, the Student Lesson page with content and materials, `LessonPolicy` student access, and `StudentCourseAccess`. The application does not yet contain progress, file uploads, downloads, delete or archive, quizzes, certificates, paid enrollment, or PayMongo.
+The foundation is runnable. The product display name is now `IT Learning Hub`. Phase 2 contains the Fortify package, User and Profile records, authentication screens, verified email access, own-profile editing, the forced temporary-password gate, the local Administrator owner, and the completed automated/browser evidence checkpoint. Phase 3 now contains ActivityLog records, role/status Actions, Policies, active-account middleware, role pages, and Administrator user management. Phase 4A now contains the Course table, enums, model, Instructor relationship, factory, and constraint tests. Phase 4B now contains the Module, Lesson, and Learning Material tables, enums, models, factories, and constraint tests. Phase 5A now contains the Instructor Course list, create form, and read-only outline. Phase 5B now contains Instructor Module and Lesson authoring on the outline page. Phase 5C now contains Instructor editing for Course, Module, and Lesson. Phase 5D now contains Instructor Learning Material metadata authoring for text, code, video link, and external link materials. Phase 5E now contains Instructor publish and unpublish actions for owned Courses. Phase 5F now contains the public Course catalog and public Course details pages. Phase 6A now contains the `enrollments` table, the `EnrollmentStatus` enum, the `Enrollment` model, and Enrollment factory. Phase 6B now contains the Student `My courses` page, the free enrollment Action, `EnrollmentPolicy`, and Enroll states on the public Course page. Phase 6C now contains the Student Course page, the Student Lesson page with content and materials, `LessonPolicy` student access, and `StudentCourseAccess`. Phase 6D now contains the `lesson_progress` table, the `LessonProgressStatus` enum, the `LessonProgress` model, and Enrollment, Lesson, and User progress relationships. The application does not yet contain a progress interface, file uploads, downloads, delete or archive, quizzes, certificates, paid enrollment, or PayMongo.
 
 ## 3. Root contents
 
@@ -33,7 +33,7 @@ The foundation is runnable. The product display name is now `IT Learning Hub`. P
 | `resources/` | Blade layouts, authentication/account/role/admin views, Tailwind CSS, and theme script | Application source |
 | `routes/` | Public, authentication, account, role, admin, and health route configuration | Application source |
 | `storage/` | Private local storage skeleton | Local runtime files are ignored |
-| `tests/` | Authentication, account, role, admin, owner-command, database, Phase 5A through Phase 5F UI feature tests, and Phase 6A foundation tests | Application source |
+| `tests/` | Authentication, account, role, admin, owner-command, database, Phase 5A through Phase 5F UI feature tests, and Phase 6A through Phase 6D foundation and UI tests | Application source |
 | `vendor/` | Installed Composer dependencies | Generated and ignored |
 | `node_modules/` | Installed npm dependencies | Generated and ignored |
 | `AGENTS.md` | OpenCode project instructions | Persistent coding context |
@@ -274,7 +274,19 @@ Phase 6B free enrollment is human-approved.
 - `StudentCourseAccess` as the single shared enrollment rule
 - No progress, quiz, payment, cancel, upload, or download behavior
 
-Phase 6C lesson access is implemented and awaiting human browser review.
+Phase 6C lesson access is human-approved, confirmed by a connected-browser review that also found and fixed seven stale status messages.
+
+### Approved Phase 6D specification
+
+- `lesson_progress` table exactly as documented in `architecture.md`
+- `LessonProgressStatus` enum with `not_started`, `in_progress`, and `completed`
+- `LessonProgress` model with Enrollment, Student, and Lesson relationships
+- `Enrollment::lessonProgress()`, `Lesson::progressRecords()`, and `User::lessonProgress()`
+- Lesson progress factory with `inProgress` and `completed` states
+- Unique `(enrollment_id, lesson_id)` rule and restrict on delete for all three foreign keys
+- Option A approved: unpublishing keeps progress rows and hides percentages
+
+Phase 6D lesson progress foundation is implemented and awaiting human schema confirmation. This phase changes the database schema.
 
 ### Reported conflict
 
@@ -308,7 +320,7 @@ Checked on September 25, 2026:
 | Credential storage | DPAPI-encrypted file under `C:\Users\Administrator\.secrets\lms-mysql.json` | Ready |
 | XAMPP database | MariaDB 10.4.32 remains on port 3306 | Preserved and not used by the LMS |
 
-Phase 1 environment prerequisites, the Laravel foundation, and the human-approved Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, Phase 5B, Phase 5C, Phase 5D, Phase 5E, Phase 5F, Phase 6A, and Phase 6B slices are ready. Phase 6C lesson access is implemented and awaiting browser review.
+Phase 1 environment prerequisites, the Laravel foundation, and the human-approved Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A through Phase 5F, Phase 6A, Phase 6B, and Phase 6C slices are ready. Phase 6D lesson progress foundation is implemented and awaiting schema confirmation.
 
 ## 5. Documentation state
 
@@ -499,7 +511,7 @@ Phase 1, Phase 2, Phase 3, and Phase 4A quality checks exist:
 - Local MySQL migrations
 - Blade, route, and configuration cache checks
 
-The first full foundation run passed 7 tests and 26 assertions. After the Fortify dependency and identity slice, the suite passed 9 tests and 45 assertions. The completed Phase 2 authentication and profile slice passes 28 tests and 141 assertions, including a real Windows DPAPI round trip. The Phase 3 role and authorization slice passed 41 tests and 195 assertions. The Phase 4A Course foundation slice passed 55 tests and 235 assertions. The Phase 4B curriculum and material foundation slice passed 80 tests and 308 assertions. The Phase 5A Instructor Course Outline UI slice passed 93 tests and 359 assertions. The Phase 5B Module and Lesson authoring slice passed 104 tests and 406 assertions. The Phase 5C content editing slice passed 120 tests and 499 assertions. The Phase 5D Learning Material authoring slice passed 136 tests and 574 assertions. The Phase 5E publishing slice passed 149 tests and 633 assertions. The Phase 5F public catalog slice passed 168 tests and 713 assertions. The Phase 6A enrollment foundation slice passed 183 tests and 743 assertions. The Phase 6B free enrollment slice passed 202 tests and 816 assertions. The Phase 6C lesson access slice passes 218 tests and 867 assertions. A first Phase 6C test asserted the word `local` never appears on a student page, which failed on the theme script; the assertion now checks only the storage path and MIME type. Six earlier guards that blocked `student.lessons.show` now check the still-absent `student.lessons.complete` route.
+The first full foundation run passed 7 tests and 26 assertions. After the Fortify dependency and identity slice, the suite passed 9 tests and 45 assertions. The completed Phase 2 authentication and profile slice passes 28 tests and 141 assertions, including a real Windows DPAPI round trip. The Phase 3 role and authorization slice passed 41 tests and 195 assertions. The Phase 4A Course foundation slice passed 55 tests and 235 assertions. The Phase 4B curriculum and material foundation slice passed 80 tests and 308 assertions. The Phase 5A Instructor Course Outline UI slice passed 93 tests and 359 assertions. The Phase 5B Module and Lesson authoring slice passed 104 tests and 406 assertions. The Phase 5C content editing slice passed 120 tests and 499 assertions. The Phase 5D Learning Material authoring slice passed 136 tests and 574 assertions. The Phase 5E publishing slice passed 149 tests and 633 assertions. The Phase 5F public catalog slice passed 168 tests and 713 assertions. The Phase 6A enrollment foundation slice passed 183 tests and 743 assertions. The Phase 6B free enrollment slice passed 202 tests and 816 assertions. The Phase 6C lesson access slice passed 218 tests and 867 assertions. The Phase 6D lesson progress foundation slice passes 232 tests and 897 assertions. A first Phase 6C test asserted the word `local` never appears on a student page, which failed on the theme script; the assertion now checks only the storage path and MIME type. Six earlier guards that blocked `student.lessons.show` now check the still-absent `student.lessons.complete` route. Five earlier guards that blocked the `lesson_progress` table now check the still-absent `quizzes` table. The progress factory derives `student_id` from its enrollment through an `afterMaking` hook so a test can never create a mismatched record.
 
 An assisted browser review of Phase 6C ran a 17-check HTTP walkthrough and measured six pages at 390 and 1440 pixels through headless Edge. It found three defects: the shared header could not shrink below about 440 pixels, the catalog filter buttons could not wrap, and the footer still claimed enrollment and lesson content were unavailable. All three are fixed, and no page overflows after the fixes. Every temporary review record and account was deleted and the database was verified back to its original state.
 
@@ -559,14 +571,14 @@ Each deferred item has a safe planning default in `plan.md` and `architecture.md
 
 ## 14. Next approved milestone
 
-The next milestone is human confirmation of the Phase 6C assisted review, which found and fixed three interface defects.
+The next milestone is human confirmation of the Phase 6D lesson progress schema, then the Phase 6E progress interface.
 
-Phase 5B through Phase 5F, Phase 6A, Phase 6B, and Phase 6C automated, build, migration, and audit evidence is recorded. The desktop browser connector was not connected to this session, so the Phase 6C review used a scripted HTTP walkthrough plus headless Edge driven over the DevTools protocol.
+Phase 5B through Phase 5F, Phase 6A, Phase 6B, Phase 6C, and Phase 6D automated, build, migration, and audit evidence is recorded. Phase 6C was reviewed twice: first with a scripted HTTP walkthrough plus headless Edge over the DevTools protocol, then with the connected OpenCode desktop browser.
 
 Progress, quizzes, paid enrollment, payments, uploads, downloads, delete, and archive remain separate approved boundaries.
 
 ## 15. Audit conclusion
 
-The repository now has a runnable Laravel 13 foundation, human-approved Phase 2 through Phase 6B slices, and a tested and assisted-reviewed Phase 6C lesson access increment for IT Learning Hub.
+The repository now has a runnable Laravel 13 foundation, human-approved Phase 2 through Phase 6C slices, and a tested Phase 6D lesson progress foundation for IT Learning Hub.
 
-The safe next step is human confirmation of the Phase 6C review, then progress tracking. Progress, paid enrollment, uploads, and payment work remain later phases.
+The safe next step is human confirmation of the Phase 6D schema, then the Phase 6E progress interface. Quizzes, paid enrollment, uploads, and payment work remain later phases.

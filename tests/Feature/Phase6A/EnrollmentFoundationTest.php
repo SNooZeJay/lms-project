@@ -219,6 +219,6 @@ class EnrollmentFoundationTest extends TestCase
         $this->assertFalse(Route::has('student.progress.index'));
         $this->assertFalse(Route::has('student.payments.checkout'));
         $this->assertFalse(Schema::hasTable('payments'));
-        $this->assertFalse(Schema::hasTable('lesson_progress'));
+        $this->assertFalse(Schema::hasTable('quizzes'));
     }
 }

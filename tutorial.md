@@ -31,10 +31,12 @@ The current project includes:
 - An enrollment database record with four documented states
 - Free course enrollment and a student `My courses` page
 - Student course and lesson reading for enrolled students
+- A lesson progress record with three documented states
 
 The following features are not built yet:
 
-- Marking lessons complete and progress tracking
+- Marking lessons complete and progress percentages
+- Continue learning
 - Paid enrollment and checkout
 - Reordering, deleting, or archiving curriculum content
 - File uploads and material downloads
@@ -565,7 +567,19 @@ Use the Student account that is already enrolled in a published free course.
 
 Progress tracking is not built yet, so nothing is marked complete.
 
-## 17. Create a Student account
+## 17. Review the lesson progress record
+
+This slice adds no page. It adds a database table, so review it with commands.
+
+1. Open PowerShell in the project folder.
+2. Run `php artisan migrate:status` and confirm the lesson progress migration shows `Ran`.
+3. Open the `lesson_progress` table in your database tool.
+4. Confirm it has `enrollment_id`, `student_id`, `lesson_id`, `status`, `started_at`, `completed_at`, and `last_viewed_at`.
+5. Confirm `status` allows only `not_started`, `in_progress`, and `completed`.
+6. Run `php artisan test --filter=Phase6D` and confirm the foundation tests pass.
+7. Run `php artisan migrate:rollback --step=1`, confirm the table is removed, then run `php artisan migrate` again.
+
+## 18. Create a Student account
 
 Use a separate browser or private window if you want to keep the Administrator session.
 
@@ -578,7 +592,7 @@ Use a separate browser or private window if you want to keep the Administrator s
 
 The registration form has no role selector. Public registration cannot create an Administrator.
 
-## 18. Find email verification and reset links
+## 19. Find email verification and reset links
 
 The local development environment uses Laravel's log mailer.
 
@@ -600,7 +614,7 @@ Copy the local link into the browser.
 
 The log is local. Do not upload or share `storage/logs/laravel.log` because it can contain private links and account details.
 
-## 19. Run the frontend development server
+## 20. Run the frontend development server
 
 Use this when you are changing CSS or JavaScript.
 
@@ -625,7 +639,7 @@ For normal work, you can stop Vite with `Ctrl + C`. You can also build the final
 npm run build
 ```
 
-## 20. Run the automated checks
+## 21. Run the automated checks
 
 Run these commands from the project folder.
 
@@ -678,7 +692,7 @@ This shows all registered URLs and their controller or action.
 php artisan optimize:clear
 ```
 
-## 21. Useful commands
+## 22. Useful commands
 
 | Command | What it does |
 |---|---|
@@ -693,7 +707,7 @@ php artisan optimize:clear
 | `npm run dev` | Starts the Vite development server |
 | `npm run build` | Builds frontend assets |
 
-## 22. Troubleshooting
+## 23. Troubleshooting
 
 ### `composer` is not recognized
 
@@ -815,7 +829,7 @@ php artisan owner:bootstrap --show-password
 
 If you no longer need the local Administrator, ask before removing the protected file or changing the account.
 
-## 23. Project folder guide
+## 24. Project folder guide
 
 These are the folders you will use most often:
 
@@ -837,7 +851,7 @@ Do not edit files in `vendor/`, `node_modules/`, or `public/build/` by hand. The
 
 `FOR_UI/adminator (FOR USER DASHBOARD)` is a read-only visual reference. It is not the application source code.
 
-## 24. Security rules
+## 25. Security rules
 
 Keep these rules in mind:
 
@@ -849,7 +863,7 @@ Keep these rules in mind:
 - Keep `MAIL_MAILER=log` for local demonstrations.
 - Do not use a real payment secret until the payment architecture phase is approved.
 
-## 25. Recommended beginner order
+## 26. Recommended beginner order
 
 When you are learning the project, use this order:
 
@@ -870,7 +884,8 @@ When you are learning the project, use this order:
 15. Run `php artisan migrate:status` and confirm the enrollment migration ran.
 16. Enroll in a published free course as a Student and check `/student/courses`.
 17. Open an enrolled lesson and read its content and materials.
-18. Read the relevant test before changing a feature.
-19. Run `php artisan test` before and after your change.
+18. Run `php artisan migrate:status` and confirm the lesson progress migration ran.
+19. Read the relevant test before changing a feature.
+20. Run `php artisan test` before and after your change.
 
 You do not need to understand the whole Laravel framework before running the application. Start with the commands in this tutorial, then inspect one small feature at a time.

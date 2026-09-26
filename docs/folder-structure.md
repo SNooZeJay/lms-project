@@ -76,6 +76,7 @@ lms-project/
 │   │   │   └── CancelEnrollment.php
 │   │   ├── Learning/
 │   │   │   ├── MarkLessonComplete.php
+│   │   │   ├── RecordLessonActivity.php
 │   │   │   └── CompleteCourse.php
 │   │   ├── Payments/
 │   │   │   ├── CreatePayMongoCheckout.php
@@ -100,8 +101,8 @@ lms-project/
 │   │   ├── ContentStatus.php
 │   │   ├── LearningMaterialType.php
 │   │   ├── EnrollmentStatus.php
-│   │   ├── PaymentStatus.php
 │   │   ├── LessonProgressStatus.php
+│   │   ├── PaymentStatus.php
 │   │   ├── QuizAttemptStatus.php
 │   │   └── CertificateStatus.php
 │   ├── Events/
@@ -319,6 +320,7 @@ lms-project/
 │   │   ├── Phase6A/
 │   │   ├── Phase6B/
 │   │   ├── Phase6C/
+│   │   ├── Phase6D/
 │   │   ├── Role/
 │   │   ├── Student/
 │   │   └── Webhooks/

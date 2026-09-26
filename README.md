@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, Phase 5F public Course catalog, Phase 6A enrollment foundation, and Phase 6B free enrollment are human-approved. Phase 6C lesson access is implemented and awaiting browser review.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A through Phase 5F, Phase 6A enrollment foundation, Phase 6B free enrollment, and Phase 6C lesson access are human-approved. Phase 6D lesson progress foundation is implemented and awaiting schema confirmation.
 
 The repository currently contains:
 
@@ -184,17 +184,21 @@ npm audit
 npm run build
 ```
 
-## Phase 6C checkpoint
+## Phase 6D checkpoint
 
-Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, Phase 5F public Course catalog, Phase 6A enrollment foundation, and Phase 6B free enrollment are human-approved. The Phase 6C slice adds:
+Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A through Phase 5F, Phase 6A enrollment foundation, Phase 6B free enrollment, and Phase 6C lesson access are human-approved. The Phase 6D slice adds:
 
-- A Student Course page and a Student Lesson page under `/student/courses`
-- Access decided by enrollment with status `active` or `completed`, not by publication
-- Lesson content, text and code material content, and safe link materials
-- `StudentCourseAccess` as one shared rule for "may this Student read this Course"
-- No progress, quiz, paid enrollment, payment, cancel, upload, or download behavior
+- A `lesson_progress` table that matches the documented design
+- A unique `(enrollment_id, lesson_id)` rule, so one progress row per enrollment and lesson
+- Restrict on delete for all three foreign keys, so learning history cannot be lost
+- A `LessonProgressStatus` enum with `not_started`, `in_progress`, and `completed`
+- A `LessonProgress` model, a factory, and Enrollment, Lesson, and User relationships
+- Option A approved: unpublishing a Course keeps the progress rows and hides the percentage
+- No Mark as complete, no percentage, no Continue Learning, and no quiz or certificate behavior
 
-The Phase 6C browser review checkpoint is open.
+This phase changes the database schema, so the schema needs human confirmation before the progress interface is built.
+
+The Phase 6D schema review checkpoint is open.
 
 The local Administrator is provisioned with:
 

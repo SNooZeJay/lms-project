@@ -169,7 +169,6 @@ class CourseFoundationTest extends TestCase
     {
         foreach ([
             'payments',
-            'lesson_progress',
             'quizzes',
             'certificates',
         ] as $table) {
