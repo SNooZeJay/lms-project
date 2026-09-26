@@ -81,5 +81,9 @@
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/js/app.js'])
     @endif
+
+    {{-- Page scripts. A view that pushes here is rendered only if the stack
+         exists, so the placeholder is required, not optional. --}}
+    @stack('scripts')
 </body>
 </html>

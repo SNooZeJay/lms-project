@@ -30,8 +30,27 @@
                 <p class="mt-1 text-sm leading-6 text-ink-muted">
                     This page does not confirm payment by itself. Your enrollment becomes active only after the payment provider sends a verified confirmation.
                 </p>
+                <p class="mt-3 text-sm leading-6 text-ink-muted" data-payment-poll>
+                    This page checks for you every few seconds. You can also reload it.
+                </p>
             @endif
         </section>
+
+        @unless ($paid)
+            <section class="mt-6" aria-labelledby="what-next-heading">
+                <h2 id="what-next-heading" class="text-lg font-semibold text-ink">If you chose a test payment option</h2>
+                <p class="mt-2 text-sm leading-6 text-ink-muted">
+                    The provider's test page offers buttons such as <span class="font-semibold text-ink">Authorize test payment</span> and <span class="font-semibold text-ink">Fail or expire test payment</span>. The result shows up here on its own:
+                </p>
+                <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-ink-muted">
+                    <li><span class="font-semibold text-ink">Authorize</span> becomes <span class="font-semibold text-ink">Payment confirmed</span> and the course opens.</li>
+                    <li><span class="font-semibold text-ink">Fail or expire</span> becomes <span class="font-semibold text-ink">Payment did not go through</span>, and you can pay again.</li>
+                </ul>
+                <p class="mt-3 text-sm leading-6 text-ink-muted">
+                    This page cannot report which button was pressed. The provider sends that to the server, not to the browser, and only a verified provider event may change what is shown above.
+                </p>
+            </section>
+        @endunless
 
         <section class="mt-8" aria-labelledby="payment-amount-heading">
             <h2 id="payment-amount-heading" class="text-lg font-semibold text-ink">Amount</h2>
@@ -59,3 +78,22 @@
         </section>
     </div>
 @endsection
+
+@push('scripts')
+    @unless ($paid)
+        <script>
+            // The provider confirms by webhook, not by the browser coming back,
+            // so the page reloads itself until the state changes. A student
+            // should not have to guess whether anything happened.
+            (() => {
+                const marker = document.querySelector('[data-payment-poll]');
+
+                if (! marker) {
+                    return;
+                }
+
+                window.setTimeout(() => window.location.reload(), 5000);
+            })();
+        </script>
+    @endunless
+@endpush

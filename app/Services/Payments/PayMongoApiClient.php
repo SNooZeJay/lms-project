@@ -82,24 +82,51 @@ class PayMongoApiClient implements PayMongoClient
         $secret = $this->webhookSecret();
 
         if ($secret === '') {
+            $this->reportMismatch('no secret is configured', null, null, $rawBody);
+
             return false;
         }
 
-        $signature = $this->header($headers, 'paymongo-signature');
+        $signature = trim($this->header($headers, 'paymongo-signature'), " \t\n\r\0\x0B");
 
         if ($signature === '') {
-            return false;
-        }
+            $this->reportMismatch('the Paymongo-Signature header was absent or empty', null, null, $rawBody);
 
-        $signature = trim($signature, " \t\n\r\0\x0B");
-
-        if ($signature === '') {
             return false;
         }
 
         $computed = hash_hmac('sha256', $rawBody, $secret);
 
-        return hash_equals($computed, $signature);
+        if (! hash_equals($computed, $signature)) {
+            $this->reportMismatch('the signature did not match', $signature, $computed, $rawBody);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Explain a failed verification in the log, because a webhook that silently
+     * rejects every delivery cannot be diagnosed from the database alone.
+     *
+     * Only a short prefix of each digest is written. A digest prefix cannot be
+     * used to forge anything without the secret, and the first few characters
+     * are all that is needed to tell the causes apart.
+     */
+    private function reportMismatch(
+        string $reason,
+        ?string $received,
+        ?string $computed,
+        string $rawBody,
+    ): void {
+        Log::warning('PayMongo signature verification failed', [
+            'reason' => $reason,
+            'received_prefix' => $received === null ? null : substr($received, 0, 12),
+            'computed_prefix' => $computed === null ? null : substr($computed, 0, 12),
+            'body_bytes' => strlen($rawBody),
+            'secret_bytes' => strlen($this->webhookSecret()),
+        ]);
     }
 
     private function guardEnabled(): void
