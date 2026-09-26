@@ -73,7 +73,7 @@ php artisan tinker
 ```php
 try {
     $r = Illuminate\Support\Facades\Http::withBasicAuth(config('services.paymongo.secret_key'), '')
-        ->timeout(20)->get('https://api.paymongo.com/v1/payments');
+        ->timeout(20)->get('https://api.paymongo.com/v2/payments');
     echo $r->status().PHP_EOL;   // 200 means TLS and the credential both work
 } catch (Throwable $e) {
     echo get_class($e).PHP_EOL; // a ConnectionException means TLS is still broken
@@ -308,18 +308,65 @@ rumour.
 https://your-domain.example/webhooks/paymongo
 ```
 
-5. Subscribe to `checkout.payment.paid`, `checkout.payment.failed`,
-   `checkout.payment.cancelled`, and `refund.paid`.
+5. Subscribe to one event. In the dashboard, under **Checkout Session**, tick
+   the small box next to `checkout_session.payment.paid`.
+
+   The dashboard shows two checkboxes per group. The large one beside the group
+   name subscribes to every event in that group. The small one under it
+   subscribes to that single event. Tick the small one.
+
+   Do not tick the **Payment** group. Those events belong to the Payment Intents
+   API, which this application does not use, and they carry no checkout session
+   id, so they cannot be matched to a Payment row. Every other group on that
+   page is a different product: QR and QR Ph are direct payments, Payout and
+   Transfer move money out, and Subscription and Workflow are recurring and
+   automation features.
+
 6. Place one real test payment and confirm the enrollment becomes `active`.
 
 Step 6 is the only way to prove the credentials and the provider contract. The
 automated suite proves the state machine with a fake provider, so only a real
 payment proves the secrets.
 
+### PayMongo names events two ways
+
+The dashboard label and the event type in the payload have differed. Both
+spellings of the paid event are handled, so either label works. The events this
+application acts on are `checkout_session.payment.paid`, `payment.failed`, and
+`payment.refunded`.
+
+There is no cancelled payment event. A Student who closes the checkout page
+produces no event at all, so the payment stays `pending` and the enrollment
+stays `pending_payment`, which is correct.
+
+PayMongo documents two different envelope layouts for the same endpoint. The
+handler reads both. This is worth knowing when a payload is inspected by hand:
+`app/Services/Payments/PayMongoEventEnvelope.php` lists the exact position of
+every field.
+
+### Getting a public URL on a local machine
+
+The endpoint must be reachable over public HTTPS, so `localhost` does not work.
+For a test run, a tunnel is enough:
+
+```bash
+php artisan serve
+ssh -R 80:localhost:8000 nokey@localhost.run
+```
+
+Then set `APP_URL` to the tunnel URL, because the `success_url` and `cancel_url`
+sent to the provider are generated from it. Without this the Student is
+redirected to `127.0.0.1` after paying.
+
+A tunnel is not a deployment. It only works while the machine is running, so
+use it to verify, not to hand in.
+
 The checkout half of this was verified against the real test API on
 September 26, 2026, and that call found a request type bug the fake could not
-see. The webhook half still needs step 5 completed first, because without the
-signing secret no event can be verified.
+see. Reading the Hosted Checkout documentation then found that the webhook
+handler only accepted one of the two documented payload layouts, which would
+have rejected every real payment. The webhook half still needs step 5 completed
+first, because without the signing secret no event can be verified.
 
 ## 12. Verification before going live
 
