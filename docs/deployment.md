@@ -448,6 +448,52 @@ have rejected every real payment. The webhook half was completed and verified
 afterwards: a ₱100 GCash test payment settled an enrollment through a signed
 delivery, and the paid course was carried through to an issued certificate.
 
+### What a public tunnel exposes, and what is done about it
+
+A tunnel does not weaken the application. It publishes the application. Anything
+that was safe because only the author could reach it is now offered to the whole
+internet, so the settings that matter are the ones that only bite when a stranger
+is looking.
+
+| Exposure | What stops it here |
+|---|---|
+| A failed request printing the environment | `ConfineDebugOutput` serves the debug page only to loopback, with no proxy header. Verified by rendering the real error page. |
+| A script injected into a page | Content security policy with a per request nonce, no `unsafe-inline`, `frame-ancestors 'none'`. |
+| Clickjacking | `X-Frame-Options: DENY` and `frame-ancestors 'none'`. |
+| Content sniffing | `X-Content-Type-Options: nosniff`. |
+| Referrer leaking the tunnel address | `Referrer-Policy: strict-origin-when-cross-origin`. |
+| Downgrade to http | `Strict-Transport-Security`, and the session cookies carry the secure flag. |
+| A forged webhook settling a payment | HMAC over `<timestamp>.<raw body>` with the endpoint secret, `hash_equals`, and a recorded provider event id. |
+| Hammering the one public endpoint | `throttle:120,1` on the webhook. |
+| Brute forcing the sign-in form | Five attempts per minute per account and address. |
+| Someone else's records | A Policy on every action, re-checked in the controller and the action. |
+
+Two things a tunnel cannot fix, and they are not attempted:
+
+- **The address is public and may be indexed.** A tunnel URL can appear in
+  certificate transparency logs and internet scanners. Nothing in the
+  application hides that, and no header can revoke it. The controls above decide
+  what a visitor who finds the address is able to do.
+- **`X-Powered-By` still reports the PHP version.** That header is added by PHP
+  itself, not by the framework, and cannot be removed from application code. Set
+  `expose_php = Off` in `php.ini` to drop it. The application removes the header
+  it controls, which is a no-op until that setting is changed, so treat this line
+  as unfinished until `php.ini` is edited.
+
+### The credentials on this machine
+
+Everything below is on one laptop behind one tunnel URL:
+
+- the database password, in `DB_PASSWORD`
+- the application encryption key, in `APP_KEY`, which is what makes every
+  encrypted column and signed cookie unreadable without it
+- the payment provider secret key, which can create and inspect payments
+- the webhook signing secret, which is what proves a delivery is genuine
+
+If that machine is lost, all four are burned. Rotate the provider credentials and
+`APP_KEY` together, and treat the database as disclosed.
+
+
 ## 12. Verification before going live
 
 ```bash

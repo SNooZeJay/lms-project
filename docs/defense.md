@@ -569,6 +569,30 @@ authorize.
 
 Saying these out loud is stronger than being asked about them.
 
+- **A security audit found the debug error page leaking every secret.** The
+  application is reached over a public tunnel, and `APP_DEBUG` was on. Rendering
+  the real error page for one failed request produced the database password, the
+  application encryption key, the payment provider secret key, and the webhook
+  signing secret, together with the server file path, the stack trace, the source
+  code and the request. Any anonymous visitor who asked for a broken URL received
+  the whole system. `ConfineDebugOutput` now serves that page only to a loopback
+  request with no proxy header, and the check fails closed on the presence of a
+  header so a tunnel that forwards a client supplied `X-Forwarded-For` cannot be
+  used to claim to be localhost. This is the single most important finding of the
+  audit and it was invisible to 560 passing tests, because none of them rendered
+  a public error page.
+- **The application sent no browser security headers at all.** No content
+  security policy, no frame protection, no sniffing protection, no referrer
+  policy, and a transport security header that never appeared. All are now set,
+  and the content security policy names a per request nonce rather than allowing
+  inline scripts, because the layout and the payment return page both carry a
+  small inline script.
+- **The session cookie was not marked secure on an https address.** A tunnel
+  forwards plain HTTP and is not a trusted proxy, so the framework could not tell
+  the request was secure and dropped the flag. The cookie would have travelled in
+  the clear to anything that downgraded the connection. The scheme now comes from
+  one place, so the cookie flag, the generated links, and the transport security
+  header cannot disagree.
 - **The PayMongo webhook path is verified against the real provider.** A GCash
   test payment of ₱100 was placed through the hosted checkout, the provider
   delivered a signed event, and the enrollment activated from the webhook rather
