@@ -28,6 +28,17 @@ class RoleManagementTest extends TestCase
             ->assertSee('Student');
     }
 
+    public function test_administrator_page_has_a_visible_sign_out_control(): void
+    {
+        $administrator = $this->makeUser(UserRole::Administrator, 'administrator@example.test');
+
+        $response = $this->actingAs($administrator)->get('/admin');
+
+        $response->assertOk()
+            ->assertSee('Sign out')
+            ->assertSee('action="'.route('logout').'"', false);
+    }
+
     public function test_user_list_explains_when_email_verification_blocks_role_changes(): void
     {
         $administrator = $this->makeUser(UserRole::Administrator, 'administrator@example.test');

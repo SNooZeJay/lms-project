@@ -51,7 +51,17 @@
                     </span>
                 </a>
 
-                <x-theme-toggle />
+                <div class="flex items-center gap-2">
+                    @auth
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Sign out</button>
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Sign in</a>
+                    @endauth
+                    <x-theme-toggle />
+                </div>
             </div>
         </header>
 

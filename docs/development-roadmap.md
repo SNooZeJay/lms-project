@@ -1268,7 +1268,7 @@ Approved on September 26, 2026. Implementation starts with CoursePolicy, Form Re
 - Added owned Course list, create form, and read-only outline pages.
 - New Courses are private drafts with server-generated unique slugs.
 - Privileged fields are prohibited and ownership is enforced on the server.
-- Added 92 automated tests with 356 assertions.
+- Added 93 automated tests with 359 assertions.
 - Pint, PHP syntax checks, Vite build, Composer validation/audit, npm audit, caches, and local migrations pass.
 - Edge browser review passed at desktop and 390px: no page overflow, visible controls are 44px, course creation works, mobile cards display correctly, and no upload/public/payment controls appear.
 - No public catalog, enrollment, payment, upload, download, or curriculum authoring behavior was added.
