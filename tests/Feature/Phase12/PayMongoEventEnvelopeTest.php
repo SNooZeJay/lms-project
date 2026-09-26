@@ -15,6 +15,7 @@ use App\Models\PaymentEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\FakePayMongoClient;
+use Tests\Support\PayMongoEventFactory;
 use Tests\TestCase;
 
 /**
@@ -115,7 +116,7 @@ class PayMongoEventEnvelopeTest extends TestCase
         // re-encode would not reproduce. A handler that parses and re-encodes
         // fails this test.
         $raw = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        $signature = hash_hmac('sha256', $raw, $this->webhookSecret);
+        $signature = PayMongoEventFactory::signatureHeadersForRawBody($raw, $this->webhookSecret)['Paymongo-Signature'];
 
         $response = $this->call(
             'POST',
@@ -338,7 +339,9 @@ class PayMongoEventEnvelopeTest extends TestCase
     private function signatureHeaders(array $payload): array
     {
         return [
-            'Paymongo-Signature' => hash_hmac('sha256', (string) json_encode($payload), $this->webhookSecret),
+            'Paymongo-Signature' => PayMongoEventFactory::signatureHeadersForRawBody(
+                (string) json_encode($payload), $this->webhookSecret
+            )['Paymongo-Signature'],
         ];
     }
 }

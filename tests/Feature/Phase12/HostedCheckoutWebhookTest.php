@@ -14,6 +14,7 @@ use App\Models\PaymentEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\FakePayMongoClient;
+use Tests\Support\PayMongoEventFactory;
 use Tests\TestCase;
 
 /**
@@ -65,7 +66,9 @@ class HostedCheckoutWebhookTest extends TestCase
             [],
             [
                 'CONTENT_TYPE' => 'application/json',
-                'HTTP_PAYMONGO_SIGNATURE' => hash_hmac('sha256', (string) json_encode($payload), $this->webhookSecret),
+                'HTTP_PAYMONGO_SIGNATURE' => PayMongoEventFactory::signatureHeadersForRawBody(
+                    (string) json_encode($payload), $this->webhookSecret
+                )['Paymongo-Signature'],
             ],
             (string) json_encode($payload)
         );
@@ -152,7 +155,9 @@ class HostedCheckoutWebhookTest extends TestCase
         [$student, $enrollment, $course, $payment] = $this->pendingPayment('cs_DOCUMENTED_7');
 
         $payload = $this->documentedPaidPayload($payment);
-        $signature = hash_hmac('sha256', (string) json_encode($payload), $this->webhookSecret);
+        $signature = PayMongoEventFactory::signatureHeadersForRawBody(
+            (string) json_encode($payload), $this->webhookSecret
+        )['Paymongo-Signature'];
 
         $payload['data']['data']['attributes']['reference_number'] = 'enrollment-someone-else';
 
@@ -189,7 +194,7 @@ class HostedCheckoutWebhookTest extends TestCase
             [],
             [
                 'CONTENT_TYPE' => 'application/json',
-                'HTTP_PAYMONGO_SIGNATURE' => hash_hmac('sha256', $raw, $this->webhookSecret),
+                'HTTP_PAYMONGO_SIGNATURE' => PayMongoEventFactory::signatureHeadersForRawBody($raw, $this->webhookSecret)['Paymongo-Signature'],
             ],
             $raw
         )->assertOk();

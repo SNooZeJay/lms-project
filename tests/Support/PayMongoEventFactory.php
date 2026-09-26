@@ -98,17 +98,29 @@ class PayMongoEventFactory
     }
 
     /**
-     * The signature header PayMongo sends, computed over the raw body.
+     * The signature header the provider sends.
+     *
+     * It is not a bare digest: it carries a timestamp plus one signature per
+     * mode, and the signed message is "<timestamp>.<raw body>".
      *
      * @param  array<string, mixed>  $payload
      * @return array<string, string>
      */
     public static function signatureHeaders(array $payload, ?string $secret = null): array
     {
-        $secret ??= (string) config('services.paymongo.webhook_secret');
+        return FakePayMongoClient::signatureHeaders(
+            (string) json_encode($payload),
+            $secret,
+        );
+    }
 
-        return [
-            'Paymongo-Signature' => hash_hmac('sha256', (string) json_encode($payload), $secret),
-        ];
+    /**
+     * The same header, for callers that already hold the raw body.
+     *
+     * @return array<string, string>
+     */
+    public static function signatureHeadersForRawBody(string $rawBody, ?string $secret = null): array
+    {
+        return FakePayMongoClient::signatureHeaders($rawBody, $secret);
     }
 }

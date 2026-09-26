@@ -44,7 +44,7 @@ class PayMongoIntegrationTest extends TestCase
     public function test_a_verified_signature_is_accepted(): void
     {
         $body = '{"id":"evt_1"}';
-        $signature = hash_hmac('sha256', $body, $this->webhookSecret);
+        $signature = PayMongoEventFactory::signatureHeadersForRawBody($body, $this->webhookSecret)['Paymongo-Signature'];
 
         $this->assertTrue((new PayMongoApiClient)->verifySignature($body, [
             'PayMongo-Signature' => $signature,
@@ -54,7 +54,7 @@ class PayMongoIntegrationTest extends TestCase
     public function test_a_wrong_signature_is_rejected(): void
     {
         $this->assertFalse((new PayMongoApiClient)->verifySignature('{"id":"evt_1"}', [
-            'PayMongo-Signature' => hash_hmac('sha256', 'other body', $this->webhookSecret),
+            'PayMongo-Signature' => 't='.time().',te=deadbeef,li=',
         ]));
     }
 
@@ -75,7 +75,7 @@ class PayMongoIntegrationTest extends TestCase
         config(['services.paymongo.webhook_secret' => '']);
 
         $this->assertFalse((new PayMongoApiClient)->verifySignature('{"id":"evt_1"}', [
-            'PayMongo-Signature' => hash_hmac('sha256', '{"id":"evt_1"}', ''),
+            'PayMongo-Signature' => 't='.time().',te=cafebabe,li=',
         ]));
     }
 
@@ -299,7 +299,7 @@ class PayMongoIntegrationTest extends TestCase
 
         $payload = PayMongoEventFactory::checkoutSessionPaid($payment, 'evt_direct_1');
         $raw = (string) json_encode($payload);
-        $headers = ['PayMongo-Signature' => hash_hmac('sha256', $raw, $this->webhookSecret)];
+        $headers = PayMongoEventFactory::signatureHeadersForRawBody($raw, $this->webhookSecret);
 
         $processor = app(ProcessPayMongoEvent::class);
         $envelope = PayMongoEventEnvelope::fromPayload($payload, $raw);
@@ -318,7 +318,7 @@ class PayMongoIntegrationTest extends TestCase
     {
         $raw = (string) json_encode($payload);
 
-        return ['PayMongo-Signature' => hash_hmac('sha256', $raw, $this->webhookSecret)];
+        return PayMongoEventFactory::signatureHeadersForRawBody($raw, $this->webhookSecret);
     }
 
     /**

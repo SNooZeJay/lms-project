@@ -79,7 +79,9 @@ class WebhookPlaceholderPathTest extends TestCase
             [],
             [
                 'CONTENT_TYPE' => 'application/json',
-                'HTTP_PAYMONGO_SIGNATURE' => hash_hmac('sha256', (string) json_encode($payload), $this->webhookSecret),
+                'HTTP_PAYMONGO_SIGNATURE' => PayMongoEventFactory::signatureHeadersForRawBody(
+                    (string) json_encode($payload), $this->webhookSecret
+                )['Paymongo-Signature'],
             ],
             (string) json_encode($payload)
         );

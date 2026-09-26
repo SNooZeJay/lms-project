@@ -82,39 +82,90 @@ class PayMongoApiClient implements PayMongoClient
         $secret = $this->webhookSecret();
 
         if ($secret === '') {
-            $this->reportMismatch($rawBody, 'no secret is configured', []);
+            $this->reportMismatch($rawBody, 'no secret is configured');
 
             return false;
         }
 
-        $signature = trim($this->header($headers, 'paymongo-signature'), " \t\n\r\0\x0B");
+        $parts = $this->parseSignatureHeader($this->header($headers, 'paymongo-signature'));
 
-        if ($signature === '') {
-            $this->reportMismatch($rawBody, 'the Paymongo-Signature header was absent or empty', []);
+        if ($parts === null) {
+            $this->reportMismatch($rawBody, 'the Paymongo-Signature header was absent or malformed');
 
             return false;
         }
 
-        // The same HMAC in the encodings a signature could plausibly arrive in.
-        // Accepting more than one encoding is not a loosening: each of them
-        // still requires the secret, so a forgery stays just as impossible.
-        $candidates = [
-            'hex' => hash_hmac('sha256', $rawBody, $secret),
-            'base64' => base64_encode(hash_hmac('sha256', $rawBody, $secret, true)),
-        ];
+        // One slot is populated per mode: te for test, li for live. The slot
+        // matching this server has to be the one that matches, so a live
+        // signature is never accepted by a test deployment, or the reverse.
+        $expected = (bool) config('services.paymongo.expected_livemode', false)
+            ? $parts['li']
+            : $parts['te'];
 
-        foreach ($candidates as $candidate) {
-            if (hash_equals($candidate, $signature)) {
-                return true;
+        if ($expected === '') {
+            $this->reportMismatch($rawBody, 'the signature slot for this mode was empty');
+
+            return false;
+        }
+
+        // The signed message is the timestamp, a period, then the untouched
+        // request body.
+        $computed = hash_hmac('sha256', $parts['t'].'.'.$rawBody, $secret);
+
+        if (! hash_equals($computed, $expected)) {
+            $this->reportMismatch($rawBody, 'the signature did not match', $expected, $computed);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Split the signature header into its timestamp and its two signature slots.
+     *
+     * The header looks like: t=1496734173,te=<hex>,li=
+     *
+     * The timestamp is deliberately not checked for freshness. PayMongo retries
+     * a failed delivery up to twelve times with backoff, and every retry carries
+     * the timestamp of the original event, so a freshness window would reject
+     * exactly the deliveries an endpoint most needs to accept. Replay is already
+     * prevented by recording the provider event id once.
+     *
+     * @return array{t: string, te: string, li: string}|null
+     */
+    private function parseSignatureHeader(string $header): ?array
+    {
+        $header = trim($header, " \t\n\r\0\x0B");
+
+        if ($header === '') {
+            return null;
+        }
+
+        $parsed = ['t' => '', 'te' => '', 'li' => ''];
+
+        foreach (explode(',', $header) as $piece) {
+            $piece = trim($piece);
+
+            if (! str_contains($piece, '=')) {
+                return null;
             }
+
+            [$key, $value] = explode('=', $piece, 2);
+            $key = strtolower(trim($key));
+
+            if (! array_key_exists($key, $parsed)) {
+                return null;
+            }
+
+            $parsed[$key] = trim($value);
         }
 
-        $this->reportMismatch($rawBody, 'the signature did not match', [
-            'received' => $signature,
-            ...$candidates,
-        ]);
+        if ($parsed['t'] === '' || ! ctype_digit($parsed['t'])) {
+            return null;
+        }
 
-        return false;
+        return $parsed;
     }
 
     /**
@@ -123,19 +174,21 @@ class PayMongoApiClient implements PayMongoClient
      *
      * Only short prefixes of the digests are written. A digest prefix cannot be
      * used to forge anything without the secret, and the first few characters
-     * are all that is needed to tell the causes apart. The body digest is
-     * included so a body altered in transit can be spotted, which is one of the
-     * causes the provider documents.
+     * are enough to tell the causes apart. The body digest is included so a body
+     * altered in transit can be spotted, which the provider lists as a cause.
      */
-    private function reportMismatch(string $rawBody, string $reason, array $candidates): void
-    {
+    private function reportMismatch(
+        string $rawBody,
+        string $reason,
+        ?string $received = null,
+        ?string $computed = null,
+    ): void {
         $short = static fn (?string $value): ?string => $value === null ? null : substr($value, 0, 16);
 
         Log::warning('PayMongo signature verification failed', [
             'reason' => $reason,
-            'received_prefix' => isset($candidates['received']) ? $short($candidates['received']) : null,
-            'hex_prefix' => isset($candidates['hex']) ? $short($candidates['hex']) : null,
-            'base64_prefix' => isset($candidates['base64']) ? $short($candidates['base64']) : null,
+            'received_prefix' => $short($received),
+            'computed_prefix' => $short($computed),
             'body_bytes' => strlen($rawBody),
             'body_sha256_prefix' => substr(hash('sha256', $rawBody), 0, 16),
             'secret_bytes' => strlen($this->webhookSecret()),
