@@ -2596,17 +2596,32 @@ Payment state transitions are fully specified and testable without live credenti
 
 ### Status
 
-Built and tested. The client is bound by default and swapped for a fake in tests. A live test-mode payment still needs real credentials, which are never committed.
+Built and tested. The client is bound by default and swapped for a fake in tests. The **checkout path is now verified against the real PayMongo test API**. The webhook path still needs the webhook signing secret.
 
 ### Evidence
 
-- 16 tests cover signature verification, credential handling, request shape, and provider errors.
+- 17 tests cover signature verification, credential handling, the documented request contract, and provider errors.
 - `Http::fake` proves the secret key travels as basic auth and never appears in a request body.
+- A test pins `show_description` to a real JSON boolean, because a fake response cannot catch a type error.
 - A tampered body with a valid original signature is rejected.
 
-### Live verification still required
+### Live verification against the real test API
 
-Set `PAYMONGO_ENABLED=true`, `PAYMONGO_SECRET_KEY`, and `PAYMONGO_WEBHOOK_SECRET` in a local `.env`, then confirm one test-mode payment activates one enrollment. The automated suite proves the state machine; only a real checkout proves the credentials and the provider contract.
+Verified on September 26, 2026 with a test-mode secret key held only in the local, git-ignored `.env`:
+
+| Check | Result |
+|---|---|
+| `GET /v1/payments` with the credential | `200`, so the credential authenticates |
+| `POST /v1/checkout_sessions` | Accepted, returned a real `checkout_id` and `checkout_url` |
+| Amount and currency | 125000 minor units, PHP, read from the course record |
+
+This call found a real contract bug that the fake-based tests could not: `show_description` was being sent as the string `true`, and the provider rejected it with `invalid_request_body` and the message `Parameter show_description must be a boolean (true or false)`. The client now sends a real boolean, and a test pins the type so the fake can never hide it again.
+
+It also exposed a local environment gap: this XAMPP install shipped no CA certificate bundle, so every outbound HTTPS call failed with `cURL error 60: unable to get local issuer certificate`. Certificate verification was **not** disabled. A CA bundle was installed and pointed at from `curl.cainfo` and `openssl.cafile`. See `docs/deployment.md`.
+
+### Still required
+
+`PAYMONGO_WEBHOOK_SECRET` is not configured, so the webhook path is still unverified against the real provider. A checkout is created, but no payment would settle, so no enrollment would be activated. `php artisan lms:check-production` fails with that exact explanation and will not pass until the secret is set. Confirm one test-mode payment end to end after setting it.
 
 ### Goal
 

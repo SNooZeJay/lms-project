@@ -60,6 +60,52 @@ class ProductionReadinessTest extends TestCase
             ->assertExitCode(1);
     }
 
+    public function test_a_missing_webhook_secret_is_reported_with_a_plain_explanation(): void
+    {
+        config([
+            'services.paymongo.enabled' => true,
+            'services.paymongo.secret_key' => 'set-for-this-test',
+            'services.paymongo.webhook_secret' => '',
+        ]);
+
+        // A checkout can be created, but nothing would ever settle, so the
+        // webhook check must fail and must say why in words.
+        $this->artisan('lms:check-production')
+            ->expectsOutputToContain('Payment webhooks can be verified')
+            ->expectsOutputToContain('no payment ever settles')
+            ->assertExitCode(1);
+    }
+
+    public function test_payments_switched_off_with_no_secrets_is_clean(): void
+    {
+        config([
+            'services.paymongo.enabled' => false,
+            'services.paymongo.secret_key' => '',
+            'services.paymongo.webhook_secret' => '',
+        ]);
+
+        // Every check label is always printed, so this asserts on the failure
+        // summary, which only lists checks that actually failed.
+        $this->artisan('lms:check-production')
+            ->doesntExpectOutputToContain('- Payments are switched off cleanly')
+            ->doesntExpectOutputToContain('- Payment checkout can be created')
+            ->doesntExpectOutputToContain('- Payment webhooks can be verified')
+            ->assertExitCode(1);
+    }
+
+    public function test_half_configured_payments_fail_the_off_check(): void
+    {
+        config([
+            'services.paymongo.enabled' => false,
+            'services.paymongo.secret_key' => 'left-over-key',
+            'services.paymongo.webhook_secret' => '',
+        ]);
+
+        $this->artisan('lms:check-production')
+            ->expectsOutputToContain('- Payments are switched off cleanly')
+            ->assertExitCode(1);
+    }
+
     public function test_the_runbook_documents_every_failing_check(): void
     {
         $runbook = File::get(base_path('docs/deployment.md'));
@@ -185,7 +231,7 @@ class ProductionReadinessTest extends TestCase
     {
         $defense = File::get(base_path('docs/defense.md'));
 
-        $this->assertStringContainsString('Live payments are not verified', $defense);
+        $this->assertStringContainsString('webhook path is not verified', $defense);
         $this->assertStringContainsString('Authorization matrix', $defense);
         $this->assertStringContainsString('Security checklist', $defense);
         $this->assertStringContainsString('Architecture tradeoffs', $defense);

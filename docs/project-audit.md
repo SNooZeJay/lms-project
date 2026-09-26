@@ -607,9 +607,10 @@ CI and production deployment checks are implemented. The pre-flight command is
 | Payment assumptions | Broken integration | Check current official PayMongo documentation |
 | Hidden business rules | Inconsistent code | Keep actions small and covered by tests |
 | Unverified completion | Weak defense | Record tests, diagrams, and real screenshots |
-| Unverified live payment | Broken release | Run one real test-mode payment before launch |
+| Unverified webhook path | Paid Student locked out | The checkout path is verified against the real test API. The webhook secret is still required, and the pre-flight check fails with that explanation until it is set |
 | Undocumented `active_slot` column | Future breakage | The column carries a comment and the tradeoff is in `defense.md` |
-| Fake provider passing while PayMongo breaks | False confidence | The runbook makes a real payment a release blocker |
+| Fake provider passing while PayMongo breaks | False confidence | A real test-API call found a request type bug the fake missed, so a real call is a release gate |
+| Local PHP has no CA bundle | Every outbound HTTPS call fails with `cURL error 60` | Install a CA bundle and point `curl.cainfo` at it. Never disable certificate verification to work around it |
 | No antivirus on uploads | Stored malware | The allow-list stops executables and scripts only |
 
 ## 12. Current approved decisions

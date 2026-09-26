@@ -531,9 +531,11 @@ the test suite binds a fake.
 **Why.** The payment state machine is the most dangerous logic in the project.
 It must be provable without credentials, offline, on every run.
 
-**Cost.** A fake can pass while a real provider contract breaks. That is why
-the runbook ends with a mandatory manual test-mode payment, and why the
-roadmap states that live verification is still outstanding.
+**Cost.** A fake can pass while a real provider contract breaks. That is not a
+theory. A real test-mode call found a request type bug the fake could not see,
+on a day when the fake suite was already green. That is why the runbook ends
+with a mandatory manual test-mode payment, and why the pre-flight command
+refuses to pass while the webhook secret is missing.
 
 ### Blades only, no frontend framework
 
@@ -552,10 +554,17 @@ authorize.
 
 Saying these out loud is stronger than being asked about them.
 
-- **Live payments are not verified.** The state machine is fully tested with a
-  fake provider, and the live client is tested with an HTTP fake. One real
-  test-mode payment is still required, and the runbook marks it as a
-  release blocker.
+- **The PayMongo webhook path is not verified against the real provider.** The
+  checkout path is: a real test-mode call returned a real `checkout_id` and
+  `checkout_url`, which proved the credential, the endpoint, the amount, and
+  the response parsing. The webhook path still needs
+  `PAYMONGO_WEBHOOK_SECRET`, which is not configured. The state machine around
+  it is fully tested with a fake provider, and the pre-flight command fails
+  with a plain explanation until the secret is set, so this gap cannot be
+  silent.
+- **A fake provider passed while the real provider would have failed.** The
+  live call found a request type bug that no fake could see. This is the
+  strongest argument for the rule "a real call is a release gate".
 - **There is no quiz timer.** A Student may leave an attempt open
   indefinitely. This is a scope decision, not an oversight.
 - **The progress percentage can move after an unpublish.** Documented above

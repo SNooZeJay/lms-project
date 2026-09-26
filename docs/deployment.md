@@ -31,6 +31,55 @@ something is wrong, so a deployment script can stop on failure.
 `fileinfo` is not optional. The upload allow-list detects the real file type
 with it, so without it every upload would be rejected.
 
+## 2A. CA certificate bundle
+
+PHP must be able to verify a TLS certificate to reach the payment provider. A
+default XAMPP or PHP install often has no CA bundle, and then every outbound
+HTTPS call fails with:
+
+```text
+cURL error 60: SSL certificate problem: unable to get local issuer certificate
+```
+
+Confirm it works:
+
+```bash
+php -r "var_dump(ini_get('curl.cainfo'));"
+```
+
+If that prints an empty string, install a bundle and point PHP at it. Get a
+current Mozilla bundle from <https://curl.se/ca/cacert.pem>, save it outside
+the repository, for example `C:\tools\php85\extras\ssl\cacert.pem`, then set
+both directives in `php.ini`:
+
+```ini
+curl.cainfo = "C:\tools\php85\extras\ssl\cacert.pem"
+openssl.cafile = "C:\tools\php85\extras\ssl\cacert.pem"
+```
+
+Restart PHP, then confirm again.
+
+**Never** work around this by setting `verify => false` in an HTTP client or by
+turning off certificate verification. That removes the only protection against
+a machine-in-the-middle on the payment call. Install the bundle instead.
+
+`php artisan lms:check-production` does not test outbound TLS. After
+installing the bundle, confirm with one real request:
+
+```bash
+php artisan tinker
+```
+
+```php
+try {
+    $r = Illuminate\Support\Facades\Http::withBasicAuth(config('services.paymongo.secret_key'), '')
+        ->timeout(20)->get('https://api.paymongo.com/v1/payments');
+    echo $r->status().PHP_EOL;   // 200 means TLS and the credential both work
+} catch (Throwable $e) {
+    echo get_class($e).PHP_EOL; // a ConnectionException means TLS is still broken
+}
+```
+
 ## 3. Server preparation
 
 ```bash
@@ -101,8 +150,18 @@ PAYMONGO_SECRET_KEY=       # paste the live secret key from the PayMongo dashboa
 PAYMONGO_WEBHOOK_SECRET=   # paste the webhook signing secret from the dashboard
 ```
 
+Both values are required, and they are not interchangeable.
+
+`PAYMONGO_SECRET_KEY` creates the checkout. `PAYMONGO_WEBHOOK_SECRET` verifies
+the event that settles the payment. With the first set and the second missing,
+a Student reaches a real checkout page, pays, and then waits forever, because
+no enrollment is ever activated. This is the worst possible payment failure:
+it looks like a provider problem and it is not.
+
+`php artisan lms:check-production` fails with that explanation, on purpose.
+
 When `PAYMONGO_ENABLED=false`, leave both secret values empty. A half
-configured payment setup is a failing check, on purpose.
+configured payment setup is a failing check too.
 
 ## 5. Database
 
@@ -256,6 +315,11 @@ https://your-domain.example/webhooks/paymongo
 Step 6 is the only way to prove the credentials and the provider contract. The
 automated suite proves the state machine with a fake provider, so only a real
 payment proves the secrets.
+
+The checkout half of this was verified against the real test API on
+September 26, 2026, and that call found a request type bug the fake could not
+see. The webhook half still needs step 5 completed first, because without the
+signing secret no event can be verified.
 
 ## 12. Verification before going live
 

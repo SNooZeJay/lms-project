@@ -184,6 +184,54 @@ class PayMongoIntegrationTest extends TestCase
         (new PayMongoApiClient)->createCheckout($payment);
     }
 
+    public function test_the_request_body_matches_the_documented_provider_contract(): void
+    {
+        Http::fake([
+            '*' => Http::response([
+                'data' => [
+                    'id' => 'chk_test_1',
+                    'attributes' => ['checkout_url' => 'https://checkout.paymongo.test/abc'],
+                ],
+            ]),
+        ]);
+
+        [, $enrollment, $course] = $this->pendingEnrollment(125000);
+        $payment = $this->pendingPayment($enrollment, $course);
+
+        (new PayMongoApiClient)->createCheckout($payment);
+
+        Http::assertSent(function (Request $request): bool {
+            $body = json_decode($request->body(), true);
+            $attributes = $body['data']['attributes'] ?? [];
+
+            // show_description must be a JSON boolean. The provider rejects the
+            // string "true" with invalid_request_body, and a fake response
+            // cannot catch that, so the type is pinned here.
+            if (! array_key_exists('show_description', $attributes)) {
+                return false;
+            }
+
+            if ($attributes['show_description'] !== true) {
+                return false;
+            }
+
+            if (! is_array($attributes['line_items'] ?? null)) {
+                return false;
+            }
+
+            $line = $attributes['line_items'][0] ?? [];
+
+            return is_int($line['amount'] ?? null)
+                && ($line['currency'] ?? null) === 'PHP'
+                && ($line['quantity'] ?? null) === 1
+                && is_string($line['name'] ?? null)
+                && is_array($attributes['payment_method_types'] ?? null)
+                && is_string($attributes['success_url'] ?? null)
+                && is_string($attributes['cancel_url'] ?? null)
+                && is_string($attributes['metadata']['reference_number'] ?? null);
+        });
+    }
+
     public function test_a_signed_webhook_activates_one_paid_enrollment(): void
     {
         [$student, $enrollment, $course] = $this->pendingEnrollment(125000);

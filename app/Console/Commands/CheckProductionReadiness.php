@@ -51,12 +51,15 @@ class CheckProductionReadiness extends Command
             'Session cookie is same site' => fn () => config('session.same_site') !== 'none',
             'CSRF protection is on' => fn () => ! app()->runningUnitTests(),
             'Trust proxies are configured' => fn () => ! empty(config('trustedproxy.proxies')),
-            'Payment secrets are server side' => fn () => $this->paymentSecrets(),
+            'Payments are switched off cleanly' => fn () => $this->paymentsDisabled(),
+            'Payment checkout can be created' => fn () => $this->checkoutCanBeCreated(),
+            'Payment webhooks can be verified' => fn () => $this->webhooksCanBeVerified(),
             'No default or example secret remains' => fn () => ! $this->looksLikeAnExample(),
             'Error pages do not leak internals' => fn () => (bool) config('app.debug') === false,
         ];
 
         $failures = [];
+        $hints = [];
 
         foreach ($checks as $label => $check) {
             $ok = false;
@@ -71,6 +74,12 @@ class CheckProductionReadiness extends Command
 
             if (! $ok) {
                 $failures[] = $label;
+
+                $hint = $this->hintFor($label);
+
+                if ($hint !== null) {
+                    $hints[$label] = $hint;
+                }
             }
         }
 
@@ -82,6 +91,10 @@ class CheckProductionReadiness extends Command
 
             foreach ($failures as $failure) {
                 $this->line('  - '.$failure);
+
+                if (isset($hints[$failure])) {
+                    $this->line('      '.$hints[$failure]);
+                }
             }
 
             $this->newLine();
@@ -93,6 +106,28 @@ class CheckProductionReadiness extends Command
         $this->info('All production checks passed.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * A plain-language fix for the failures whose cause is not obvious.
+     */
+    private function hintFor(string $label): ?string
+    {
+        return match ($label) {
+            'Payment webhooks can be verified' => 'Without PAYMONGO_WEBHOOK_SECRET a checkout is created but no '
+                .'payment ever settles, so no enrollment is ever activated. Copy the webhook signing secret '
+                .'from the PayMongo dashboard.',
+            'Payment checkout can be created' => 'Set PAYMONGO_ENABLED=true and PAYMONGO_SECRET_KEY in .env.',
+            'Payments are switched off cleanly' => 'Set PAYMONGO_ENABLED=false and blank both PayMongo secrets, '
+                .'or configure both secrets and enable payments.',
+            'Trust proxies are configured' => 'Set TRUSTED_PROXIES to the addresses of your load balancer.',
+            'Session cookie is secure' => 'Set SESSION_SECURE=true once the site is served over HTTPS.',
+            'Storage link is not required' => 'Run: rm public/storage. Uploaded files must stay private.',
+            'Route cache is current' => 'Run: php artisan route:cache',
+            'Configuration is cached' => 'Run: php artisan config:cache',
+            'Migrations are up to date' => 'Run: php artisan migrate --force',
+            default => null,
+        };
     }
 
     /**
@@ -180,17 +215,37 @@ class CheckProductionReadiness extends Command
     /**
      * Payments may be switched off, but then no secret may be half configured.
      */
-    private function paymentSecrets(): bool
+    private function paymentsDisabled(): bool
     {
-        $enabled = (bool) config('services.paymongo.enabled');
-        $key = (string) config('services.paymongo.secret_key');
-        $webhook = (string) config('services.paymongo.webhook_secret');
-
-        if (! $enabled) {
-            return $key === '' && $webhook === '';
+        if ((bool) config('services.paymongo.enabled')) {
+            return false;
         }
 
-        return $key !== '' && $webhook !== '';
+        return config('services.paymongo.secret_key') === ''
+            && config('services.paymongo.webhook_secret') === '';
+    }
+
+    private function checkoutCanBeCreated(): bool
+    {
+        if (! (bool) config('services.paymongo.enabled')) {
+            return true;
+        }
+
+        return (string) config('services.paymongo.secret_key') !== '';
+    }
+
+    /**
+     * Without the webhook secret a payment can never settle, so a paid
+     * student would wait forever. This check exists so that failure can
+     * never be silent.
+     */
+    private function webhooksCanBeVerified(): bool
+    {
+        if (! (bool) config('services.paymongo.enabled')) {
+            return true;
+        }
+
+        return (string) config('services.paymongo.webhook_secret') !== '';
     }
 
     private function looksLikeAnExample(): bool

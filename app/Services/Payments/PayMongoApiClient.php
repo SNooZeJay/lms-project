@@ -46,7 +46,9 @@ class PayMongoApiClient implements PayMongoClient
                                 ],
                             ],
                             'payment_method_types' => ['card'],
-                            'show_description' => 'true',
+                            // The provider requires a real boolean here. A string
+                            // "true" is rejected with invalid_request_body.
+                            'show_description' => true,
                             'success_url' => route('student.payments.return', $payment->course),
                             'cancel_url' => route('student.payments.return', $payment->course),
                             'metadata' => [
