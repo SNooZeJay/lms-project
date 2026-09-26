@@ -345,7 +345,7 @@ class LessonProgressTest extends TestCase
         $this->assertFalse(Route::has('student.continue.index'));
     }
 
-    public function test_no_page_still_claims_progress_is_missing(): void
+    public function test_no_page_still_claims_a_built_feature_is_missing(): void
     {
         [$student, $course, , $lesson] = $this->makeEnrolledCourse();
 
@@ -379,6 +379,51 @@ class LessonProgressTest extends TestCase
                 'progress is not built',
                 $body,
                 "Page {$url} still says progress is not built."
+            );
+
+            $this->assertStringNotContainsStringIgnoringCase(
+                'certificates are not built',
+                $body,
+                "Page {$url} still says certificates are not built."
+            );
+
+            $this->assertStringNotContainsStringIgnoringCase(
+                'quizzes, certificates, uploads, and payments are not enabled',
+                $body,
+                "Page {$url} still says quizzes and certificates are not enabled."
+            );
+        }
+    }
+
+    public function test_no_page_still_claims_quizzes_or_certificates_are_missing(): void
+    {
+        [$student, $course, , $lesson] = $this->makeEnrolledCourse();
+
+        $this->actingAs($student)->post($this->completeUrl($course, $lesson));
+
+        $pages = [
+            route('home'),
+            route('courses.index'),
+            route('student.dashboard'),
+            route('student.courses.index'),
+            $this->courseUrl($course),
+            $this->lessonUrl($course, $lesson),
+            route('student.certificates.index'),
+        ];
+
+        foreach ($pages as $url) {
+            $body = $this->actingAs($student)->get($url)->assertOk()->getContent();
+
+            $this->assertStringNotContainsStringIgnoringCase(
+                'quizzes are not built',
+                $body,
+                "Page {$url} still says quizzes are not built."
+            );
+
+            $this->assertStringNotContainsStringIgnoringCase(
+                'certificates are not built',
+                $body,
+                "Page {$url} still says certificates are not built."
             );
         }
     }

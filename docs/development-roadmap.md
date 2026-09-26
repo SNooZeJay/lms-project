@@ -2671,6 +2671,40 @@ All dashboards work with real authorized data and approved empty states.
 
 ## 29. Phase 14: quality and accessibility
 
+### Status
+
+Audited and fixed. Every page was measured in a real browser.
+
+### Evidence
+
+- `php artisan test` gives 450 passed and 1618 assertions.
+- `./vendor/bin/pint --test` gives PASS on 224 files.
+- `npm run build` succeeds. `composer audit` and `npm audit` are clean.
+- `php artisan route:list` shows 86 routes.
+
+### Audit results
+
+| Check | Scope | Result |
+|---|---|---|
+| Horizontal overflow | 16 pages at 390, 768, and 1440 px | 0 findings |
+| Text contrast in the dark theme | 16 pages | 0 findings below WCAG AA |
+| Text contrast in the light theme | 16 pages | 0 findings below WCAG AA |
+| Tap target size | 20 page and width combinations | 0 findings below 44 px |
+| Unlabelled inputs | every page | 0 findings |
+| Links without a destination | every page | 0 findings |
+| Images without alt text | every page | 0 findings |
+| Pages without exactly one `h1` | every page | 0 findings |
+| Browser console | full student flow | empty |
+| Failed network requests | full student flow | none |
+
+The theme toggle was verified with both a DOM click and a real trusted mouse click, so it changes the theme, the label, and the stored preference.
+
+### Bugs found and fixed
+
+- `resources/views/student/courses/show.blade.php` still said certificates were not built. It now points at the quiz requirement instead.
+- `resources/views/layouts/app.blade.php` still said quizzes and certificates were not enabled. It now names what is actually live.
+- A guard test now fails if any page claims a built feature is missing.
+
 ### Goal
 
 Verify the complete V1 release.

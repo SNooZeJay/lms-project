@@ -142,6 +142,6 @@
             </section>
         @endif
 
-        <p class="mt-10 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">Mark a lesson complete to update your progress. Certificates are not built yet.</p>
+        <p class="mt-10 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">Mark a lesson complete to update your progress. Pass every required quiz to unlock your certificate.</p>
     </div>
 @endsection
