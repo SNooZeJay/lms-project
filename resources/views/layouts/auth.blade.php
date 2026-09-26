@@ -10,6 +10,7 @@
     <title>@yield('title', 'Sign in') · {{ config('app.name') }}</title>
 
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/brand/touch-icon.png') }}">
 
     {{-- The theme is chosen before the first paint so a dark theme never flashes
          light. It is a small inline script, so it carries the request nonce that
