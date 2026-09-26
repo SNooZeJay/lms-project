@@ -108,7 +108,8 @@
                     <div>
                         <x-logo size="sm" />
                         <p class="mt-4 max-w-xs text-sm leading-6 text-ink-muted">
-                            An academic learning platform for BSIT students, built with Laravel.
+                            Courses in information technology, programming, web development,
+                            and cybersecurity.
                         </p>
                     </div>
 
@@ -116,7 +117,9 @@
                         <h2 class="text-sm font-semibold text-ink">Learn</h2>
                         <ul role="list" class="mt-3 space-y-1 text-sm">
                             <li><a href="{{ route('courses.index') }}" class="link-quiet text-ink-muted hover:text-ink">Course catalog</a></li>
-                            <li><a href="{{ route('login') }}" class="link-quiet text-ink-muted hover:text-ink">Sign in</a></li>
+                            @auth
+                                <li><a href="{{ route('student.courses.index') }}" class="link-quiet text-ink-muted hover:text-ink">My courses</a></li>
+                            @endauth
                         </ul>
                     </div>
 
@@ -127,21 +130,25 @@
                                 <li><a href="{{ route('account.profile') }}" class="link-quiet text-ink-muted hover:text-ink">Your profile</a></li>
                                 <li><a href="{{ route('account.password') }}" class="link-quiet text-ink-muted hover:text-ink">Password</a></li>
                             @else
-                                <li><span class="text-ink-muted">Sign in to manage your account</span></li>
+                                <li><a href="{{ route('login') }}" class="link-quiet text-ink-muted hover:text-ink">Sign in</a></li>
                             @endauth
                         </ul>
                     </div>
 
+                    {{-- The terms the sign up and sign in pages link to. A page that
+                         is linked from somewhere has to exist, and these are the
+                         only two the site publishes. --}}
                     <div>
-                        <h2 class="text-sm font-semibold text-ink">Payments</h2>
-                        <p class="mt-3 text-sm leading-6 text-ink-muted">
-                            Paid courses are charged once and confirmed by the provider.
-                        </p>
+                        <h2 class="text-sm font-semibold text-ink">Legal</h2>
+                        <ul role="list" class="mt-3 space-y-1 text-sm">
+                            <li><a href="{{ route('legal.terms') }}" class="link-quiet text-ink-muted hover:text-ink">Terms of use</a></li>
+                            <li><a href="{{ route('legal.privacy') }}" class="link-quiet text-ink-muted hover:text-ink">Privacy</a></li>
+                        </ul>
                     </div>
                 </div>
 
                 <p class="mt-8 border-t border-line pt-6 text-sm leading-6 text-ink-muted">
-                    IT Learning Hub. Built as a student academic project.
+                    &copy; {{ now()->year }} {{ config('app.name') }}
                 </p>
             </div>
         </footer>
