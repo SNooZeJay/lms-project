@@ -472,6 +472,13 @@ Phase 5E adds two state controls to the Instructor workspace:
 - Filter by category and level
 - Filter by free or paid type
 - Clear empty and error states
+- A guest can browse without an account
+- Cards show title, category, level, type, price, module count, and Instructor name
+- A `Free` course shows the word `Free` instead of `PHP 0.00`
+- The details page shows the outline structure, never Lesson content or material links
+- A `Not open yet` note replaces an enroll button
+- Filters use visible labels and keep a `Clear filters` link
+- A draft Course has no public page at all
 - Pagination when required
 
 ### Course details

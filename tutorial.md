@@ -27,11 +27,12 @@ The current project includes:
 - Instructor editing for Course, Module, and Lesson
 - Instructor Learning Material metadata for text, code, and link materials
 - Instructor publish and unpublish for owned courses
+- A public course catalog and public course details pages
 
 The following features are not built yet:
 
-- Public course catalog
 - Enrollment
+- Reading lesson content and materials after enrolling
 - Reordering, deleting, or archiving curriculum content
 - File uploads and material downloads
 - Full role-specific business dashboards
@@ -486,7 +487,27 @@ Sign in as the Instructor.
 
 Nothing is public yet. The public catalog is the next phase.
 
-## 13. Create a Student account
+## 13. Review the public course catalog
+
+You do not need to sign in for this part. Open a private window so you are not signed in.
+
+1. Open `http://127.0.0.1:8000/courses`.
+2. Confirm your published course appears and your draft course does not.
+3. Select a course to open its public details page.
+4. Confirm the page shows the title, description, objectives, level, type, price, and Instructor name.
+5. Confirm the outline lists Module titles and Lesson titles with minutes and `Required` or `Optional`.
+6. Confirm the page does not show Lesson content, Lesson summaries, or material links.
+7. Go back and use the search box. Confirm the list narrows.
+8. Use the category, level, and type filters. Confirm the list narrows.
+9. Type a nonsense filter such as `?level=not-a-level` in the address bar. Confirm the page still loads.
+10. Search for `' OR 1=1--`. Confirm no error and an empty result message.
+11. Confirm a `Free` course shows the word `Free` and a paid course shows a `PHP` price.
+12. Sign in as the Instructor, unpublish the course, then open `/courses` again. Confirm the course is gone.
+13. Open the draft course address directly. Confirm the page shows `404`.
+14. Sign in again, publish the course, and confirm it returns to the catalog.
+15. Check the catalog and details page at 390px width.
+
+## 14. Create a Student account
 
 Use a separate browser or private window if you want to keep the Administrator session.
 
@@ -499,7 +520,7 @@ Use a separate browser or private window if you want to keep the Administrator s
 
 The registration form has no role selector. Public registration cannot create an Administrator.
 
-## 14. Find email verification and reset links
+## 15. Find email verification and reset links
 
 The local development environment uses Laravel's log mailer.
 
@@ -521,7 +542,7 @@ Copy the local link into the browser.
 
 The log is local. Do not upload or share `storage/logs/laravel.log` because it can contain private links and account details.
 
-## 15. Run the frontend development server
+## 16. Run the frontend development server
 
 Use this when you are changing CSS or JavaScript.
 
@@ -546,7 +567,7 @@ For normal work, you can stop Vite with `Ctrl + C`. You can also build the final
 npm run build
 ```
 
-## 16. Run the automated checks
+## 17. Run the automated checks
 
 Run these commands from the project folder.
 
@@ -599,7 +620,7 @@ This shows all registered URLs and their controller or action.
 php artisan optimize:clear
 ```
 
-## 17. Useful commands
+## 18. Useful commands
 
 | Command | What it does |
 |---|---|
@@ -614,7 +635,7 @@ php artisan optimize:clear
 | `npm run dev` | Starts the Vite development server |
 | `npm run build` | Builds frontend assets |
 
-## 18. Troubleshooting
+## 19. Troubleshooting
 
 ### `composer` is not recognized
 
@@ -736,7 +757,7 @@ php artisan owner:bootstrap --show-password
 
 If you no longer need the local Administrator, ask before removing the protected file or changing the account.
 
-## 19. Project folder guide
+## 20. Project folder guide
 
 These are the folders you will use most often:
 
@@ -758,7 +779,7 @@ Do not edit files in `vendor/`, `node_modules/`, or `public/build/` by hand. The
 
 `FOR_UI/adminator (FOR USER DASHBOARD)` is a read-only visual reference. It is not the application source code.
 
-## 20. Security rules
+## 21. Security rules
 
 Keep these rules in mind:
 
@@ -770,7 +791,7 @@ Keep these rules in mind:
 - Keep `MAIL_MAILER=log` for local demonstrations.
 - Do not use a real payment secret until the payment architecture phase is approved.
 
-## 21. Recommended beginner order
+## 22. Recommended beginner order
 
 When you are learning the project, use this order:
 
@@ -787,7 +808,8 @@ When you are learning the project, use this order:
 11. Edit the Course, the Module, and the Lesson.
 12. Add a text material and a link material to a Lesson.
 13. Publish the Course, then unpublish it.
-14. Read the relevant test before changing a feature.
-15. Run `php artisan test` before and after your change.
+14. Open `/courses` in a private window and browse the published Course.
+15. Read the relevant test before changing a feature.
+16. Run `php artisan test` before and after your change.
 
 You do not need to understand the whole Laravel framework before running the application. Start with the commands in this tutorial, then inspect one small feature at a time.

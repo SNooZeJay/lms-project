@@ -390,6 +390,30 @@ Phase 5E rules:
 
 Deferred decision: locking the price of a published Course. That rule belongs to the enrollment phase, where a Student buys a specific price.
 
+### Phase 5F public Course catalog
+
+Phase 5F is the first student-facing read-only page.
+
+Phase 5F includes:
+
+- Public Course catalog at `/courses`
+- Public Course details at `/courses/{slug}`
+- Search by title and filters for category, level, and free or paid type
+- Pagination and a clear empty state
+- Public outline structure with Module titles, Lesson titles, minutes, and required state
+- A Courses link in the shared header and on the home page
+
+Phase 5F rules:
+
+- Only `published` Courses are listed and viewable. A draft or archived Course returns `404`.
+- A public page never shows Lesson content, Lesson summary text, or any Learning Material data.
+- A public page shows the Instructor display name only, never an email address.
+- Only `published` Modules and Lessons appear in a public outline.
+- Unknown filter values are ignored instead of raising an error.
+- Course text is HTML escaped by Blade.
+- The catalog needs no account. Browsing is public.
+- Phase 5F does not add enrollment, payment, progress, certificates, uploads, downloads, delete, or archive behavior.
+
 ### Deferred: delete and archive
 
 Delete is deliberately not part of Phase 5C.

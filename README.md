@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, and Phase 5D Learning Material metadata authoring are human-approved. Phase 5E Course publishing is implemented and awaiting browser review.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, and Phase 5E Course publishing are human-approved. Phase 5F public Course catalog is implemented and awaiting browser review.
 
 The repository currently contains:
 
@@ -184,21 +184,21 @@ npm audit
 npm run build
 ```
 
-## Phase 5E checkpoint
+## Phase 5F checkpoint
 
-Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, and Phase 5D Learning Material metadata authoring are human-approved. The Phase 5E slice adds:
+Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, and Phase 5E Course publishing are human-approved. The Phase 5F slice adds:
 
-- Instructor-owned publish and unpublish actions
-- `draft` to `published` and `published` to `draft` transitions only
-- A requirement for at least one Module and one Lesson before publishing
-- Module and Lesson content that follows the Course status in one transaction
-- A server-owned `published_at` value
-- Publish and unpublish controls on the Course list and outline
-- No archive, delete, catalog, enrollment, payment, or upload behavior
+- A public catalog at `/courses` and public details at `/courses/{slug}`
+- Published Courses only, with a `404` for a draft or archived slug
+- Search by title and filters for category, level, and free or paid type
+- Public outline structure with no Lesson content and no material data
+- Instructor display name only, never an email address
+- A Courses link in the shared header and on the home page
+- No enrollment, payment, progress, upload, download, delete, or archive behavior
 
 Delete and archiving stay deferred on purpose. A later phase will use status-based archiving so student progress and payment history stay intact.
 
-The Phase 5E browser review checkpoint is open.
+The Phase 5F browser review checkpoint is open.
 
 The local Administrator is provisioned with:
 

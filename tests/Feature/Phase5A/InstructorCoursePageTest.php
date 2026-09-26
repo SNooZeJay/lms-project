@@ -205,9 +205,9 @@ class InstructorCoursePageTest extends TestCase
 
     public function test_phase_five_a_has_no_public_course_or_payment_routes(): void
     {
-        $this->assertFalse(Route::has('courses.index'));
         $this->assertFalse(Route::has('payments.index'));
         $this->assertFalse(Route::has('student.enrollments.index'));
+        $this->assertFalse(Route::has('student.courses.index'));
     }
 
     private function makeInstructor(): User

@@ -4,6 +4,7 @@ use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Catalog\CourseCatalogController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Instructor\CourseController;
 use App\Http\Controllers\Instructor\CurriculumController;
@@ -13,6 +14,9 @@ use App\Http\Controllers\Role\StudentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+
+Route::get('/courses', [CourseCatalogController::class, 'index'])->name('courses.index');
+Route::get('/courses/{course:slug}', [CourseCatalogController::class, 'show'])->name('courses.show');
 
 $authenticated = ['auth', 'account.active', 'verified', 'password.change'];
 

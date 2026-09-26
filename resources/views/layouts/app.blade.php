@@ -52,6 +52,7 @@
                 </a>
 
                 <div class="flex items-center gap-2">
+                    <a href="{{ route('courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Courses</a>
                     @auth
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -72,7 +73,7 @@
         <footer class="border-t border-line bg-surface">
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-ink-muted sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
                 <p>IT Learning Hub</p>
-                <p>Phase 5A Instructor Course Outline UI. Public catalog, enrollment, and payments are not enabled.</p>
+                <p>Public course catalog. Enrollment, lesson content, progress, and payments are not enabled yet.</p>
             </div>
         </footer>
     </div>

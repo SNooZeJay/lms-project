@@ -143,6 +143,8 @@ lms-project/
 │   │   │   │   ├── UpdateAccountStatusRequest.php
 │   │   │   │   └── UpdateUserRoleRequest.php
 │   │   │   ├── Auth/
+│   │   │   ├── Catalog/
+│   │   │   │   └── CourseCatalogRequest.php
 │   │   │   ├── Courses/
 │   │   │   │   ├── CreateCourseRequest.php
 │   │   │   │   ├── CreateLearningMaterialRequest.php
@@ -263,6 +265,7 @@ lms-project/
 │       ├── certificates/
 │       ├── components/
 │       ├── courses/
+│       ├── catalog/
 │       ├── dashboard/
 │       ├── errors/
 │       ├── instructor/
@@ -295,6 +298,8 @@ lms-project/
 │   │   ├── Account/
 │   │   ├── Admin/
 │   │   ├── Auth/
+│   │   ├── Catalog/
+│   │   │   └── CourseCatalogController.php
 │   │   ├── Instructor/
 │   │   ├── Phase4A/
 │   │   ├── Phase4B/
@@ -303,6 +308,7 @@ lms-project/
 │   │   ├── Phase5C/
 │   │   ├── Phase5D/
 │   │   ├── Phase5E/
+│   │   ├── Phase5F/
 │   │   ├── Role/
 │   │   ├── Student/
 │   │   └── Webhooks/

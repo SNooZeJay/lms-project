@@ -4,7 +4,7 @@
 
 This roadmap turns the approved LMS plan into small, testable steps.
 
-Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, Phase 5B, Phase 5C, and Phase 5D are human-approved. Phase 5E Course publishing is the active slice. No later business phase has started.
+Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, Phase 5B, Phase 5C, Phase 5D, and Phase 5E are human-approved. Phase 5F public Course catalog is implemented and awaiting human browser review. No later business phase has started.
 
 Do not skip directly to payment processing or dashboard polish.
 
@@ -1599,7 +1599,7 @@ Let an Instructor publish and unpublish an owned Course so the public catalog ha
 
 ### Status
 
-Approved on September 26, 2026. Publishing is implemented and passes 149 tests. Human browser review is the open checkpoint.
+Approved on September 26, 2026. Publishing is implemented, tested, and human-approved.
 
 ### Confirmed scope
 
@@ -1695,31 +1695,124 @@ Approved on September 26, 2026. Publishing is implemented and passes 149 tests. 
 
 ### Goal
 
-Publish safe public Course metadata.
+Publish safe public Course metadata so a guest can browse published Courses.
 
-### Work
+### Status
 
-- Add public Course catalog
-- Add search and approved filters
-- Add Course details
-- Add publication state
-- Add Instructor Course list
-- Add Create and Edit Course
-- Add slug generation
-- Add PHP price formatter
+Approved on September 26, 2026. The public catalog is implemented and passes 168 tests. Human browser review is the open checkpoint.
 
-### Tests
+### Confirmed scope
 
-- Guests see published Course metadata
-- Draft and archived Courses stay private
-- Instructors can manage owned Courses
-- Instructors cannot manage another Instructor’s Course
-- Administrators can manage all Courses
-- Price uses validated database data
+- Public Course catalog at `/courses`
+- Public Course details at `/courses/{slug}`
+- Only `published` Courses are listed or viewable
+- Search by title, filter by category, level, and free or paid type
+- Pagination and a clear empty state
+- Public outline structure: Module titles, Lesson titles, minutes, and required state
+- Instructor display name only, never an email address
+- A Courses link in the shared header and on the home page
+
+### Explicitly not included
+
+- No Lesson content, no Lesson summary text, and no Learning Material title, content, or link on a public page
+- No enrollment button, no payment, no progress, and no certificate
+- No thumbnail image, because uploads are not built
+- No student or Instructor accounts required to browse
+- No archive, delete, reorder, or upload behavior
+
+### Public visibility rule
+
+A public page may show only these fields:
+
+- Course title, description, learning objectives, category, level, type, price, currency
+- Instructor display name
+- Module title and position
+- Lesson title, position, estimated minutes, and required state
+- Course published time
+
+Everything else stays behind enrollment in a later phase.
+
+### Input, Process, and Output
+
+**Input**
+
+- Optional `q` search text
+- Optional `category`, `level`, and `course_type` filters
+- Optional `page` for pagination
+- Optional Course slug on the details page
+
+**Process**
+
+- Sanitize filter values and drop unknown values instead of failing
+- Query only Courses where status is `published`
+- Apply search on the title and the approved filters with bound query values
+- Load only published Modules and published Lessons for a details page
+- Load only the Instructor display name, never the email
+- Return `404` for a draft or archived Course slug
+- Paginate the catalog
+
+**Output**
+
+- A public list of published Courses
+- A public details page with the outline structure only
+- No Lesson content, no material links, no enrollment, and no payment
+
+### Task list
+
+- [x] Task 1: Update Phase 5F requirements, routes, and flow
+- [x] Task 2: Add failing public catalog tests
+- [x] Task 3: Add the catalog Form Request and controller
+- [x] Task 4: Add catalog and details views with accessible filters
+- [x] Task 5: Add the Courses link to the header and home page
+- [x] Task 6: Run test, build, and security gates
+- [ ] Task 7: Human browser review of the catalog
+
+### Phase 5F implementation evidence
+
+- `app/Http/Requests/Catalog/CourseCatalogRequest.php`
+- `app/Http/Controllers/Catalog/CourseCatalogController.php`
+- `resources/views/catalog/index.blade.php`
+- `resources/views/catalog/show.blade.php`
+- `resources/views/layouts/app.blade.php`
+- `resources/views/public/home.blade.php`
+- `routes/web.php`
+- `tests/Feature/Phase5F/PublicCourseCatalogTest.php`
+
+### Phase 5F automated evidence
+
+- `php artisan test` passes with 168 tests and 713 assertions
+- `./vendor/bin/pint --test` passes on 133 files
+- `npm run build` succeeds
+- `composer validate`, `composer audit`, and `npm audit` pass
+- Route, config, and view cache checks pass
+- No database migration was needed for Phase 5F
+
+### Phase 5F security notes
+
+- The catalog query filters on `status = published` in every listing and details request
+- A draft or archived Course slug returns `404`, even for the owner
+- Only published Modules and published Lessons load on a public page
+- Lesson content, Lesson summary, and Learning Material data are never rendered publicly
+- The Instructor relation loads `id,name` only, so an email cannot leak
+- Filter values are sanitized in a Form Request and unknown values are dropped
+- Search and filters use bound query values
+- The public details route binds by `slug`, so database IDs stay out of public URLs
+- Earlier Phase 4A, Phase 5A, Phase 5B, and Phase 5E guards were updated to check still-absent routes
+
+### Phase 5F security tests
+
+- A guest sees only published Courses.
+- A draft or archived Course returns `404` on the public details page.
+- Lesson content, Lesson summary, and Learning Material data never appear on a public page.
+- A draft Module or Lesson inside a published Course is hidden from the public outline.
+- An Instructor email address never appears on a public page.
+- Course title text is HTML escaped.
+- Unknown filter values are ignored instead of causing an error.
+- No enrollment, payment, progress, download, or upload route exists.
 
 ### Exit condition
 
-An Instructor can create and publish a Course, and a guest can view safe public details.
+An Instructor can publish a Course, and a guest can browse it and open safe public details.
 
 ## 17. Phase 6: curriculum and materials
 
@@ -2077,6 +2170,6 @@ A task is done when:
 
 ## 30. Current next action
 
-The current next action is Phase 5E Course publishing.
+The current next action is human browser review of the implemented Phase 5F public Course catalog.
 
-Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Course outline UI, Phase 5B curriculum authoring, Phase 5C content editing, and Phase 5D material authoring are complete and human-approved. Do not add public catalog, enrollment, payment, upload, download, delete, or archive behavior.
+Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Course outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D material authoring, and Phase 5E publishing are complete and human-approved. Do not add enrollment, payment, progress, upload, download, delete, or archive behavior.

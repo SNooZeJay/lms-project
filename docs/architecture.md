@@ -297,6 +297,17 @@ Phase 5D accepts only `text`, `code`, `video_link`, and `external_link` material
 
 Phase 5E sends a POST with no trusted body fields. It does not add a public catalog route, archive, delete, reorder, upload, download, enrollment, or payment route.
 
+### Phase 5F public catalog routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| GET | `/courses` | Public catalog of published Courses | Public, status filter |
+| GET | `/courses/{course:slug}` | Public Course details and outline structure | Public, status filter |
+
+These routes sit outside the authenticated middleware groups on purpose, because browsing is public. Safety comes from a `published` status filter in the query, not from a Policy. The details route binds by `slug` so public URLs stay readable and do not expose database IDs.
+
+The catalog does not add an enrollment, payment, progress, certificate, download, upload, delete, or archive route.
+
 ### Student routes
 
 
@@ -812,6 +823,50 @@ flowchart TD
 - A published or draft Course with matching Module and Lesson status
 - A server-owned `published_at` value
 - No public page, archive, delete, enrollment, or payment behavior
+
+### Phase 5F public catalog flow
+
+```mermaid
+flowchart TD
+    V[Guest opens /courses] --> S[Sanitize search and filter values]
+    S --> Q[Query only published Courses]
+    Q --> F[Apply title search and approved filters]
+    F --> P[Paginate the result]
+    P --> L[Render catalog cards]
+    L --> D[Guest opens a Course details page]
+    D --> B[Bind the Course by slug]
+    B --> C{Is the Course published?}
+    C -->|No| N[Return 404]
+    C -->|Yes| O[Load only published Modules and Lessons]
+    O --> R[Render outline structure without content or materials]
+```
+
+### Phase 5F Input, Process, and Output
+
+**Input**
+
+- Optional `q` search text
+- Optional `category`, `level`, and `course_type` filters
+- Optional `page` value
+- Optional Course slug on the details page
+
+**Process**
+
+- Sanitize filters in a Form Request and drop unknown values
+- Query only `status = published`
+- Search the title with a bound query value
+- Filter by category, level, and course type with bound values
+- Order by `published_at` descending
+- Load only published Modules and published Lessons for the details page
+- Load only the Instructor display name
+- Return `404` when the slug is missing or the Course is not published
+- Paginate twelve rows per page
+
+**Output**
+
+- A public list of published Courses
+- A public details page with outline structure only
+- No Lesson content, no material data, no email address, no enrollment, and no payment
 
 ## 8. Authorization
 

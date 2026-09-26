@@ -208,10 +208,8 @@ class CoursePublishingTest extends TestCase
             ->assertSee(route('instructor.courses.unpublish', $published), false);
     }
 
-    public function test_phase_five_e_adds_no_catalog_enrollment_or_archive_routes(): void
+    public function test_phase_five_e_adds_no_enrollment_or_archive_routes(): void
     {
-        $this->assertFalse(Route::has('courses.index'));
-        $this->assertFalse(Route::has('courses.show'));
         $this->assertFalse(Route::has('instructor.courses.archive'));
         $this->assertFalse(Route::has('instructor.courses.destroy'));
         $this->assertFalse(Route::has('student.enrollments.store'));

@@ -21,12 +21,15 @@
                 </p>
 
                 <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    <a href="{{ route('courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
+                        Browse published courses
+                    </a>
                     @auth
-                        <a href="{{ route('account.profile') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
+                        <a href="{{ route('account.profile') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
                             Open your account
                         </a>
                     @else
-                        <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
+                        <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
                             Sign in
                         </a>
                         <a href="{{ route('register') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
@@ -38,7 +41,7 @@
                 <div class="mt-8 border-l-4 border-accent bg-surface px-5 py-4 sm:px-6">
                     <p class="text-sm font-semibold text-ink">Current boundary</p>
                     <p class="mt-1 max-w-xl leading-7 text-ink-muted">
-                        Authentication and profiles are being built in approved slices. Course access, progress, certificates, uploads, and payments remain later work.
+                        You can browse published courses. Enrollment, lesson content, progress, certificates, uploads, and payments remain later work.
                     </p>
                 </div>
             </div>
