@@ -2412,6 +2412,16 @@ A Student can mark Lessons complete and sees a database-backed percentage.
 
 ## 22. Phase 7: curriculum reorder, archive, and private uploads
 
+### Status
+
+Built and tested in three slices: 7A reorder, 7B archive, 7C private files.
+
+### Evidence
+
+- `php artisan test` gives 308 passed and 1186 assertions.
+- `./vendor/bin/pint --test` gives PASS on 163 files.
+- Reorder, archive, and download routes are listed in `architecture.md`.
+
 ### Goal
 
 Finish curriculum management and protected file delivery.

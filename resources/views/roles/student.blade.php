@@ -8,6 +8,24 @@
         <h1 class="mt-3 text-3xl font-[650] tracking-tight text-ink">Welcome, {{ $user->name }}</h1>
         <p class="mt-3 max-w-2xl leading-7 text-ink-muted">Your account is ready. Browse published courses and enroll in free courses to build your learning record.</p>
 
+        @if ($continueLesson)
+            <section class="mt-8 border-t-4 border-accent bg-surface p-6 shadow-sm" aria-labelledby="continue-learning-heading">
+                <p class="font-mono text-sm font-semibold text-primary-text">Continue learning</p>
+                <h2 id="continue-learning-heading" class="mt-2 text-lg font-semibold text-ink">{{ $continueLesson->title }}</h2>
+                <p class="mt-1 text-sm text-ink-muted">{{ $continueLesson->module->course->title }} · {{ $continueLesson->module->title }}</p>
+                @if ($continueProgress?->last_viewed_at)
+                    <p class="mt-1 text-sm text-ink-muted">Last opened {{ $continueProgress->last_viewed_at->diffForHumans() }}.</p>
+                @endif
+                <a href="{{ route('student.lessons.show', [$continueLesson->module->course, $continueLesson]) }}" class="mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Resume {{ $continueLesson->title }}</a>
+            </section>
+        @else
+            <section class="mt-8 border-t-4 border-line bg-surface-muted p-6" aria-labelledby="continue-empty-heading">
+                <h2 id="continue-empty-heading" class="text-lg font-semibold text-ink">No lessons opened yet</h2>
+                <p class="mt-2 text-sm leading-6 text-ink-muted">Open a lesson in one of your courses and it appears here so you can pick up where you stopped.</p>
+                <a href="{{ route('student.courses.index') }}" class="mt-5 inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open My courses</a>
+            </section>
+        @endif
+
         <div class="mt-8 grid gap-6 md:grid-cols-2">
             <section class="border-t-4 border-primary bg-surface p-6 shadow-sm" aria-labelledby="account-summary-heading">
                 <h2 id="account-summary-heading" class="text-lg font-semibold text-ink">Account summary</h2>
