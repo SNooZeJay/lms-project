@@ -21,10 +21,11 @@ The current project includes:
 - Role-based landing pages
 - Administrator user search and role/status controls
 - Read-only role and account-status activity records
+- Course database foundation with Instructor ownership and safe defaults
 
 The following features are not built yet:
 
-- Courses
+- Course catalog and management UI
 - Enrollment
 - Full role-specific business dashboards
 - Quizzes
@@ -364,6 +365,8 @@ Role-based pages are also available:
 ```
 
 Each page shows the current signed-in role and account status. Pages for other roles return a safe `403` response.
+
+Phase 4A currently adds the Course database foundation only. There is no `/courses` page yet, so do not expect a catalog or sample courses in the browser.
 
 ## 8. Create a Student account
 

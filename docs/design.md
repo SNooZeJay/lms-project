@@ -380,6 +380,19 @@ Role and status actions require clear labels and confirmation for suspension, re
 
 The activity page is read-only. It shows actor, target, event, previous value, new value, and timestamp. It must not show passwords, tokens, IP addresses, or browser metadata.
 
+### Phase 4A Course foundation
+
+Phase 4A has no public course page yet. The data rules still guide later Instructor and public course interfaces:
+
+- Course status is visible as `Draft`, `Published`, or `Archived`
+- Course type is visible as `Free` or `Paid`
+- Prices are formatted from integer minor units and `PHP`
+- Level is shown as `Beginner`, `Intermediate`, or `Advanced`
+- The server owns the Instructor, slug, price, currency, status, publication time, and thumbnail path
+- Course lists must never show private thumbnail paths or server-owned payment data
+
+Do not add course cards, catalog filters, fake courses, or enrollment buttons before the Course data and authorization slices are approved.
+
 ### Course catalog
 
 - Search by course title

@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication and profiles are human-approved. Phase 3 roles and authorization is in progress.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, and Phase 3 roles and authorization are human-approved. Phase 4A Course foundation is implemented and awaiting human review.
 
 The repository currently contains:
 
@@ -16,7 +16,7 @@ The repository currently contains:
 - Project-local agent skills and OpenCode configuration
 - A compiled Adminator dashboard under `FOR_UI/`
 
-Role management, courses, enrollment, learning materials, progress, quizzes, certificates, private uploads, and PayMongo are not implemented yet.
+Course management UI, enrollment, learning materials, progress, quizzes, certificates, private uploads, and PayMongo are not implemented yet. The Course database foundation is implemented in Phase 4A.
 
 ## Approved technology stack
 
@@ -184,20 +184,19 @@ npm audit
 npm run build
 ```
 
-## Phase 3 checkpoint
+## Phase 4A checkpoint
 
-Phase 2 authentication and profiles are human-approved. Phase 3 roles and authorization is in progress. The first tested slices include:
+Phase 2 authentication, profiles, and Phase 3 roles and authorization are human-approved. Phase 4A Course foundation is implemented and awaiting human review. The slice includes:
 
-- Administrator user search and filters
-- Protected role assignment
-- Account suspension and reactivation
-- Role and active-account middleware
-- User policies
-- Audited ActivityLog records
-- Minimal authorized role landing pages
-- Strict role and security tests
+- `courses` migration with Instructor ownership
+- Unique slugs and catalog indexes
+- Free/paid price checks and PHP currency checks
+- `CourseLevel`, `CourseType`, and `CourseStatus` enums
+- `Course` model and Instructor relationship
+- Course factory and constraint tests
+- No catalog UI, enrollment, payment, curriculum, upload, or sample seeders
 
-The Phase 3 human approval checkpoint remains open.
+The Phase 4A human approval checkpoint remains open.
 
 The local Administrator is provisioned with:
 
@@ -213,4 +212,4 @@ Email: bautista.jayzee@ncst.edu.ph
 Role: Administrator
 ```
 
-The first sign-in requires a password change. The provided PayMongo public test key remains local configuration only. Courses, enrollment, quizzes, certificates, uploads, and payments remain later phases.
+The first sign-in requires a password change. The provided PayMongo public test key remains local configuration only. Catalog UI, enrollment, quizzes, certificates, uploads, and payments remain later phases.

@@ -258,6 +258,18 @@ A generated local bootstrap password protected by Windows DPAPI. The account mus
 
 The academic learning offering owned by one Instructor.
 
+**Course type**
+
+The stored Course price category: `free` or `paid`. Free Courses use zero minor units; paid Courses use a positive amount.
+
+**Course status**
+
+The stored Course visibility state: `draft`, `published`, or `archived`. Only published Courses may enter the public catalog in a later phase.
+
+**Minor units**
+
+Integer money storage such as `100` for PHP 1.00. Phase 4A stores Course prices as `price_minor` with the `PHP` currency code.
+
 **Module**
 
 An ordered section inside a Course.

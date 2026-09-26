@@ -4,7 +4,7 @@
 
 This roadmap turns the approved LMS plan into small, testable steps.
 
-Phase 0 is approved. Phase 1 is complete. Phase 2 is human-approved. Phase 3 roles and authorization implementation is in progress. No Phase 4 or later implementation has started.
+Phase 0 is approved. Phase 1 is complete. Phase 2 and Phase 3 are human-approved. Phase 4A Course foundation is implemented and awaiting human review. No later business phase has started.
 
 Do not skip directly to payment processing or dashboard polish.
 
@@ -179,7 +179,7 @@ Create a clean Laravel 13 application with no LMS business logic yet.
 
 ### Status
 
-Approved. Phase 1 implementation is complete, Phase 2 is human-approved, and Phase 3 is in progress.
+Approved. Phase 1 implementation is complete, Phase 2 and Phase 3 are human-approved, and Phase 4A is implemented pending human review.
 
 ### Environment preflight
 
@@ -325,7 +325,7 @@ Create secure accounts, verified email access, editable own profiles, and one lo
 
 ### Status
 
-Approved on September 25, 2026. Human review confirmed the Phase 2 authentication and profile slice. Phase 3 is now approved and starts with the role, activity-log, and authorization data update.
+Approved on September 25, 2026. Human review confirmed the Phase 2 authentication and profile slice. Phase 3 and Phase 4A are now implemented; Phase 4A awaits human review.
 
 ### Confirmed decisions
 
@@ -568,7 +568,7 @@ Protect every role-specific route and resource with server-side role checks, saf
 
 ### Status
 
-Approved on September 25, 2026. Implementation starts with the activity-log ERD, authorization rules, and failing tests.
+Human review confirmed the Phase 3 roles, activity-log, Administrator, and authorization slices. Phase 3 is approved. Phase 4A Course foundation is now the active slice.
 
 ### Confirmed decisions
 
@@ -740,7 +740,7 @@ flowchart TD
   - Acceptance: each role sees only its authorized page and no fake courses, payments, or progress data.
   - Verify: role matrix, view, accessibility, and responsive checks.
 
-- [ ] Checkpoint: Phase 3 strict security gate
+- [x] Checkpoint: Phase 3 strict security gate
   - [x] Full test suite passes.
   - [x] Build passes.
   - [x] Composer and npm audits pass.
@@ -748,7 +748,7 @@ flowchart TD
   - [x] Policy and self/last-admin tests pass.
   - [x] ActivityLog transaction tests pass.
   - [x] Desktop and mobile admin pages are usable.
-  - [ ] Human approval is recorded before Phase 4.
+  - [x] Human approval is recorded before Phase 4A.
 
 ### Phase 3 implementation evidence
 
@@ -791,42 +791,192 @@ flowchart TD
 
 ### Exit condition
 
-An Administrator can search users, assign an approved role, suspend or reactivate an account, and review a read-only activity record. Every protected role and account action is enforced on the server and covered by tests. No Phase 4 business feature has started.
+An Administrator can search users, assign an approved role, suspend or reactivate an account, and review a read-only activity record. Every protected role and account action is enforced on the server and covered by tests. Phase 3 is human-approved.
 
-## 8. Phase 4: database foundation
+## 8. Phase 4A: Course foundation
 
 ### Goal
 
-Create the approved relational model before building dependent features.
+Create the approved Course data foundation before building catalog, curriculum, enrollment, or payment behavior.
+
+### Status
+
+Approved on September 25, 2026. The Course ERD, constraints, migration, model, factory, and automated tests are implemented. Human review remains before Phase 4B.
+
+### Confirmed decisions
+
+- Reuse the existing User identity for Course ownership
+- Add `CourseLevel`, `CourseType`, and `CourseStatus` enums
+- Add only the `courses` table in this slice
+- Default level to `beginner`
+- Default Course type to `free`
+- Default price to zero minor units
+- Default currency to `PHP`
+- Default status to `draft`
+- Keep `published_at` nullable
+- Keep `thumbnail_path` nullable and protected
+- Generate slugs server-side in a later Course action
+- Do not add catalog, curriculum, enrollment, payment, upload, or seeder behavior
+
+### Phase 4A ERD update
+
+```mermaid
+erDiagram
+    USERS ||--|| PROFILES : has
+    USERS ||--o{ ACTIVITY_LOGS : acts
+    USERS ||--o{ ACTIVITY_LOGS : receives
+    USERS ||--o{ COURSES : owns_as_instructor
+
+    USERS {
+        bigint id PK
+        varchar name
+        varchar email UK
+    }
+
+    COURSES {
+        bigint id PK
+        bigint instructor_id FK
+        varchar title
+        varchar slug UK
+        text description
+        text learning_objectives
+        varchar category
+        enum level
+        enum course_type
+        bigint price_minor
+        char currency
+        enum status
+        varchar thumbnail_path
+        timestamp published_at
+        timestamp created_at
+        timestamp updated_at
+    }
+```
+
+### Phase 4A process flow
+
+```mermaid
+flowchart TD
+    I[Instructor or Administrator input] --> V[Validate Course fields]
+    V --> E[Validate level, type, status, and price]
+    E -->|Invalid| R[Reject without saving]
+    E -->|Valid| O[Assign Instructor and server-owned defaults]
+    O --> S[Reserve unique slug]
+    S --> D[Begin database transaction]
+    D --> C[Insert Course]
+    C --> X[Commit Course]
+    X --> P[Return saved Course record]
+```
+
+### Phase 4A Input, Process, and Output
+
+**Input**
+
+- Instructor User ID
+- Course title
+- Description
+- Learning objectives
+- Category
+- Level
+- Course type
+- Price in minor units
+- Currency
+
+**Process**
+
+- Validate the Instructor relationship
+- Validate approved enum values
+- Validate price and Course type together
+- Apply server-owned defaults
+- Reserve a unique slug
+- Save the Course in a database transaction
+
+**Output**
+
+- Valid Course record
+- Instructor relationship
+- Safe draft/free defaults
+- Database constraints and indexes
+- No public catalog access
+- No enrollment, payment, curriculum, or upload record
 
 ### Work
 
-- Add Course, Module, Lesson, and LearningMaterial migrations
-- Add Enrollment and Payment migrations
-- Add LessonProgress migration
-- Add Quiz and Certificate migrations
-- Add CourseRequirement migration
-- Add system tables required by Laravel sessions, cache, and queues
-- Add model relationships
-- Add factories
-- Add documented non-sensitive seeders
+- Add CourseLevel, CourseType, and CourseStatus enums
+- Add the courses migration with foreign key, checks, and indexes
+- Add the Course model with guarded server-owned fields
+- Add User ownership relationship
+- Add Course factory
+- Add Course foundation tests
 
-### Database tests
+### Task list and acceptance criteria
 
-- Foreign keys reject invalid relationships
-- Unique enrollment works
-- Unique payment idempotency key works
-- Unique provider event works
-- Quiz attempt uniqueness works
-- Certificate code uniqueness works
-- Status constraints reject invalid values
-- Free and paid price constraints work
+- [x] Task 1: Update Phase 4A data and flow contracts
+  - Acceptance: plan, architecture, roadmap, design, folder structure, and audit describe the approved Course slice.
+  - Verify: documentation review and `git diff --check`.
+
+- [x] Task 2: Add failing Course schema tests
+  - Acceptance: tests describe columns, indexes, foreign keys, enum values, defaults, price rules, and slug uniqueness.
+  - Verify: tests fail before the migration exists.
+
+- [x] Task 3: Add Course enums, migration, and model
+  - Acceptance: a clean database migrates and creates valid Course records; invalid records are rejected by database constraints.
+  - Verify: focused migration and model tests.
+
+- [x] Task 4: Add Course factory and relationship tests
+  - Acceptance: the factory creates a valid Course owned by an Instructor; the User relationship resolves correctly.
+  - Verify: focused factory and relationship tests.
+
+- [x] Task 5: Run the Phase 4A quality gate
+  - Acceptance: full tests, Pint, PHP syntax, build, audits, route checks, and clean local migration pass.
+  - Verify: recorded evidence in `docs/project-audit.md`.
+
+### Phase 4A implementation evidence
+
+- Added the `courses` migration with Instructor foreign key, unique slug, catalog indexes, enum columns, PHP currency check, and free/paid price check.
+- Added `CourseLevel`, `CourseType`, and `CourseStatus` enums with model casts.
+- Added the `Course` model with an Instructor relationship and guarded server-owned fields.
+- Added `UserFactory::instructor()` and `CourseFactory` for valid test data.
+- Added Phase 4A tests for columns, indexes, constraints, defaults, relationships, mass-assignment protection, and route boundaries.
+- The full suite passes 55 tests and 235 assertions.
+- Pint, PHP syntax checks, Vite build, Composer validation/audit, npm audit, and local migration all pass.
+- No Course UI, curriculum, enrollment, payment, upload, or sample seeder behavior was added.
+
+### Phase 4A security tests
+
+- A Course cannot reference a missing Instructor User.
+- A Course slug cannot be duplicated.
+- Invalid level, Course type, status, or currency values are rejected.
+- A free Course cannot have a positive price.
+- A paid Course cannot have a zero price.
+- Server-owned fields are not mass-assignable from a normal request.
+- No public course route exists before the catalog phase.
+- No payment, enrollment, curriculum, or upload record is created.
+
+### Do not add
+
+- Public catalog or course detail pages
+- Instructor course forms
+- Slug generation action
+- Module, Lesson, or LearningMaterial tables
+- Enrollment or payment tables
+- Course seeders with sample content
+- Thumbnail upload behavior
+- PayMongo behavior
 
 ### Exit condition
 
-A clean test database can migrate from zero and seed documented test records.
+A clean test database can migrate from zero and create valid Course records through the model and factory. No catalog, curriculum, enrollment, payment, or upload behavior has started.
 
-## 9. Phase 5: course catalog
+## 9. Phase 4B: curriculum and material foundation
+
+Create Module, Lesson, and LearningMaterial tables after the Course foundation passes.
+
+## 10. Phase 4C: enrollment and progress foundation
+
+Create Enrollment and LessonProgress tables after the curriculum foundation passes.
+
+## 11. Phase 5: course catalog
 
 ### Goal
 
@@ -856,7 +1006,7 @@ Publish safe public Course metadata.
 
 An Instructor can create and publish a Course, and a guest can view safe public details.
 
-## 10. Phase 6: curriculum and materials
+## 12. Phase 6: curriculum and materials
 
 ### Goal
 
@@ -886,7 +1036,7 @@ Manage ordered Modules, Lessons, and protected Learning Materials.
 
 An Instructor can build a complete Course outline with authorized material access.
 
-## 11. Phase 7: free enrollment
+## 13. Phase 7: free enrollment
 
 ### Goal
 
@@ -914,7 +1064,7 @@ Prove the first complete learning access workflow before payment work.
 
 A Student can enroll once in a free Course and open authorized published Lessons.
 
-## 12. Phase 8: lesson access and progress
+## 14. Phase 8: lesson access and progress
 
 ### Goal
 
@@ -942,7 +1092,7 @@ Persist Lesson activity and calculate progress from records.
 
 A Student can complete Lessons and see database-backed progress.
 
-## 13. Phase 9: quizzes
+## 15. Phase 9: quizzes
 
 ### Goal
 
@@ -973,7 +1123,7 @@ Deliver safe Questions and enforce server-side grading.
 
 A Student can complete a Quiz and receive a correct server-calculated result.
 
-## 14. Phase 10: completion and certificates
+## 16. Phase 10: completion and certificates
 
 ### Goal
 
@@ -1001,7 +1151,7 @@ Verify Course completion and issue one certificate.
 
 An eligible Student receives one printable certificate with safe authenticated access.
 
-## 15. Phase 11: payment architecture
+## 17. Phase 11: payment architecture
 
 ### Goal
 
@@ -1030,7 +1180,7 @@ Finalize payment behavior before calling PayMongo.
 
 Payment state transitions are fully specified and testable without live credentials.
 
-## 16. Phase 12: PayMongo integration
+## 18. Phase 12: PayMongo integration
 
 ### Goal
 
@@ -1056,7 +1206,7 @@ Run the approved webhook scenarios from `plan.md` and `architecture.md`.
 
 A real test-mode payment activates one paid Enrollment once, and repeated delivery causes no duplicate.
 
-## 17. Phase 13: dashboards and reports
+## 19. Phase 13: dashboards and reports
 
 ### Goal
 
@@ -1083,7 +1233,7 @@ Add role-specific pages using real authorized data.
 
 All dashboards work with real authorized data and approved empty states.
 
-## 18. Phase 14: quality and accessibility
+## 20. Phase 14: quality and accessibility
 
 ### Goal
 
@@ -1128,7 +1278,7 @@ php artisan route:list
 
 Every acceptance criterion in `plan.md` passes with recorded evidence.
 
-## 19. Phase 15: deployment and defense
+## 21. Phase 15: deployment and defense
 
 ### Goal
 
@@ -1164,7 +1314,7 @@ Deploy a tested release and prepare the SIA1 presentation.
 
 The deployed application works, the team can explain the architecture, and critical workflows remain testable.
 
-## 20. Commands after scaffolding
+## 22. Commands after scaffolding
 
 Use the commands generated by the selected Laravel starter kit.
 
@@ -1184,7 +1334,7 @@ npm run build
 
 Do not run `migrate:fresh` against a shared or production database.
 
-## 21. Definition of ready
+## 23. Definition of ready
 
 A task is ready when:
 
@@ -1196,7 +1346,7 @@ A task is ready when:
 - Documentation impact is known
 - No unresolved product decision remains
 
-## 22. Definition of done
+## 24. Definition of done
 
 A task is done when:
 
@@ -1210,8 +1360,8 @@ A task is done when:
 - No unrelated file changed
 - The team can explain the change
 
-## 23. Current next action
+## 25. Current next action
 
-The current next action is human approval of the completed Phase 2 checkpoint.
+The current next action is human review of the completed Phase 4A Course foundation checkpoint.
 
-Environment preflight, the Laravel foundation, the Phase 2 identity/authentication slices, local migrations, the local Administrator owner, and fallback Edge review are complete. Do not begin Phase 3 until the checkpoint is approved.
+Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course data, local migrations, and automated quality checks are complete. Do not begin Phase 4B until the Phase 4A checkpoint is approved.

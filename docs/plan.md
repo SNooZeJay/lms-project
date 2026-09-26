@@ -215,6 +215,40 @@ Unpublishing a course:
 
 An Administrator must perform any later access suspension through a protected and audited action.
 
+### Phase 4A Course foundation
+
+Phase 4A creates the Course data foundation before any catalog or enrollment UI.
+
+Phase 4A includes:
+
+- `courses` table
+- `Course` model
+- `CourseLevel`, `CourseType`, and `CourseStatus` enums
+- Course factory
+- Instructor ownership relationship
+- Database constraints and indexes
+- Migration and model tests
+
+Phase 4A defaults:
+
+- `level` defaults to `beginner`
+- `course_type` defaults to `free`
+- `price_minor` defaults to `0`
+- `currency` defaults to `PHP`
+- `status` defaults to `draft`
+- `published_at` starts as null
+
+Phase 4A rules:
+
+- A Course must belong to one Instructor User.
+- A Course slug must be unique.
+- Free Courses must have a zero price.
+- Paid Courses must have a positive price in minor units.
+- Currency must be `PHP`.
+- Level, Course type, and Course status use approved enum values only.
+- Instructor, slug, price, currency, status, publication time, and thumbnail path are server-owned fields.
+- Phase 4A does not create public catalog pages, enrollment, payment, curriculum, or upload behavior.
+
 ## 6. Enrollment
 
 Enrollment is the canonical record for Student access to a Course.

@@ -87,6 +87,8 @@ lms-project/
 │   │   ├── UserRole.php
 │   │   ├── UserAccountStatus.php
 │   │   ├── CourseStatus.php
+│   │   ├── CourseLevel.php
+│   │   ├── CourseType.php
 │   │   ├── EnrollmentStatus.php
 │   │   ├── PaymentStatus.php
 │   │   ├── LessonProgressStatus.php
@@ -214,6 +216,8 @@ lms-project/
 │   └── session.php
 ├── database/
 │   ├── factories/
+│   │   ├── CourseFactory.php
+│   │   └── UserFactory.php
 │   ├── migrations/
 │   └── seeders/
 ├── public/
@@ -265,6 +269,7 @@ lms-project/
 │   │   ├── Admin/
 │   │   ├── Auth/
 │   │   ├── Instructor/
+│   │   ├── Phase4A/
 │   │   ├── Role/
 │   │   ├── Student/
 │   │   └── Webhooks/

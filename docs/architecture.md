@@ -2,7 +2,7 @@
 
 ## 1. Document status
 
-This document defines the approved target architecture for the BSIT Academic LMS. The Phase 1 Laravel foundation and human-approved Phase 2 authentication/profile slice are implemented. Phase 3 roles and authorization is approved and in progress. This document does not create hosted services or payment resources.
+This document defines the approved target architecture for the BSIT Academic LMS. The Phase 1 Laravel foundation, human-approved Phase 2 authentication/profile slice, and human-approved Phase 3 roles and authorization slice are implemented. Phase 4A Course foundation is implemented and awaiting human review. This document does not create hosted services or payment resources.
 
 The approved stack is:
 
@@ -464,6 +464,55 @@ sequenceDiagram
 
 A failed validation, policy denial, or last-Administrator safeguard rolls back both records.
 
+### Phase 4A Course foundation flow
+
+```mermaid
+flowchart TD
+    I[Instructor or Administrator input] --> V[Validate Course fields]
+    V --> E[Validate level, type, status, and price]
+    E -->|Invalid| R[Reject without saving]
+    E -->|Valid| O[Assign Instructor and server-owned defaults]
+    O --> S[Generate or reserve unique slug]
+    S --> D[Begin database transaction]
+    D --> C[Insert Course]
+    C --> X[Commit Course]
+    X --> P[Return saved Course record]
+```
+
+Phase 4A does not publish a Course to the public catalog. A later Course action will own slug generation and publication state changes.
+
+### Phase 4A Input, Process, and Output
+
+**Input**
+
+- Instructor User ID
+- Course title
+- Description
+- Learning objectives
+- Category
+- Level
+- Course type
+- Price in minor units
+- Currency
+
+**Process**
+
+- Validate the Instructor relationship
+- Validate approved enum values
+- Validate the price and Course type together
+- Apply server-owned defaults
+- Generate or reserve a unique slug
+- Save the Course in a database transaction
+
+**Output**
+
+- Valid Course record
+- Instructor relationship
+- Safe draft/free defaults
+- Database constraints and indexes
+- No public catalog access
+- No enrollment, payment, curriculum, or upload record
+
 ## 8. Authorization
 
 Authorization answers what the user may do.
@@ -653,29 +702,35 @@ Role and account status cannot be updated by the profile owner.
 
 ### `courses`
 
+Phase 4A creates the Course table and its ownership relationship. Curriculum, enrollment, payment, and upload behavior stay in later phases.
+
 | Column | Type | Rules |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | Primary key |
-| `instructor_id` | BIGINT UNSIGNED | Foreign key to users |
+| `instructor_id` | BIGINT UNSIGNED | Foreign key to users, delete restricted |
 | `title` | VARCHAR | Required |
-| `slug` | VARCHAR | Unique, required |
+| `slug` | VARCHAR | Unique, required, server-generated |
 | `description` | TEXT | Nullable while authoring |
 | `learning_objectives` | TEXT | Nullable |
 | `category` | VARCHAR | Nullable |
-| `level` | ENUM | `beginner`, `intermediate`, `advanced` |
-| `course_type` | ENUM | `free`, `paid` |
-| `price_minor` | BIGINT UNSIGNED | Default 0 |
-| `currency` | CHAR(3) | `PHP` |
-| `status` | ENUM | `draft`, `published`, `archived` |
-| `thumbnail_path` | VARCHAR | Nullable, protected by default |
-| `published_at` | TIMESTAMP | Nullable |
+| `level` | ENUM | `beginner`, `intermediate`, `advanced`; default `beginner` |
+| `course_type` | ENUM | `free`, `paid`; default `free` |
+| `price_minor` | BIGINT UNSIGNED | Default 0, server-owned minor units |
+| `currency` | CHAR(3) | `PHP`, default `PHP` |
+| `status` | ENUM | `draft`, `published`, `archived`; default `draft` |
+| `thumbnail_path` | VARCHAR | Nullable, protected by default, server-owned |
+| `published_at` | TIMESTAMP | Nullable, server-owned |
 | timestamps | TIMESTAMP | Required |
 
 Constraints:
 
 - Free Course has zero price.
-- Paid Course has positive price.
-- Index Instructor, status, type, and catalog filters.
+- Paid Course has a positive price.
+- Currency is always `PHP`.
+- Level, Course type, and Course status accept only approved values.
+- `slug` is unique.
+- Index Instructor, status, type, category, and publication time for later catalog queries.
+- `instructor_id`, `slug`, `price_minor`, `currency`, `status`, `published_at`, and `thumbnail_path` are not mass-assigned from a normal request.
 
 ### `modules`
 
@@ -1231,6 +1286,10 @@ Use the database queue during early development. Select a production queue drive
 31. Require verified target email before role assignment.
 32. Write role/status changes and ActivityLog records in one transaction.
 33. Keep Phase 3 ActivityLog data limited to role and account-status changes.
+34. Enforce free/paid Course price rules in the database.
+35. Enforce `PHP` as the Course currency in the database.
+36. Generate Course slugs on the server and keep them unique.
+37. Keep Course ownership and publication fields server-owned.
 
 ## 21. Error handling and observability
 

@@ -29,6 +29,15 @@ class UserFactory extends Factory
         ];
     }
 
+    public function instructor(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            $user->profile->forceFill([
+                'role' => UserRole::Instructor,
+            ])->save();
+        });
+    }
+
     public function unverified(): static
     {
         return $this->state(fn (array $attributes) => [

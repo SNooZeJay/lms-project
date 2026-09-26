@@ -19,7 +19,7 @@ class FoundationDatabaseTest extends TestCase
         $this->assertStringStartsWith('8.4.', $version);
     }
 
-    public function test_phase_three_identity_and_audit_schema_contains_no_lms_business_tables(): void
+    public function test_phase_four_a_identity_and_audit_schema_contains_no_later_business_tables(): void
     {
         $this->assertTrue(Schema::hasTable('sessions'));
         $this->assertTrue(Schema::hasTable('cache'));
@@ -28,6 +28,18 @@ class FoundationDatabaseTest extends TestCase
         $this->assertTrue(Schema::hasTable('password_reset_tokens'));
         $this->assertTrue(Schema::hasTable('profiles'));
         $this->assertTrue(Schema::hasTable('activity_logs'));
+        $this->assertTrue(Schema::hasTable('courses'));
+
+        $this->assertTrue(Schema::hasColumns('courses', [
+            'instructor_id',
+            'title',
+            'slug',
+            'level',
+            'course_type',
+            'price_minor',
+            'currency',
+            'status',
+        ]));
 
         $this->assertTrue(Schema::hasColumns('activity_logs', [
             'actor_id',
@@ -51,7 +63,7 @@ class FoundationDatabaseTest extends TestCase
         $this->assertFalse(Schema::hasColumn('activity_logs', 'ip_address'));
         $this->assertFalse(Schema::hasColumn('activity_logs', 'user_agent'));
 
-        $this->assertFalse(Schema::hasTable('courses'));
+        $this->assertFalse(Schema::hasTable('modules'));
         $this->assertFalse(Schema::hasTable('enrollments'));
         $this->assertFalse(Schema::hasTable('payments'));
         $this->assertFalse(Schema::hasTable('quizzes'));
