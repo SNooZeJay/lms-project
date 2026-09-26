@@ -28,6 +28,21 @@ class RoleManagementTest extends TestCase
             ->assertSee('Student');
     }
 
+    public function test_user_list_explains_when_email_verification_blocks_role_changes(): void
+    {
+        $administrator = $this->makeUser(UserRole::Administrator, 'administrator@example.test');
+        $target = $this->makeUser(UserRole::Student, 'unverified@example.test', 'Unverified Student');
+        $target->forceFill(['email_verified_at' => null])->save();
+
+        $response = $this->actingAs($administrator)
+            ->get('/admin/users?search=Unverified Student');
+
+        $response->assertOk()
+            ->assertSee('Unverified Student')
+            ->assertSee('Email not verified')
+            ->assertSee('Role changes unlock after email verification');
+    }
+
     public function test_administrator_can_change_a_verified_users_role_and_record_activity(): void
     {
         $administrator = $this->makeUser(UserRole::Administrator, 'administrator@example.test');
