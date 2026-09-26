@@ -53,11 +53,12 @@ return [
         // does not match is acknowledged and ignored, so a test server can
         // never act on a real payment.
         'expected_livemode' => (bool) env('PAYMONGO_LIVEMODE', false),
-        // The payment methods offered on the hosted checkout page. QR Ph is
-        // the common Philippine option.
+        // The payment methods offered on the hosted checkout page. Cards are
+        // deliberately excluded: this is a Philippine student project and the
+        // wallets plus QR Ph cover how BSIT students actually pay.
         'payment_method_types' => array_values(array_filter(array_map(
             'trim',
-            explode(',', (string) env('PAYMONGO_PAYMENT_METHODS', 'qrph,card'))
+            explode(',', (string) env('PAYMONGO_PAYMENT_METHODS', 'qrph,gcash,maya'))
         ))),
     ],
 
