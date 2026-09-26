@@ -21,6 +21,10 @@ return [
 
     'csrf_exempt_paths' => [
         'webhooks/*',
+        // TEMPORARY. The saved endpoint URL still points at the path PayMongo's
+        // own form uses as its placeholder. Remove this with the matching route
+        // in routes/web.php once the saved URL is the canonical path.
+        'webhook',
     ],
 
 ];

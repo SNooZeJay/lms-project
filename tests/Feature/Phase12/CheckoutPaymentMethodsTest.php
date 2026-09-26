@@ -19,8 +19,11 @@ use Tests\TestCase;
  * purpose, so this file stops a default or an environment value from quietly
  * putting them back.
  *
- * The method names were checked against the live test API: PayMongo accepted a
- * checkout session carrying all three.
+ * The method names were checked against the live test API, but a created
+ * session is not proof on its own: PayMongo stores an unrecognised method
+ * string without complaining. Creating a session with 'maya' succeeds and then
+ * produces a dead page, an empty method list and a disabled Continue button.
+ * The correct identifier for Maya is 'paymaya'.
  */
 class CheckoutPaymentMethodsTest extends TestCase
 {
@@ -39,7 +42,7 @@ class CheckoutPaymentMethodsTest extends TestCase
     public function test_the_default_offers_qr_ph_gcash_and_maya(): void
     {
         $this->assertSame(
-            ['qrph', 'gcash', 'maya'],
+            ['qrph', 'gcash', 'paymaya'],
             (array) config('services.paymongo.payment_method_types'),
         );
     }
@@ -49,6 +52,16 @@ class CheckoutPaymentMethodsTest extends TestCase
         $methods = (array) config('services.paymongo.payment_method_types');
 
         $this->assertNotContains('card', $methods, 'Card payments are excluded by product decision.');
+    }
+
+    public function test_maya_uses_the_identifier_paymongo_actually_renders(): void
+    {
+        $methods = (array) config('services.paymongo.payment_method_types');
+
+        // 'maya' is accepted by the API and then produces an empty method list
+        // on the hosted page. This is the exact failure that was reported.
+        $this->assertContains('paymaya', $methods);
+        $this->assertNotContains('maya', $methods, "'maya' renders an unusable checkout page.");
     }
 
     public function test_the_request_sent_to_the_provider_carries_those_methods(): void
@@ -72,7 +85,7 @@ class CheckoutPaymentMethodsTest extends TestCase
             $methods = $request->data()['data']['attributes']['payment_method_types'] ?? null;
 
             return $request->url() === 'https://api.paymongo.com/v2/checkout_sessions'
-                && $methods === ['qrph', 'gcash', 'maya'];
+                && $methods === ['qrph', 'gcash', 'paymaya'];
         });
     }
 

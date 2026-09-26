@@ -56,9 +56,15 @@ return [
         // The payment methods offered on the hosted checkout page. Cards are
         // deliberately excluded: this is a Philippine student project and the
         // wallets plus QR Ph cover how BSIT students actually pay.
+        //
+        // Maya is 'paymaya', not 'maya'. PayMongo stores an unrecognised method
+        // string without complaint, so a wrong one only shows up later as a
+        // dead checkout page. Verified against the live test API: a session
+        // created with 'maya' alone renders an empty method list and a disabled
+        // Continue button, while 'paymaya' renders a usable control.
         'payment_method_types' => array_values(array_filter(array_map(
             'trim',
-            explode(',', (string) env('PAYMONGO_PAYMENT_METHODS', 'qrph,gcash,maya'))
+            explode(',', (string) env('PAYMONGO_PAYMENT_METHODS', 'qrph,gcash,paymaya'))
         ))),
     ],
 
