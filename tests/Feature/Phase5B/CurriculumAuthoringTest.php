@@ -179,13 +179,14 @@ class CurriculumAuthoringTest extends TestCase
                 'form_context' => "lesson:{$module->id}",
                 'title' => '',
                 'content_text' => 'Long lesson draft text.',
-            ])
-            ->assertSessionHasErrors('title');
+            ]);
 
         $this->actingAs($instructor)
             ->get(route('instructor.courses.show', $course))
             ->assertOk()
+            ->assertSee('Check the highlighted fields')
             ->assertSee('Long lesson draft text.', false)
+            ->assertSee('The title field is required.')
             ->assertSee('<details class="border-t border-line bg-surface-muted px-5 py-4" open>', false);
     }
 
@@ -200,12 +201,13 @@ class CurriculumAuthoringTest extends TestCase
                 'form_context' => 'module',
                 'title' => '',
                 'description' => 'Module draft description.',
-            ])
-            ->assertSessionHasErrors('title');
+            ]);
 
         $this->actingAs($instructor)
             ->get(route('instructor.courses.show', $course))
             ->assertOk()
+            ->assertSee('Check the highlighted fields')
+            ->assertSee('The title field is required.')
             ->assertSee('Module draft description.', false);
     }
 
