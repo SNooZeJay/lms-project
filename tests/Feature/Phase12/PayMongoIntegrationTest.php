@@ -14,6 +14,7 @@ use App\Models\Payment;
 use App\Models\PaymentEvent;
 use App\Models\User;
 use App\Services\Payments\PayMongoApiClient;
+use App\Services\Payments\PayMongoEventEnvelope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -301,9 +302,10 @@ class PayMongoIntegrationTest extends TestCase
         $headers = ['PayMongo-Signature' => hash_hmac('sha256', $raw, $this->webhookSecret)];
 
         $processor = app(ProcessPayMongoEvent::class);
+        $envelope = PayMongoEventEnvelope::fromPayload($payload, $raw);
 
-        $processor->handle('evt_direct_1', 'checkout_session.payment.paid', $payload, $headers, $raw);
-        $processor->handle('evt_direct_1', 'checkout_session.payment.paid', $payload, $headers, $raw);
+        $processor->handle($envelope, $payload, $headers, $raw);
+        $processor->handle($envelope, $payload, $headers, $raw);
 
         $this->assertSame(1, PaymentEvent::query()->count());
     }

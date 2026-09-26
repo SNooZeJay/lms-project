@@ -8,6 +8,7 @@ use App\Enums\PaymentEventStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\PaymentEvent;
+use App\Services\Payments\PayMongoEventEnvelope;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,11 +17,11 @@ use Throwable;
 /**
  * Processes one provider event, exactly once.
  *
- * The event envelope nests everything, so the id, the type, the resource, and
- * the reference number are all read from their documented positions rather
- * than guessed. The signature is verified against the raw request body,
- * because re-encoding a parsed payload changes the bytes and would make every
- * legitimate event look forged.
+ * The envelope is read by PayMongoEventEnvelope, which accepts both shapes
+ * PayMongo documents, so this class never has to know where a field sits. The
+ * signature is verified against the raw request body, because re-encoding a
+ * parsed payload changes the bytes and would make every legitimate event look
+ * forged.
  *
  * The provider event id is unique, so a replayed delivery is recorded and
  * changes nothing. An unverified signature is recorded and discarded without
@@ -32,8 +33,8 @@ class ProcessPayMongoEvent
     public function __construct(private readonly PayMongoClient $client) {}
 
     /**
-     * Events that settle a payment, in both the documented spelling and the
-     * spelling shown in the PayMongo dashboard.
+     * Events that settle a payment. Both spellings are listed because the
+     * dashboard label and the documented event type have differed.
      */
     private const PAID_EVENTS = [
         'checkout_session.payment.paid',
@@ -54,8 +55,7 @@ class ProcessPayMongoEvent
      * @param  array<string, mixed>  $headers
      */
     public function handle(
-        string $providerEventId,
-        string $eventType,
+        PayMongoEventEnvelope $envelope,
         array $payload,
         array $headers,
         ?string $rawBody = null,
@@ -65,7 +65,7 @@ class ProcessPayMongoEvent
             $headers,
         );
 
-        $event = $this->record($providerEventId, $eventType, $payload, $verified);
+        $event = $this->record($envelope, $payload, $verified);
 
         if (! $verified) {
             $this->mark($event, PaymentEventStatus::Ignored, 'Signature verification failed.');
@@ -77,7 +77,7 @@ class ProcessPayMongoEvent
             return $event;
         }
 
-        if (! $this->livemodeMatches($payload)) {
+        if (! $this->livemodeMatches($envelope)) {
             $this->mark(
                 $event,
                 PaymentEventStatus::Ignored,
@@ -88,11 +88,11 @@ class ProcessPayMongoEvent
         }
 
         try {
-            $this->apply($event, $eventType, $payload);
+            $this->apply($event, $envelope);
         } catch (Throwable $exception) {
             Log::error('Payment event failed', [
-                'provider_event_id' => $providerEventId,
-                'event_type' => $eventType,
+                'provider_event_id' => $envelope->eventId,
+                'event_type' => $envelope->eventType,
                 'message' => $exception->getMessage(),
             ]);
 
@@ -105,28 +105,26 @@ class ProcessPayMongoEvent
     }
 
     /**
-     * A test server must never act on a live event, and the reverse.
+     * A test server must never act on a live event, and the reverse. A payload
+     * without the flag is accepted, because a missing flag is not a mismatch.
      */
-    private function livemodeMatches(array $payload): bool
+    private function livemodeMatches(PayMongoEventEnvelope $envelope): bool
     {
-        $expected = (bool) config('services.paymongo.expected_livemode', false);
-        $livemode = data_get($payload, 'data.attributes.livemode');
-
-        if ($livemode === null) {
+        if ($envelope->livemode === null) {
             return true;
         }
 
-        return (bool) $livemode === $expected;
+        return $envelope->livemode === (bool) config('services.paymongo.expected_livemode', false);
     }
 
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function record(string $providerEventId, string $eventType, array $payload, bool $verified): PaymentEvent
+    private function record(PayMongoEventEnvelope $envelope, array $payload, bool $verified): PaymentEvent
     {
         $existing = PaymentEvent::query()
             ->where('provider', 'paymongo')
-            ->where('provider_event_id', $providerEventId)
+            ->where('provider_event_id', $envelope->eventId)
             ->first();
 
         if ($existing !== null) {
@@ -136,8 +134,8 @@ class ProcessPayMongoEvent
         $event = new PaymentEvent;
         $event->forceFill([
             'provider' => 'paymongo',
-            'provider_event_id' => $providerEventId,
-            'event_type' => $eventType,
+            'provider_event_id' => $envelope->eventId,
+            'event_type' => $envelope->eventType,
             'payload' => $payload,
             'signature_verified' => $verified,
             'processing_status' => PaymentEventStatus::Received,
@@ -149,7 +147,7 @@ class ProcessPayMongoEvent
         } catch (QueryException $exception) {
             $raced = PaymentEvent::query()
                 ->where('provider', 'paymongo')
-                ->where('provider_event_id', $providerEventId)
+                ->where('provider_event_id', $envelope->eventId)
                 ->first();
 
             if ($raced === null) {
@@ -162,12 +160,9 @@ class ProcessPayMongoEvent
         return $event;
     }
 
-    /**
-     * @param  array<string, mixed>  $payload
-     */
-    private function apply(PaymentEvent $event, string $eventType, array $payload): void
+    private function apply(PaymentEvent $event, PayMongoEventEnvelope $envelope): void
     {
-        $payment = $this->resolvePayment($event, $payload);
+        $payment = $this->resolvePayment($event, $envelope);
 
         if ($payment === null) {
             $this->mark($event, PaymentEventStatus::Ignored, 'No matching payment.');
@@ -175,11 +170,11 @@ class ProcessPayMongoEvent
             return;
         }
 
-        if (in_array($eventType, self::PAID_EVENTS, true)) {
-            $this->markPaid($event, $payment, $payload);
-        } elseif (in_array($eventType, self::FAILED_EVENTS, true)) {
-            $this->markFailed($event, $payment, $payload);
-        } elseif (in_array($eventType, self::REFUNDED_EVENTS, true)) {
+        if (in_array($envelope->eventType, self::PAID_EVENTS, true)) {
+            $this->markPaid($event, $payment, $envelope);
+        } elseif (in_array($envelope->eventType, self::FAILED_EVENTS, true)) {
+            $this->markFailed($event, $payment, $envelope);
+        } elseif (in_array($envelope->eventType, self::REFUNDED_EVENTS, true)) {
             $this->markRefunded($event, $payment);
         } else {
             $this->mark($event, PaymentEventStatus::Ignored, 'Unhandled event type.');
@@ -189,27 +184,22 @@ class ProcessPayMongoEvent
     /**
      * Find the Payment this event belongs to.
      *
-     * The checkout session id is the strongest link because it was stored
-     * verbatim when the checkout was created. The reference number is the
-     * fallback, and the provider resource id is the last resort.
-     *
-     * @param  array<string, mixed>  $payload
+     * The reference number is tried first because this application sets it
+     * when it creates the checkout. The provider resource id is the fallback,
+     * and it covers the session id as well as the payment id.
      */
-    private function resolvePayment(PaymentEvent $event, array $payload): ?Payment
+    private function resolvePayment(PaymentEvent $event, PayMongoEventEnvelope $envelope): ?Payment
     {
-        $resourceId = (string) data_get($payload, 'data.attributes.data.id', '');
-        $reference = (string) data_get($payload, 'data.attributes.data.attributes.reference_number', '');
-
         $payment = null;
 
-        if ($reference !== '') {
-            $payment = Payment::query()->where('idempotency_key', $reference)->first();
+        if ($envelope->referenceNumber !== null) {
+            $payment = Payment::query()->where('idempotency_key', $envelope->referenceNumber)->first();
         }
 
-        if ($payment === null && $resourceId !== '') {
+        if ($payment === null && $envelope->resourceId !== null) {
             $payment = Payment::query()
-                ->where('provider_checkout_id', $resourceId)
-                ->orWhere('provider_payment_id', $resourceId)
+                ->where('provider_checkout_id', $envelope->resourceId)
+                ->orWhere('provider_payment_id', $envelope->resourceId)
                 ->first();
         }
 
@@ -223,12 +213,10 @@ class ProcessPayMongoEvent
     /**
      * A paid event activates the enrollment in the same transaction as the
      * payment, so a Student is never left active without a paid record.
-     *
-     * @param  array<string, mixed>  $payload
      */
-    private function markPaid(PaymentEvent $event, Payment $payment, array $payload): void
+    private function markPaid(PaymentEvent $event, Payment $payment, PayMongoEventEnvelope $envelope): void
     {
-        DB::transaction(function () use ($event, $payment, $payload): void {
+        DB::transaction(function () use ($event, $payment, $envelope): void {
             $locked = Payment::query()->lockForUpdate()->find($payment->id);
 
             if ($locked === null) {
@@ -243,11 +231,9 @@ class ProcessPayMongoEvent
                 return;
             }
 
-            $resourceId = (string) data_get($payload, 'data.attributes.data.id', '');
-
             $locked->forceFill([
                 'status' => PaymentStatus::Paid,
-                'provider_payment_id' => $resourceId !== '' ? $resourceId : $locked->provider_payment_id,
+                'provider_payment_id' => $envelope->providerPaymentId ?? $locked->provider_payment_id,
                 'paid_at' => now(),
                 'failure_code' => null,
                 'failure_message' => null,
@@ -269,30 +255,18 @@ class ProcessPayMongoEvent
     }
 
     /**
-     * @param  array<string, mixed>  $payload
+     * The enrollment stays pending_payment, so the Student can retry.
      */
-    private function markFailed(PaymentEvent $event, Payment $payment, array $payload): void
+    private function markFailed(PaymentEvent $event, Payment $payment, PayMongoEventEnvelope $envelope): void
     {
-        $resource = 'data.attributes.data.attributes';
-
-        $code = (string) (data_get($payload, $resource.'.last_error.code')
-            ?? data_get($payload, $resource.'.failure_code')
-            ?? 'failed');
-
-        $message = (string) (data_get($payload, $resource.'.last_error.message')
-            ?? data_get($payload, $resource.'.failure_message')
-            ?? '');
-
         $payment->forceFill([
             'status' => PaymentStatus::Failed,
-            'failure_code' => $code !== '' ? $code : 'failed',
-            'failure_message' => $message !== ''
-                ? $message
-                : 'The provider reported a failed payment.',
+            'failure_code' => $envelope->failureCode ?? 'failed',
+            'failure_message' => $envelope->failureMessage
+                ?? 'The provider reported a failed payment.',
         ]);
         $payment->save();
 
-        // The enrollment stays pending_payment, so the Student can retry.
         $this->mark($event, PaymentEventStatus::Processed, 'Payment failed; enrollment stays pending.');
     }
 

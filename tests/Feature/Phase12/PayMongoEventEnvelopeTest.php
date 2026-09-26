@@ -26,7 +26,7 @@ class PayMongoEventEnvelopeTest extends TestCase
 {
     use RefreshDatabase;
 
-    private string $webhookSecret = 'whsec_envelope_test';
+    private string $webhookSecret = 'test-signing-key-envelope';
 
     private FakePayMongoClient $client;
 
@@ -56,8 +56,12 @@ class PayMongoEventEnvelopeTest extends TestCase
             ->assertJsonPath('status', 'processed');
 
         $this->assertSame(PaymentStatus::Paid, $payment->fresh()->status);
-        $this->assertSame('cs_REAL_CHECKOUT_1', $payment->fresh()->provider_payment_id);
         $this->assertSame(EnrollmentStatus::Active, $enrollment->fresh()->status);
+
+        // A cs_ id is the checkout session, not the payment. Storing it as
+        // provider_payment_id would lose the link to the real pay_ resource,
+        // so it is left alone until an event carries a payment list.
+        $this->assertNull($payment->fresh()->provider_payment_id);
     }
 
     public function test_the_dashboard_spelling_of_the_event_is_also_handled(): void

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Webhooks;
 
 use App\Actions\Payments\ProcessPayMongoEvent;
 use App\Http\Controllers\Controller;
+use App\Services\Payments\PayMongoEventEnvelope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -14,6 +15,10 @@ use Illuminate\Http\Request;
  * The raw request body is captured before anything else touches it. Parsing
  * and re-encoding the payload changes the bytes, which silently breaks every
  * signature check, so verification must run against the original body.
+ *
+ * Reading the envelope is delegated so that both shapes PayMongo documents are
+ * accepted. Reading a single shape here meant every event of the other product
+ * came back as malformed.
  */
 class PayMongoWebhookController extends Controller
 {
@@ -27,21 +32,16 @@ class PayMongoWebhookController extends Controller
             return response()->json(['message' => 'The request body must be a JSON object.'], 422);
         }
 
-        // The event envelope nests the id and the type. They are not at the
-        // top level, so reading them there would make every real event look
-        // malformed.
-        $eventId = (string) data_get($payload, 'data.id', '');
-        $eventType = (string) data_get($payload, 'data.attributes.type', '');
+        $envelope = PayMongoEventEnvelope::fromPayload($payload, $rawBody);
 
-        if ($eventId === '' || $eventType === '') {
+        if ($envelope === null) {
             return response()->json([
-                'message' => 'The payload must contain data.id and data.attributes.type.',
+                'message' => 'The payload does not look like a PayMongo event.',
             ], 422);
         }
 
         $event = $processEvent->handle(
-            $eventId,
-            $eventType,
+            $envelope,
             $payload,
             $request->headers->all(),
             $rawBody,

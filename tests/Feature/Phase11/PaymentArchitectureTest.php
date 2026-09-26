@@ -17,6 +17,7 @@ use App\Models\Enrollment;
 use App\Models\Payment;
 use App\Models\PaymentEvent;
 use App\Models\User;
+use App\Services\Payments\PayMongoEventEnvelope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\FakePayMongoClient;
 use Tests\Support\PayMongoEventFactory;
@@ -406,12 +407,13 @@ class PaymentArchitectureTest extends TestCase
                 ],
             ]);
 
+        $raw = (string) json_encode($payload);
+
         return app(ProcessPayMongoEvent::class)->handle(
-            $id,
-            $type,
+            PayMongoEventEnvelope::fromPayload($payload, $raw),
             $payload,
             PayMongoEventFactory::signatureHeaders($payload, $this->webhookSecret),
-            (string) json_encode($payload),
+            $raw,
         );
     }
 
