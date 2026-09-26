@@ -168,7 +168,6 @@ class CourseFoundationTest extends TestCase
     public function test_phase_four_a_does_not_create_later_business_tables(): void
     {
         foreach ([
-            'learning_materials',
             'enrollments',
             'payments',
             'lesson_progress',

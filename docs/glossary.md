@@ -266,6 +266,14 @@ The stored Course price category: `free` or `paid`. Free Courses use zero minor 
 
 The stored Course visibility state: `draft`, `published`, or `archived`. Only published Courses may enter the public catalog in a later phase.
 
+**Content status**
+
+The stored Module or Lesson state: `draft`, `published`, or `archived`. Phase 4B stores the state but does not expose curriculum publicly.
+
+**Learning Material**
+
+A Lesson resource described by metadata. Phase 4B stores text, link, or private-file metadata but does not upload or serve files.
+
 **Minor units**
 
 Integer money storage such as `100` for PHP 1.00. Phase 4A stores Course prices as `price_minor` with the `PHP` currency code.

@@ -216,11 +216,12 @@ class CurriculumFoundationTest extends TestCase
         $this->assertFalse($lesson->is_required);
     }
 
-    public function test_phase_four_b_one_does_not_add_curriculum_routes_or_materials(): void
+    public function test_curriculum_slice_has_no_routes_or_later_workflows(): void
     {
         $this->assertFalse(Route::has('instructor.courses.modules.index'));
         $this->assertFalse(Route::has('student.learn.index'));
-        $this->assertFalse(Schema::hasTable('learning_materials'));
+        $this->assertFalse(Schema::hasTable('enrollments'));
+        $this->assertFalse(Schema::hasTable('payments'));
     }
 
     private function insertModule(array $overrides = []): void

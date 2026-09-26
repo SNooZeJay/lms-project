@@ -19,7 +19,7 @@ class FoundationDatabaseTest extends TestCase
         $this->assertStringStartsWith('8.4.', $version);
     }
 
-    public function test_phase_four_b_one_identity_and_audit_schema_contains_no_later_business_tables(): void
+    public function test_phase_four_b_identity_and_audit_schema_contains_no_later_business_tables(): void
     {
         $this->assertTrue(Schema::hasTable('sessions'));
         $this->assertTrue(Schema::hasTable('cache'));
@@ -31,6 +31,7 @@ class FoundationDatabaseTest extends TestCase
         $this->assertTrue(Schema::hasTable('courses'));
         $this->assertTrue(Schema::hasTable('modules'));
         $this->assertTrue(Schema::hasTable('lessons'));
+        $this->assertTrue(Schema::hasTable('learning_materials'));
 
         $this->assertTrue(Schema::hasColumns('modules', [
             'course_id',
@@ -47,6 +48,16 @@ class FoundationDatabaseTest extends TestCase
             'status',
             'is_required',
             'estimated_minutes',
+        ]));
+
+        $this->assertTrue(Schema::hasColumns('learning_materials', [
+            'lesson_id',
+            'uploaded_by',
+            'title',
+            'material_type',
+            'position',
+            'storage_disk',
+            'storage_path',
         ]));
 
         $this->assertTrue(Schema::hasColumns('courses', [
@@ -82,7 +93,6 @@ class FoundationDatabaseTest extends TestCase
         $this->assertFalse(Schema::hasColumn('activity_logs', 'ip_address'));
         $this->assertFalse(Schema::hasColumn('activity_logs', 'user_agent'));
 
-        $this->assertFalse(Schema::hasTable('learning_materials'));
         $this->assertFalse(Schema::hasTable('enrollments'));
         $this->assertFalse(Schema::hasTable('payments'));
         $this->assertFalse(Schema::hasTable('quizzes'));

@@ -6,7 +6,7 @@ Audit date: September 25, 2026
 
 This document describes the repository as it exists now.
 
-The Laravel foundation, Phase 2 authentication/profile slice, Phase 3 roles and authorization slice, and Phase 4A Course foundation are human-approved. Phase 4B increment 1 adds Module and Lesson curriculum data; Learning Materials are next. Later LMS business modules remain unbuilt.
+The Laravel foundation, Phase 2 authentication/profile slice, Phase 3 roles and authorization slice, and Phase 4A Course foundation are human-approved. Phase 4B curriculum and material foundation is implemented and awaiting human review. Later LMS business modules remain unbuilt.
 
 ## 2. Current repository state
 
@@ -101,6 +101,9 @@ The following Phase 1, Phase 2, Phase 3, and Phase 4A capabilities exist:
 - `ContentStatus` enum
 - `Module` and `Lesson` models with Course → Module → Lesson relationships
 - `ModuleFactory` and `LessonFactory`
+- `learning_materials` metadata table with Lesson and uploader relationships
+- `LearningMaterialType` enum
+- `LearningMaterial` model and `LearningMaterialFactory`
 
 The following capabilities are not implemented yet:
 
@@ -143,7 +146,7 @@ The following capabilities are not implemented yet:
 - Block suspended sessions on the next request
 - No deletion, archive, bulk actions, multi-role accounts, or business modules
 
-Phase 3 and Phase 4A code are human-approved. Phase 4B increment 1 adds Module and Lesson curriculum data; Learning Materials are next.
+Phase 3 and Phase 4A code are human-approved. Phase 4B curriculum and material metadata is implemented and awaiting human review.
 
 ### Approved Phase 4A specification
 
@@ -167,7 +170,7 @@ Phase 3 and Phase 4A code are human-approved. Phase 4B increment 1 adds Module a
 - Keep storage metadata server-owned
 - Do not add curriculum routes, uploads, private downloads, URL fetching, enrollment, payment, or sample seeders
 
-Phase 4B increment 1 is implemented. Learning Materials remain the next increment.
+Phase 4B code is implemented and awaiting human review.
 
 ### Local environment check
 
@@ -188,7 +191,7 @@ Checked on September 25, 2026:
 | Credential storage | DPAPI-encrypted file under `C:\Users\Administrator\.secrets\lms-mysql.json` | Ready |
 | XAMPP database | MariaDB 10.4.32 remains on port 3306 | Preserved and not used by the LMS |
 
-Phase 1 environment prerequisites, the Laravel foundation, and the human-approved Phase 2, Phase 3, and Phase 4A slices are ready. Phase 4B curriculum and material foundation is being specified.
+Phase 1 environment prerequisites, the Laravel foundation, and the human-approved Phase 2, Phase 3, and Phase 4A slices are ready. Phase 4B curriculum and material foundation is implemented and awaiting human review.
 
 ## 5. Documentation state
 
@@ -379,7 +382,7 @@ Phase 1, Phase 2, Phase 3, and Phase 4A quality checks exist:
 - Local MySQL migrations
 - Blade, route, and configuration cache checks
 
-The first full foundation run passed 7 tests and 26 assertions. After the Fortify dependency and identity slice, the suite passed 9 tests and 45 assertions. The completed Phase 2 authentication and profile slice passes 28 tests and 141 assertions, including a real Windows DPAPI round trip. The Phase 3 role and authorization slice passed 41 tests and 195 assertions. The Phase 4A Course foundation slice passes 55 tests and 235 assertions. The first dependency pass found a missing PHP Fileinfo extension, which was enabled and retested. A later cached-config run exposed a test database selection defect, which was fixed and retested. A first-run Blade check exposed an unconditional Vite manifest dependency, which was fixed and retested. A local `.env` owner-name value needed quoting and was fixed before the Phase 2 tests passed. Fortify’s default unknown-email reset response initially exposed account state, so a safe generic response was added and retested. The password-change middleware initially allowed the GET route but not the POST route, and the fix was retested. The owner test initially reused the real local secret path, so it now uses a unique temporary path. Registration normalization initially assumed missing fields were present, so missing-field validation now returns safe errors. Edge fallback review confirmed responsive auth layout, theme persistence, and keyboard-safe controls. The Phase 3 Administrator table initially caused mobile page overflow; stacked mobile cards fixed it and the 390px browser check was rerun. The first Phase 4A factory test exposed an array value in a text column; the factory now joins sentences before insertion.
+The first full foundation run passed 7 tests and 26 assertions. After the Fortify dependency and identity slice, the suite passed 9 tests and 45 assertions. The completed Phase 2 authentication and profile slice passes 28 tests and 141 assertions, including a real Windows DPAPI round trip. The Phase 3 role and authorization slice passed 41 tests and 195 assertions. The Phase 4A Course foundation slice passed 55 tests and 235 assertions. The Phase 4B curriculum and material foundation slice passes 80 tests and 308 assertions. The first dependency pass found a missing PHP Fileinfo extension, which was enabled and retested. A later cached-config run exposed a test database selection defect, which was fixed and retested. A first-run Blade check exposed an unconditional Vite manifest dependency, which was fixed and retested. A local `.env` owner-name value needed quoting and was fixed before the Phase 2 tests passed. Fortify’s default unknown-email reset response initially exposed account state, so a safe generic response was added and retested. The password-change middleware initially allowed the GET route but not the POST route, and the fix was retested. The owner test initially reused the real local secret path, so it now uses a unique temporary path. Registration normalization initially assumed missing fields were present, so missing-field validation now returns safe errors. Edge fallback review confirmed responsive auth layout, theme persistence, and keyboard-safe controls. The Phase 3 Administrator table initially caused mobile page overflow; stacked mobile cards fixed it and the 390px browser check was rerun. The first Phase 4A factory test exposed an array value in a text column; the factory now joins sentences before insertion.
 
 CI and production deployment checks are not implemented yet.
 
@@ -435,14 +438,14 @@ Each deferred item has a safe planning default in `plan.md` and `architecture.md
 
 ## 14. Next approved milestone
 
-The next milestone is Phase 4B increment 2: Learning Material metadata.
+The next milestone is human review of the completed Phase 4B curriculum and material foundation.
 
-Phase 4B increment 1 evidence is recorded for Modules and Lessons. The desktop browser connector was unavailable in this session, so Edge fallback checks are used.
+Phase 4B increment 1 and increment 2 evidence is recorded. The desktop browser connector was unavailable in this session, so Edge fallback checks are used.
 
-Learning Materials will add only metadata, relationships, and constraints. Uploads, private downloads, enrollment, quizzes, certificates, and payments remain separate approved boundaries.
+Uploads, private downloads, enrollment, quizzes, certificates, and payments remain separate approved boundaries.
 
 ## 15. Audit conclusion
 
-The repository now has a runnable Laravel 13 foundation, human-approved Phase 2, Phase 3, and Phase 4A slices, and an implemented Phase 4B Module and Lesson foundation for IT Learning Hub.
+The repository now has a runnable Laravel 13 foundation, human-approved Phase 2, Phase 3, and Phase 4A slices, and an implemented Phase 4B curriculum and material metadata foundation for IT Learning Hub.
 
-The safe next step is the TDD Learning Material metadata increment. Payment and curriculum UI work remain later phases.
+The safe next step is human review of Phase 4B. Payment and curriculum UI work remain later phases.

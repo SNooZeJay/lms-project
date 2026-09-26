@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, and Phase 4A Course foundation are human-approved. Phase 4B increment 1 adds Module and Lesson curriculum data; Learning Materials are next.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, and Phase 4A Course foundation are human-approved. Phase 4B curriculum and material metadata is implemented and awaiting human review.
 
 The repository currently contains:
 
@@ -190,13 +190,13 @@ Phase 2 authentication, profiles, Phase 3 roles and authorization, and Phase 4A 
 
 - `modules` migration with Course ownership and ordered positions
 - `lessons` migration with Module ownership and ordered positions
-- Module and Lesson relationship models
-- Content status enum
+- `learning_materials` migration with Lesson ownership and material metadata
+- Module, Lesson, and material relationship models
+- Content status and material type enums
 - Constraint, relationship, and factory tests
-- `learning_materials` metadata is the next increment
 - No upload handler, private download route, enrollment, payment, or sample seeders
 
-The Phase 4B human approval checkpoint is not yet open; Learning Material metadata remains to be implemented.
+The Phase 4B human approval checkpoint is not yet open; the metadata slice is ready for review.
 
 The local Administrator is provisioned with:
 

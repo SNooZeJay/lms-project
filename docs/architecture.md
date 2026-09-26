@@ -2,7 +2,7 @@
 
 ## 1. Document status
 
-This document defines the approved target architecture for the BSIT Academic LMS. The Phase 1 Laravel foundation, human-approved Phase 2 authentication/profile slice, human-approved Phase 3 roles and authorization slice, and human-approved Phase 4A Course foundation are implemented. Phase 4B curriculum and material foundation is being specified. This document does not create hosted services or payment resources.
+This document defines the approved target architecture for the BSIT Academic LMS. The Phase 1 Laravel foundation, human-approved Phase 2 authentication/profile slice, human-approved Phase 3 roles and authorization slice, and human-approved Phase 4A Course foundation are implemented. Phase 4B curriculum and material foundation is implemented and awaiting human review. This document does not create hosted services or payment resources.
 
 The approved stack is:
 
@@ -675,6 +675,11 @@ activity_logs(entity_type, entity_id)
 Required unique indexes remain required even when another index has similar columns:
 
 - `courses(slug)`
+- `modules(course_id, position)`
+- `lessons(module_id, slug)`
+- `lessons(module_id, position)`
+- `learning_materials(lesson_id, position)`
+- `learning_materials(storage_disk, storage_path)`
 - `enrollments(student_id, course_id)`
 - `payments(provider, provider_payment_id)`
 - `payments(enrollment_id, idempotency_key)`
@@ -694,6 +699,7 @@ erDiagram
     USERS ||--o{ ACTIVITY_LOGS : acts
     USERS ||--o{ ACTIVITY_LOGS : receives
     USERS ||--o{ COURSES : owns_as_instructor
+    USERS ||--o{ LEARNING_MATERIALS : uploads
     USERS ||--o{ ENROLLMENTS : owns_as_student
     COURSES ||--o{ MODULES : contains
     MODULES ||--o{ LESSONS : contains
@@ -1361,6 +1367,10 @@ Use the database queue during early development. Select a production queue drive
 35. Enforce `PHP` as the Course currency in the database.
 36. Generate Course slugs on the server and keep them unique.
 37. Keep Course ownership and publication fields server-owned.
+38. Keep curriculum positions, Lesson slugs, and content status server-owned.
+39. Keep Learning Material storage paths on private metadata only.
+40. Never treat a storage path as public access.
+41. Validate external material URLs and uploaded files only in later approved actions.
 
 ## 21. Error handling and observability
 

@@ -981,7 +981,7 @@ Create the ordered Course outline and Learning Material metadata before curricul
 
 ### Status
 
-Approved on September 26, 2026. Implementation starts with the Module and Lesson ERD, constraints, and failing tests.
+Approved on September 26, 2026. Module, Lesson, and Learning Material metadata are implemented and awaiting human review.
 
 ### Confirmed decisions
 
@@ -1125,15 +1125,15 @@ flowchart TD
   - Acceptance: factories create valid parent-scoped records; Course → Module → Lesson relationships resolve correctly.
   - Verify: focused factory and relationship tests.
 
-- [ ] Task 5: Add failing Learning Material tests
+- [x] Task 5: Add failing Learning Material tests
   - Acceptance: tests describe metadata columns, foreign keys, material types, positions, storage paths, and server-owned fields.
   - Verify: tests fail before the migration exists.
 
-- [ ] Task 6: Add Learning Material migration, model, and factory
+- [x] Task 6: Add Learning Material migration, model, and factory
   - Acceptance: valid metadata records save; invalid types, positions, and relationships fail safely.
   - Verify: focused migration and model tests.
 
-- [ ] Task 7: Run the Phase 4B quality gate
+- [x] Task 7: Run the Phase 4B quality gate
   - Acceptance: full tests, Pint, PHP syntax, build, audits, route checks, and clean local migration pass.
   - Verify: recorded evidence in `docs/project-audit.md`.
 
@@ -1147,6 +1147,17 @@ flowchart TD
 - The full suite passes 70 tests and 279 assertions.
 - Pint, PHP syntax checks, and local migrations pass.
 - No curriculum routes, uploads, Learning Materials, enrollment, or payment behavior has started.
+
+### Phase 4B increment 2 evidence
+
+- Added `LearningMaterialType` and the Learning Material migration.
+- Enforced positive, Lesson-scoped positions and storage-path uniqueness within a disk.
+- Added the `LearningMaterial` model with Lesson and uploader relationships.
+- Added `LearningMaterialFactory` with safe text-material defaults.
+- Added server-owned storage and ordering field tests.
+- The full suite passes 80 tests and 308 assertions.
+- Pint, PHP syntax checks, Vite build, Composer validation/audit, npm audit, caches, and local migrations pass.
+- No upload handler, private download route, external URL fetching, enrollment, or payment behavior was added.
 
 ### Phase 4B security tests
 
@@ -1177,6 +1188,11 @@ flowchart TD
 ### Exit condition
 
 A clean test database can migrate from zero and create valid Module, Lesson, and Learning Material metadata through models and factories. No curriculum UI, upload, enrollment, or payment behavior has started.
+
+### Phase 4B checkpoint
+
+- [x] Module, Lesson, and Learning Material foundations pass automated checks
+- [ ] Human review confirms the Phase 4B curriculum data slice
 
 ## 10. Phase 4C: enrollment and progress foundation
 
@@ -1568,6 +1584,6 @@ A task is done when:
 
 ## 25. Current next action
 
-The current next action is Phase 4B increment 2 for Learning Material metadata.
+The current next action is human review of the completed Phase 4B curriculum and material foundation.
 
-Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, the human-approved Phase 4A Course foundation, and Phase 4B Module and Lesson data are complete. Do not add uploads or curriculum routes.
+Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, the human-approved Phase 4A Course foundation, and Phase 4B Module, Lesson, and Learning Material data are complete. Do not begin Phase 4C until the Phase 4B checkpoint is approved.
