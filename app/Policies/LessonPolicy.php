@@ -32,6 +32,11 @@ class LessonPolicy
         return $this->viewForStudent($actor, $lesson);
     }
 
+    public function reorder(User $actor, Module $module): bool
+    {
+        return $this->ownsCourse($actor, $module->course);
+    }
+
     public function create(User $actor, Module $module): bool
     {
         return $this->ownsCourse($actor, $module->course);

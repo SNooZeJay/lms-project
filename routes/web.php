@@ -48,6 +48,8 @@ Route::middleware([...$authenticated, 'role:instructor'])->group(function (): vo
     Route::post('/instructor/courses/{course}/publish', [CourseController::class, 'publish'])->name('instructor.courses.publish');
     Route::post('/instructor/courses/{course}/unpublish', [CourseController::class, 'unpublish'])->name('instructor.courses.unpublish');
     Route::post('/instructor/courses/{course}/modules', [CurriculumController::class, 'storeModule'])->name('instructor.courses.modules.store');
+    Route::patch('/instructor/courses/{course}/modules/reorder', [CurriculumController::class, 'reorderModules'])->name('instructor.courses.modules.reorder');
+    Route::patch('/instructor/courses/{course}/modules/{module}/lessons/reorder', [CurriculumController::class, 'reorderLessons'])->name('instructor.courses.modules.lessons.reorder');
     Route::patch('/instructor/courses/{course}/modules/{module}', [CurriculumController::class, 'updateModule'])->name('instructor.courses.modules.update');
     Route::get('/instructor/courses/{course}/modules/{module}/edit', [CurriculumController::class, 'editModule'])->name('instructor.courses.modules.edit');
     Route::post('/instructor/courses/{course}/modules/{module}/lessons', [CurriculumController::class, 'storeLesson'])->name('instructor.courses.modules.lessons.store');

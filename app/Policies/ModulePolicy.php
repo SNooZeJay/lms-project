@@ -20,6 +20,11 @@ class ModulePolicy
         return $this->ownsCourse($actor, $module->course);
     }
 
+    public function reorder(User $actor, Course $course): bool
+    {
+        return $this->ownsCourse($actor, $course);
+    }
+
     private function ownsCourse(User $actor, Course $course): bool
     {
         return $actor->profile?->role === UserRole::Instructor

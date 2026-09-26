@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Instructor;
 use App\Actions\Courses\Curriculum\CreateLearningMaterial;
 use App\Actions\Courses\Curriculum\CreateLesson;
 use App\Actions\Courses\Curriculum\CreateModule;
+use App\Actions\Courses\Curriculum\ReorderCurriculum;
 use App\Actions\Courses\Curriculum\UpdateLearningMaterial;
 use App\Actions\Courses\Curriculum\UpdateLesson;
 use App\Actions\Courses\Curriculum\UpdateModule;
@@ -12,6 +13,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Courses\CreateLearningMaterialRequest;
 use App\Http\Requests\Courses\CreateLessonRequest;
 use App\Http\Requests\Courses\CreateModuleRequest;
+use App\Http\Requests\Courses\ReorderLessonsRequest;
+use App\Http\Requests\Courses\ReorderModulesRequest;
 use App\Http\Requests\Courses\UpdateLearningMaterialRequest;
 use App\Http\Requests\Courses\UpdateLessonRequest;
 use App\Http\Requests\Courses\UpdateModuleRequest;
@@ -153,6 +156,32 @@ class CurriculumController extends Controller
         return redirect()
             ->route('instructor.courses.show', $course)
             ->with('status', 'Learning Material updated.');
+    }
+
+    public function reorderModules(
+        ReorderModulesRequest $request,
+        Course $course,
+        ReorderCurriculum $reorderCurriculum,
+    ): RedirectResponse {
+        $reorderCurriculum->reorderModules($request->user(), $course, $request->order());
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Module order saved.');
+    }
+
+    public function reorderLessons(
+        ReorderLessonsRequest $request,
+        Course $course,
+        Module $module,
+        ReorderCurriculum $reorderCurriculum,
+    ): RedirectResponse {
+        abort_unless($module->course_id === $course->id, 404);
+        $reorderCurriculum->reorderLessons($request->user(), $module, $request->order());
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Lesson order saved.');
     }
 
     private function lessonBelongsToCourse(Course $course, Module $module, Lesson $lesson): bool

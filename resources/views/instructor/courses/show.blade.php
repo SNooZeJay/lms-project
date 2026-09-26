@@ -179,6 +179,33 @@
                         <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Add private lesson</button>
                     </form>
                 </details>
+
+                @php
+                    $reorderableLessons = $module->lessons->where('status.value', '!=', \App\Enums\ContentStatus::Archived->value)->values();
+                @endphp
+
+                @if ($reorderableLessons->count() > 1)
+                    <details class="border-t border-line px-5 py-4">
+                        <summary class="inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-primary-text focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Reorder lessons</summary>
+
+                        <form method="POST" action="{{ route('instructor.courses.modules.lessons.reorder', [$course, $module]) }}" class="mt-4 space-y-3">
+                            @csrf
+                            @method('PATCH')
+
+                            @foreach ($reorderableLessons as $index => $reorderable)
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <label for="lesson-position-{{ $reorderable->id }}" class="text-sm font-medium text-ink">
+                                        <span class="font-mono text-xs text-ink-muted">now {{ $reorderable->position }}</span>
+                                        <span class="block">{{ $reorderable->title }}</span>
+                                    </label>
+                                    <input id="lesson-position-{{ $reorderable->id }}" name="positions[{{ $reorderable->id }}]" type="number" min="1" max="{{ $reorderableLessons->count() }}" step="1" required value="{{ $index + 1 }}" class="min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink sm:w-24 focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                                </div>
+                            @endforeach
+
+                            <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Save lesson order</button>
+                        </form>
+                    </details>
+                @endif
             </section>
         @empty
             <section class="mt-10 border-t border-line py-16 text-center" aria-labelledby="empty-outline-heading">
@@ -186,6 +213,38 @@
                 <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-muted">This Course is a private draft. Add the first Module to begin its outline.</p>
             </section>
         @endforelse
+
+        @php
+            $reorderableModules = $course->modules->where('status.value', '!=', \App\Enums\ContentStatus::Archived->value)->values();
+        @endphp
+
+        @if ($reorderableModules->count() > 1)
+            <section class="mt-8 border border-line bg-surface-muted p-5" aria-labelledby="reorder-modules-heading">
+                <h2 id="reorder-modules-heading" class="text-lg font-semibold text-ink">Reorder modules</h2>
+                <p class="mt-1 text-sm leading-6 text-ink-muted">Enter a position from 1 to {{ $reorderableModules->count() }} for each module. The saved order is the outline order students read.</p>
+
+                <x-form-errors :errors="$errors" />
+
+                <form method="POST" action="{{ route('instructor.courses.modules.reorder', $course) }}" class="mt-4">
+                    @csrf
+                    @method('PATCH')
+
+                    <ul class="space-y-3" role="list">
+                        @foreach ($reorderableModules as $index => $reorderable)
+                            <li class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <label for="module-position-{{ $reorderable->id }}" class="text-sm font-medium text-ink">
+                                    <span class="font-mono text-xs text-ink-muted">now {{ $reorderable->position }}</span>
+                                    <span class="block">{{ $reorderable->title }}</span>
+                                </label>
+                                <input id="module-position-{{ $reorderable->id }}" name="positions[{{ $reorderable->id }}]" type="number" min="1" max="{{ $reorderableModules->count() }}" step="1" required value="{{ $index + 1 }}" class="min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink sm:w-24 focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                            </li>
+                        @endforeach
+                    </ul>
+
+                    <button type="submit" class="mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Save module order</button>
+                </form>
+            </section>
+        @endif
 
         @php
             $moduleFailed = old('form_context') === 'module';

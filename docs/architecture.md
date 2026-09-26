@@ -373,6 +373,62 @@ Rules:
 
 Phase 6E adds no Continue Learning, quiz, certificate, or payment route.
 
+### Phase 7A reorder routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| PATCH | `/instructor/courses/{course}/modules/reorder` | Save a new Module order | Instructor group and ModulePolicy `reorder` |
+| PATCH | `/instructor/courses/{course}/modules/{module}/lessons/reorder` | Save a new Lesson order | Instructor group and LessonPolicy `reorder` |
+
+The request carries an `order` array of IDs. The Action rebuilds positions inside one transaction and ignores any ID that does not belong to the Course. Positions are never accepted from the browser.
+
+### Phase 7A reorder rules
+
+- The submitted order must be a permutation of the real Module or Lesson IDs for that owner.
+- A missing, duplicated, or foreign ID fails validation before any write.
+- Positions are renumbered from `1` with no gaps.
+- Archived rows keep their position and are never offered for reorder.
+- The whole reorder runs in one transaction, so a failure leaves the original order untouched.
+
+### Phase 7B archive routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| POST | `/instructor/courses/{course}/archive` | Archive a Course | Instructor group and CoursePolicy `archive` |
+| POST | `/instructor/courses/{course}/restore` | Return an archived Course to draft | Instructor group and CoursePolicy `restore` |
+| POST | `/instructor/courses/{course}/modules/{module}/archive` | Archive a Module | Instructor group and ModulePolicy `archive` |
+| POST | `/instructor/courses/{course}/modules/{module}/restore` | Return an archived Module to draft | Instructor group and ModulePolicy `restore` |
+| POST | `/instructor/courses/{course}/modules/{module}/lessons/{lesson}/archive` | Archive a Lesson | Instructor group and LessonPolicy `archive` |
+| POST | `/instructor/courses/{course}/modules/{module}/lessons/{lesson}/restore` | Return an archived Lesson to draft | Instructor group and LessonPolicy `restore` |
+
+Archive is a status change, never a delete. `archived` is a terminal state for the public catalog. Restoring returns the row to `draft` so the Instructor publishes it deliberately again.
+
+Archived content rules:
+
+- An archived Course, Module, or Lesson leaves the public catalog and the student course page.
+- Enrollments, Lesson progress, payments, and certificates are never touched by archiving.
+- An archived row cannot be published directly. Restore first.
+- `status` is server-owned and is never read from a request.
+
+### Phase 7C private file routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| POST | `/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials` | Add a file material | Instructor group and LearningMaterialPolicy `create` |
+| GET | `/student/courses/{course}/lessons/{lesson}/materials/{material}/download` | Download a file material | Student group and LearningMaterialPolicy `downloadForStudent` |
+| GET | `/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials/{material}/download` | Download for the owning Instructor | Instructor group and LearningMaterialPolicy `downloadForInstructor` |
+| GET | `/admin/materials/{material}/download` | Administrator download | Administrator group and LearningMaterialPolicy `downloadForAdministrator` |
+
+Private file rules:
+
+- Files are stored on the private `local` disk under a generated path. The original filename is never used as a path.
+- Only `image`, `pdf`, and `document` types accept a file. Text, code, and link types keep their existing rules.
+- Validation rejects executables, scripts, and unknown extensions before the file is stored.
+- The stored MIME type is read from the file itself and is never taken from the request.
+- `storage_disk`, `storage_path`, `mime_type`, and `byte_size` are written by the server only.
+- Downloads are authorized on every request. No route serves a Storage path directly.
+- A download uses the stored MIME type and a sanitized filename, and never renders the file inline.
+
 ### Phase 6A enrollment foundation
 
 Phase 6A adds no route. It creates the `enrollments` table, the `EnrollmentStatus` enum, the `Enrollment` model, and the `User::enrollments()` and `Course::enrollments()` relationships. The free enrollment UI is Phase 6B.
