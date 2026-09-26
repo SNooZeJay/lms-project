@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Instructor;
 
+use App\Actions\Courses\ArchiveContent;
 use App\Actions\Courses\Curriculum\CreateLearningMaterial;
 use App\Actions\Courses\Curriculum\CreateLesson;
 use App\Actions\Courses\Curriculum\CreateModule;
@@ -156,6 +157,60 @@ class CurriculumController extends Controller
         return redirect()
             ->route('instructor.courses.show', $course)
             ->with('status', 'Learning Material updated.');
+    }
+
+    public function archiveModule(
+        Course $course,
+        Module $module,
+        ArchiveContent $archiveContent,
+    ): RedirectResponse {
+        abort_unless($module->course_id === $course->id, 404);
+        $archiveContent->archiveModule(request()->user(), $module);
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Module archived. Enrollments and progress are kept.');
+    }
+
+    public function restoreModule(
+        Course $course,
+        Module $module,
+        ArchiveContent $archiveContent,
+    ): RedirectResponse {
+        abort_unless($module->course_id === $course->id, 404);
+        $archiveContent->restoreModule(request()->user(), $module);
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Module restored as a draft. Publish the course again to show it.');
+    }
+
+    public function archiveLesson(
+        Course $course,
+        Module $module,
+        Lesson $lesson,
+        ArchiveContent $archiveContent,
+    ): RedirectResponse {
+        abort_unless($this->lessonBelongsToCourse($course, $module, $lesson), 404);
+        $archiveContent->archiveLesson(request()->user(), $lesson);
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Lesson archived. Enrollments and progress are kept.');
+    }
+
+    public function restoreLesson(
+        Course $course,
+        Module $module,
+        Lesson $lesson,
+        ArchiveContent $archiveContent,
+    ): RedirectResponse {
+        abort_unless($this->lessonBelongsToCourse($course, $module, $lesson), 404);
+        $archiveContent->restoreLesson(request()->user(), $lesson);
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Lesson restored as a draft. Publish the course again to show it.');
     }
 
     public function reorderModules(

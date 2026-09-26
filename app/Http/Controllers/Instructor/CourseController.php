@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Instructor;
 
+use App\Actions\Courses\ArchiveContent;
 use App\Actions\Courses\CreateCourse;
 use App\Actions\Courses\PublishCourse;
 use App\Actions\Courses\UnpublishCourse;
@@ -108,5 +109,23 @@ class CourseController extends Controller
         return redirect()
             ->route('instructor.courses.show', $course)
             ->with('status', 'Course unpublished. It is hidden from the public catalog.');
+    }
+
+    public function archive(Course $course, ArchiveContent $archiveContent): RedirectResponse
+    {
+        $archiveContent->archiveCourse(request()->user(), $course);
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Course archived. Enrollments and progress are kept.');
+    }
+
+    public function restore(Course $course, ArchiveContent $archiveContent): RedirectResponse
+    {
+        $archiveContent->restoreCourse(request()->user(), $course);
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Course restored as a draft. Publish it when the outline is ready.');
     }
 }

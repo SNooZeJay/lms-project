@@ -352,12 +352,12 @@ class ContentEditingTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_phase_five_c_adds_no_delete_or_archive_routes(): void
+    public function test_phase_five_c_adds_no_delete_routes(): void
     {
+        // Archiving arrives in Phase 7B. Deleting is never added.
         $this->assertFalse(Route::has('instructor.courses.destroy'));
         $this->assertFalse(Route::has('instructor.courses.modules.destroy'));
         $this->assertFalse(Route::has('instructor.courses.modules.lessons.destroy'));
-        $this->assertFalse(Route::has('instructor.courses.archive'));
     }
 
     public function test_outline_page_links_to_edit_pages(): void

@@ -37,20 +37,32 @@
                     @if ($course->published_at)
                         First published {{ $course->published_at->format('M j, Y g:i A') }}.
                     @endif
-                    Reordering, uploads, deletion, and archiving are not enabled yet.
+                    Reordering, uploads, and deletion are not enabled yet. Archiving keeps enrollments and progress.
                 </p>
                 <div class="flex shrink-0 flex-col gap-3 sm:flex-row">
                     <a href="{{ route('instructor.courses.edit', $course) }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Edit course details</a>
 
-                    @if ($course->status === \App\Enums\CourseStatus::Draft)
-                        <form method="POST" action="{{ route('instructor.courses.publish', $course) }}">
+                    @if ($course->status === \App\Enums\CourseStatus::Archived)
+                        <form method="POST" action="{{ route('instructor.courses.restore', $course) }}">
                             @csrf
-                            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Publish course</button>
+                            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Restore course</button>
                         </form>
                     @else
-                        <form method="POST" action="{{ route('instructor.courses.unpublish', $course) }}">
+                        @if ($course->status === \App\Enums\CourseStatus::Draft)
+                            <form method="POST" action="{{ route('instructor.courses.publish', $course) }}">
+                                @csrf
+                                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Publish course</button>
+                            </form>
+                        @else
+                            <form method="POST" action="{{ route('instructor.courses.unpublish', $course) }}">
+                                @csrf
+                                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Unpublish course</button>
+                            </form>
+                        @endif
+
+                        <form method="POST" action="{{ route('instructor.courses.archive', $course) }}">
                             @csrf
-                            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Unpublish course</button>
+                            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Archive course</button>
                         </form>
                     @endif
                 </div>
@@ -68,9 +80,20 @@
                         <p class="text-xs font-semibold uppercase tracking-wide text-primary-text">Module {{ $module->position }}</p>
                         <h2 id="module-{{ $module->id }}" class="mt-1 text-lg font-semibold text-ink">{{ $module->title }}</h2>
                     </div>
-                    <div class="flex items-center gap-4">
+                    <div class="flex flex-wrap items-center gap-3">
                         <span class="text-sm font-medium text-ink-muted">{{ ucfirst($module->status->value) }}</span>
                         <a href="{{ route('instructor.courses.modules.edit', [$course, $module]) }}" class="inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Edit module</a>
+                        @if ($module->status === \App\Enums\ContentStatus::Archived)
+                            <form method="POST" action="{{ route('instructor.courses.modules.restore', [$course, $module]) }}">
+                                @csrf
+                                <button type="submit" class="inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Restore module</button>
+                            </form>
+                        @else
+                            <form method="POST" action="{{ route('instructor.courses.modules.archive', [$course, $module]) }}">
+                                @csrf
+                                <button type="submit" class="inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Archive module</button>
+                            </form>
+                        @endif
                     </div>
                 </div>
 
@@ -88,6 +111,17 @@
                                 <span class="rounded-full bg-surface-muted px-2.5 py-1">{{ ucfirst($lesson->status->value) }}</span>
                                 <span class="rounded-full bg-surface-muted px-2.5 py-1">{{ $lesson->is_required ? 'Required' : 'Optional' }}</span>
                                 <a href="{{ route('instructor.courses.modules.lessons.edit', [$course, $module, $lesson]) }}" class="inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Edit lesson</a>
+                                @if ($lesson->status === \App\Enums\ContentStatus::Archived)
+                                    <form method="POST" action="{{ route('instructor.courses.modules.lessons.restore', [$course, $module, $lesson]) }}" class="inline-flex">
+                                        @csrf
+                                        <button type="submit" class="inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Restore lesson</button>
+                                    </form>
+                                @else
+                                    <form method="POST" action="{{ route('instructor.courses.modules.lessons.archive', [$course, $module, $lesson]) }}" class="inline-flex">
+                                        @csrf
+                                        <button type="submit" class="inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Archive lesson</button>
+                                    </form>
+                                @endif
                             </div>
                         </div>
 

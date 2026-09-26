@@ -51,6 +51,16 @@ class CoursePolicy
         return $this->view($actor, $course);
     }
 
+    public function archive(User $actor, Course $course): bool
+    {
+        return $this->view($actor, $course);
+    }
+
+    public function restore(User $actor, Course $course): bool
+    {
+        return $this->view($actor, $course);
+    }
+
     private function isActiveInstructor(User $actor): bool
     {
         return $actor->profile?->role === UserRole::Instructor

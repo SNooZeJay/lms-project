@@ -47,12 +47,18 @@ Route::middleware([...$authenticated, 'role:instructor'])->group(function (): vo
     Route::patch('/instructor/courses/{course}', [CourseController::class, 'update'])->name('instructor.courses.update');
     Route::post('/instructor/courses/{course}/publish', [CourseController::class, 'publish'])->name('instructor.courses.publish');
     Route::post('/instructor/courses/{course}/unpublish', [CourseController::class, 'unpublish'])->name('instructor.courses.unpublish');
+    Route::post('/instructor/courses/{course}/archive', [CourseController::class, 'archive'])->name('instructor.courses.archive');
+    Route::post('/instructor/courses/{course}/restore', [CourseController::class, 'restore'])->name('instructor.courses.restore');
     Route::post('/instructor/courses/{course}/modules', [CurriculumController::class, 'storeModule'])->name('instructor.courses.modules.store');
     Route::patch('/instructor/courses/{course}/modules/reorder', [CurriculumController::class, 'reorderModules'])->name('instructor.courses.modules.reorder');
     Route::patch('/instructor/courses/{course}/modules/{module}/lessons/reorder', [CurriculumController::class, 'reorderLessons'])->name('instructor.courses.modules.lessons.reorder');
     Route::patch('/instructor/courses/{course}/modules/{module}', [CurriculumController::class, 'updateModule'])->name('instructor.courses.modules.update');
     Route::get('/instructor/courses/{course}/modules/{module}/edit', [CurriculumController::class, 'editModule'])->name('instructor.courses.modules.edit');
     Route::post('/instructor/courses/{course}/modules/{module}/lessons', [CurriculumController::class, 'storeLesson'])->name('instructor.courses.modules.lessons.store');
+    Route::post('/instructor/courses/{course}/modules/{module}/archive', [CurriculumController::class, 'archiveModule'])->name('instructor.courses.modules.archive');
+    Route::post('/instructor/courses/{course}/modules/{module}/restore', [CurriculumController::class, 'restoreModule'])->name('instructor.courses.modules.restore');
+    Route::post('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/archive', [CurriculumController::class, 'archiveLesson'])->name('instructor.courses.modules.lessons.archive');
+    Route::post('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/restore', [CurriculumController::class, 'restoreLesson'])->name('instructor.courses.modules.lessons.restore');
     Route::get('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/edit', [CurriculumController::class, 'editLesson'])->name('instructor.courses.modules.lessons.edit');
     Route::patch('/instructor/courses/{course}/modules/{module}/lessons/{lesson}', [CurriculumController::class, 'updateLesson'])->name('instructor.courses.modules.lessons.update');
     Route::post('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials', [CurriculumController::class, 'storeMaterial'])->name('instructor.courses.materials.store');
