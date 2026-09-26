@@ -1,96 +1,135 @@
-@extends('layouts.app')
+@extends('layouts.app-shell')
 
 @section('title', 'My courses')
+@section('workspace-context', 'Learning workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-                <p class="font-mono text-sm font-semibold text-primary-text">Student workspace</p>
-                <h1 class="mt-3 text-3xl font-[650] tracking-tight text-ink">My courses</h1>
-                <p class="mt-3 max-w-2xl leading-7 text-ink-muted">These are your own enrollments. No one else can see this list.</p>
-            </div>
-            <a href="{{ route('courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Browse catalog</a>
-        </div>
+    <div class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <x-breadcrumbs :items="[
+            ['label' => 'Dashboard', 'href' => route('student.dashboard')],
+            ['label' => 'My courses'],
+        ]" class="mb-6" />
+
+        <x-page-header
+            eyebrow="Student workspace"
+            title="My courses"
+            description="These are your own enrollments. No one else can see this list."
+        >
+            <x-slot:actions>
+                <x-btn :href="route('courses.index')" variant="secondary" size="md">
+                    <x-icon name="search" size="sm" />
+                    Browse catalog
+                </x-btn>
+            </x-slot:actions>
+        </x-page-header>
 
         @if (session('status'))
-            <div role="status" class="mt-6 border-l-4 border-accent bg-success-surface px-4 py-3 text-sm font-semibold text-success-text">{{ session('status') }}</div>
+            <x-note tone="success" class="mt-6">{{ session('status') }}</x-note>
         @endif
 
-        <x-form-errors :errors="$errors" />
+        <x-form-errors :errors="$errors" class="mt-6" />
 
         @if ($enrollments->isEmpty())
-            <section class="mt-10 border-t border-line py-16 text-center" aria-labelledby="empty-enrollments-heading">
-                <h2 id="empty-enrollments-heading" class="text-lg font-semibold text-ink">No enrollments yet</h2>
-                <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-muted">Enroll in a published free course to start your learning record.</p>
-                <a href="{{ route('courses.index') }}" class="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Browse published courses</a>
-            </section>
+            <div class="card mt-8">
+                <x-empty-state
+                    icon="book-open"
+                    title="No enrollments yet"
+                    description="Enroll in a published free course to start your learning record. A paid course asks for payment before it opens."
+                >
+                    <x-btn :href="route('courses.index')" variant="primary" size="md">
+                        Browse published courses
+                    </x-btn>
+                </x-empty-state>
+            </div>
         @else
-            <ul class="mt-8 grid gap-5 sm:grid-cols-2" role="list">
+            <ul role="list" class="mt-8 grid gap-5 sm:grid-cols-2">
                 @foreach ($enrollments as $enrollment)
                     @php
                         $course = $enrollment->course;
                         $paymentState = $paymentStates[$enrollment->id] ?? null;
-                        $toneClasses = [
-                            'success' => 'bg-success-surface text-success-text',
-                            'warning' => 'bg-accent-surface text-accent-text',
-                            'danger' => 'bg-danger-surface text-danger-text',
-                            'neutral' => 'bg-surface-muted text-ink',
-                        ][$paymentState?->tone ?? 'neutral'] ?? 'bg-surface-muted text-ink';
+                        $progress = $progressByEnrollment[$enrollment->id];
                     @endphp
-                    <li class="flex flex-col border border-line bg-surface p-5 shadow-sm">
+                    <li class="card flex flex-col p-5">
                         <div class="flex items-start justify-between gap-3">
-                            <h2 class="text-lg font-semibold text-ink">{{ $course?->title ?? 'Removed course' }}</h2>
-                            <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold {{ $toneClasses }}">{{ $paymentState?->label ?? 'Unknown' }}</span>
+                            <h2 class="text-lg font-semibold text-ink">
+                                {{ $course?->title ?? 'Removed course' }}
+                            </h2>
+                            @if ($paymentState)
+                                <x-badge :tone="$paymentState->tone" class="shrink-0">{{ $paymentState->label }}</x-badge>
+                            @endif
                         </div>
 
                         <p class="mt-2 text-sm text-ink-muted">{{ $course?->category ?: 'Uncategorized' }}</p>
 
+                        <div class="mt-4">
+                            @if ($progress['visible'])
+                                <x-progress
+                                    :percentage="$progress['percentage']"
+                                    label="Lesson progress"
+                                    :detail="$progress['completed'].' of '.$progress['total'].' required published lessons completed.'"
+                                    size="sm"
+                                />
+                            @else
+                                <x-note tone="neutral">
+                                    This course is no longer published. Your enrollment is kept.
+                                    Every lesson you already completed is kept too.
+                                </x-note>
+                            @endif
+                        </div>
+
                         <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
                             <div>
-                                <dt class="text-ink-muted">Type</dt>
-                                <dd class="mt-1 font-medium text-ink">{{ $course ? ucfirst($course->course_type->value) : 'Unknown' }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-ink-muted">Enrolled</dt>
-                                <dd class="mt-1 font-medium text-ink">{{ $enrollment->activated_at?->format('M j, Y') ?? 'Pending' }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-ink-muted">Progress</dt>
-                                <dd class="mt-1 font-semibold text-ink">
-                                    @if ($progressByEnrollment[$enrollment->id]['visible'])
-                                        {{ $progressByEnrollment[$enrollment->id]['percentage'] }}%
-                                    @else
-                                        Hidden
-                                    @endif
+                                <dt class="meta-label">Type</dt>
+                                <dd class="mt-1 font-medium text-ink">
+                                    {{ $course ? \App\Support\StatusLabel::words($course->course_type->value) : 'Unknown' }}
                                 </dd>
                             </div>
                             <div>
-                                <dt class="text-ink-muted">Instructor</dt>
+                                <dt class="meta-label">Enrolled</dt>
+                                <dd class="mt-1 font-medium text-ink">
+                                    {{ $enrollment->activated_at?->format('M j, Y') ?? 'Waiting' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="meta-label">Instructor</dt>
                                 <dd class="mt-1 font-medium text-ink">{{ $course?->instructor?->name ?? 'IT Learning Hub' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="meta-label">Price</dt>
+                                <dd class="mt-1 font-medium text-ink">
+                                    @if ($course)
+                                        <x-amount :minor="$course->price_minor" :type="$course->course_type" :currency="$course->currency" />
+                                    @else
+                                        Unknown
+                                    @endif
+                                </dd>
                             </div>
                         </dl>
 
                         @if ($paymentState)
-                            <p class="mt-4 border-l-4 px-3 py-2 text-sm leading-6 text-ink {{ $paymentState->tone === 'danger' ? 'border-danger-text bg-danger-surface' : ($paymentState->tone === 'success' ? 'border-accent bg-success-surface' : 'border-line bg-surface-muted') }}">
-                                {{ $paymentState->message }}
-                            </p>
+                            <x-note :tone="$paymentState->tone" class="mt-4">{{ $paymentState->message }}</x-note>
                         @endif
 
-                        @if ($enrollment->grantsAccess() && $course)
-                            <a href="{{ route('student.courses.show', $course) }}" class="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open course</a>
-                        @elseif ($paymentState?->offersPayment && $course)
-                            <form method="POST" action="{{ route('student.payments.checkout', $course) }}" class="mt-3">
-                                @csrf
-                                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">{{ $paymentState->actionLabel }}</button>
-                            </form>
-                        @endif
+                        <div class="mt-5 flex flex-col gap-3">
+                            @if ($enrollment->grantsAccess() && $course)
+                                <x-btn :href="route('student.courses.show', $course)" variant="primary" size="md" block>
+                                    Open course
+                                </x-btn>
+                            @elseif ($paymentState?->offersPayment && $course)
+                                <form method="POST" action="{{ route('student.payments.checkout', $course) }}" data-pending>
+                                    @csrf
+                                    <x-btn type="submit" variant="primary" size="md" block data-pending-button>
+                                        <span data-pending-text>{{ $paymentState->actionLabel }}</span>
+                                    </x-btn>
+                                </form>
+                            @endif
 
-                        @if ($course?->status === \App\Enums\CourseStatus::Published)
-                            <a href="{{ route('courses.show', $course) }}" class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Public page</a>
-                        @else
-                            <p class="mt-3 border-l-4 border-line bg-surface-muted px-3 py-2 text-sm leading-6 text-ink-muted">This course is no longer published. Your enrollment is kept.</p>
-                        @endif
+                            @if ($course?->status === \App\Enums\CourseStatus::Published)
+                                <x-btn :href="route('courses.show', $course)" variant="secondary" size="md" block>
+                                    View the public course page
+                                </x-btn>
+                            @endif
+                        </div>
                     </li>
                 @endforeach
             </ul>

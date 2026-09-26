@@ -1,65 +1,236 @@
-@extends('layouts.app')
+@extends('layouts.app-shell')
 
-@section('title', 'Administrator home')
+@section('title', 'Administrator dashboard')
+@section('workspace-context', 'Operations workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
-        <p class="font-mono text-sm font-semibold text-primary-text">Administrator workspace</p>
-        <h1 class="mt-3 text-3xl font-[650] tracking-tight text-ink">Welcome, {{ $user->name }}</h1>
-        <p class="mt-3 max-w-2xl leading-7 text-ink-muted">Your Administrator access is active. User management, certificates, reports, and audit tools are available below.</p>
+    <div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <x-page-header
+            eyebrow="Administrator workspace"
+            :title="'Welcome back, '.$user->name"
+            description="Your Administrator access is active. User management, certificates, reports, and audit tools are available below."
+        >
+            <x-slot:actions>
+                <x-btn :href="route('admin.reports.index')" variant="secondary" size="md">
+                    <x-icon name="chart" size="sm" />
+                    Reports
+                </x-btn>
+                <x-btn :href="route('admin.users.index')" variant="primary" size="md">
+                    <x-icon name="users" size="sm" />
+                    Manage users
+                </x-btn>
+            </x-slot:actions>
+        </x-page-header>
 
-        <dl class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4" role="list">
-            <div class="border-t-4 border-primary bg-surface p-5">
-                <dt class="text-sm text-ink-muted">Users</dt>
-                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['users'] }}</dd>
-            </div>
-            <div class="border-t-4 border-primary bg-surface p-5">
-                <dt class="text-sm text-ink-muted">Students</dt>
-                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['students'] }}</dd>
-            </div>
-            <div class="border-t-4 border-primary bg-surface p-5">
-                <dt class="text-sm text-ink-muted">Instructors</dt>
-                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['instructors'] }}</dd>
-            </div>
-            <div class="border-t-4 border-primary bg-surface p-5">
-                <dt class="text-sm text-ink-muted">Courses</dt>
-                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['courses'] }}</dd>
-            </div>
-            <div class="border-t-4 border-accent bg-surface p-5">
-                <dt class="text-sm text-ink-muted">Enrollments</dt>
-                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['enrollments'] }}</dd>
-            </div>
-            <div class="border-t-4 border-accent bg-surface p-5">
-                <dt class="text-sm text-ink-muted">Active enrollments</dt>
-                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['active_enrollments'] }}</dd>
-            </div>
-            <div class="border-t-4 border-accent bg-surface p-5">
-                <dt class="text-sm text-ink-muted">Certificates earned</dt>
-                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['certificates'] }}</dd>
-            </div>
-            <div class="border-t-4 border-accent bg-surface p-5">
-                <dt class="text-sm text-ink-muted">Paid payments</dt>
-                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['paid_payments'] }}</dd>
-            </div>
-        </dl>
+        {{-- The operational summary. Four columns on a wide screen, two on a
+             tablet, one on a phone. Every label names what is counted. --}}
+        <section class="mt-8" aria-labelledby="administrator-summary-heading">
+            <h2 id="administrator-summary-heading" class="sr-only">System totals</h2>
 
-        <section class="mt-8 border border-line bg-surface-muted p-6" aria-labelledby="administrator-tools-heading">
-            <h2 id="administrator-tools-heading" class="text-lg font-semibold text-ink">Administration tools</h2>
-            <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <a href="{{ route('admin.users.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Manage users</a>
-                <a href="{{ route('admin.certificates.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Manage certificates</a>
-                <a href="{{ route('admin.reports.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">View reports</a>
-                <a href="{{ route('admin.activity.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">View activity</a>
-            </div>
+            <dl role="list" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <x-stat label="Users" :value="$stats['users']" tone="primary" hint="Every account"
+                        :href="route('admin.users.index')">Manage users</x-stat>
+                <x-stat label="Students" :value="$stats['students']" tone="primary" />
+                <x-stat label="Instructors" :value="$stats['instructors']" tone="primary" />
+                <x-stat label="Courses" :value="$stats['courses']" tone="primary" />
+                <x-stat label="Enrollments" :value="$stats['enrollments']" tone="accent" hint="Every state" />
+                <x-stat label="Active enrollments" :value="$stats['active_enrollments']" tone="accent" />
+                <x-stat label="Certificates earned" :value="$stats['certificates']" tone="accent" hint="Issued and valid"
+                        :href="route('admin.certificates.index')">Manage certificates</x-stat>
+                <x-stat label="Paid payments" :value="$stats['paid_payments']" tone="accent" hint="Confirmed by the provider" />
+            </dl>
         </section>
 
-        <section class="mt-8 border border-line bg-surface p-6" aria-labelledby="administrator-summary-heading">
-            <h2 id="administrator-summary-heading" class="text-lg font-semibold text-ink">Account summary</h2>
-            <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-                <div><dt class="text-ink-muted">Role</dt><dd class="font-medium text-ink">{{ ucfirst($user->profile->role->value) }}</dd></div>
-                <div><dt class="text-ink-muted">Status</dt><dd class="font-medium text-ink">{{ ucfirst($user->profile->account_status->value) }}</dd></div>
-                <div><dt class="text-ink-muted">Email</dt><dd class="break-words font-medium text-ink">{{ $user->email }}</dd></div>
-            </dl>
+        <div class="mt-8 grid gap-6 lg:grid-cols-2">
+            {{-- Recent students. --}}
+            <section class="card" aria-labelledby="administrator-users-heading">
+                <div class="card-header">
+                    <div>
+                        <h2 id="administrator-users-heading" class="text-base font-semibold text-ink">Recent accounts</h2>
+                        <p class="mt-1 text-sm text-ink-muted">The newest registrations.</p>
+                    </div>
+                    <x-btn :href="route('admin.users.index')" variant="quiet" size="sm">
+                        Manage users
+                        <x-icon name="chevron-right" size="sm" />
+                    </x-btn>
+                </div>
+
+                @if ($recentUsers->isEmpty())
+                    <p class="card-body text-sm leading-6 text-ink-muted">No account has been registered yet.</p>
+                @else
+                    <ul role="list" class="divide-y divide-line">
+                        @foreach ($recentUsers as $listedUser)
+                            <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-4">
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold text-ink">{{ $listedUser->name }}</p>
+                                    <p class="mt-0.5 truncate text-sm text-ink-muted">{{ $listedUser->email }}</p>
+                                </div>
+                                <div class="flex shrink-0 flex-wrap items-center gap-2">
+                                    <x-status
+                                        :value="$listedUser->profile?->role?->value"
+                                        :label="\App\Support\StatusLabel::words($listedUser->profile?->role?->value)"
+                                        tone="primary"
+                                    />
+                                    <x-status :value="$listedUser->profile?->account_status?->value" />
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
+
+            {{-- Recent enrollments. --}}
+            <section class="card" aria-labelledby="administrator-enrollments-heading">
+                <div class="card-header">
+                    <div>
+                        <h2 id="administrator-enrollments-heading" class="text-base font-semibold text-ink">
+                            Recent enrollments
+                        </h2>
+                        <p class="mt-1 text-sm text-ink-muted">Newest first, with the stored state.</p>
+                    </div>
+                    <x-btn :href="route('admin.reports.index')" variant="quiet" size="sm">
+                        Full report
+                        <x-icon name="chevron-right" size="sm" />
+                    </x-btn>
+                </div>
+
+                @if ($recentEnrollments->isEmpty())
+                    <p class="card-body text-sm leading-6 text-ink-muted">No enrollment has been recorded yet.</p>
+                @else
+                    <ul role="list" class="divide-y divide-line">
+                        @foreach ($recentEnrollments as $enrollment)
+                            <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-4">
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold text-ink">
+                                        {{ $enrollment->student?->name ?? 'Unknown student' }}
+                                    </p>
+                                    <p class="mt-0.5 truncate text-sm text-ink-muted">{{ $enrollment->course?->title ?? 'Unknown course' }}</p>
+                                </div>
+                                <x-status :value="$enrollment->status->value" class="shrink-0" />
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
+
+            {{-- Recent payments. --}}
+            <section class="card" aria-labelledby="administrator-payments-heading">
+                <div class="card-header">
+                    <h2 id="administrator-payments-heading" class="text-base font-semibold text-ink">Recent payments</h2>
+                </div>
+
+                @if ($recentPayments->isEmpty())
+                    <p class="card-body text-sm leading-6 text-ink-muted">
+                        No payment attempt has been recorded yet.
+                    </p>
+                @else
+                    <ul role="list" class="divide-y divide-line">
+                        @foreach ($recentPayments as $payment)
+                            <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-4">
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold text-ink">
+                                        {{ $payment->student?->name ?? 'Unknown student' }}
+                                    </p>
+                                    <p class="mt-0.5 truncate font-mono text-xs text-ink-muted">
+                                        {{ $payment->reference ?? 'No reference yet' }}
+                                    </p>
+                                </div>
+                                <div class="flex shrink-0 items-center gap-3">
+                                    <x-amount :minor="$payment->amount_minor" :currency="$payment->currency" class="text-sm font-semibold" />
+                                    <x-status :value="$payment->status->value" />
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
+
+            {{-- Course status. --}}
+            <section class="card" aria-labelledby="administrator-course-status-heading">
+                <div class="card-header">
+                    <div>
+                        <h2 id="administrator-course-status-heading" class="text-base font-semibold text-ink">
+                            Course status
+                        </h2>
+                        <p class="mt-1 text-sm text-ink-muted">How many courses hold each state.</p>
+                    </div>
+                </div>
+
+                <dl class="card-body space-y-3">
+                    @foreach (\App\Support\StatusLabel::options(\App\Enums\CourseStatus::class) as $option)
+                        <div class="flex items-center justify-between gap-4">
+                            <dt class="text-sm text-ink">
+                                <x-status :value="$option['value']" />
+                            </dt>
+                            <dd class="text-sm font-semibold text-ink tabular-nums">{{ $courseStatusCounts[$option['value']] ?? 0 }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </section>
+        </div>
+
+        {{-- Recent system activity. Read only, and it never shows a password, a
+             token, an IP address, or browser metadata. --}}
+        <section class="mt-8" aria-labelledby="administrator-activity-heading">
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <h2 id="administrator-activity-heading" class="text-xl font-semibold text-ink">
+                        Recent system activity
+                    </h2>
+                    <p class="mt-1 text-sm leading-6 text-ink-muted">
+                        Role and account status changes, newest first.
+                    </p>
+                </div>
+                <x-btn :href="route('admin.activity.index')" variant="quiet" size="md">
+                    Open the activity log
+                    <x-icon name="chevron-right" size="sm" />
+                </x-btn>
+            </div>
+
+            @if ($recentActivity->isEmpty())
+                <div class="card mt-4">
+                    <x-empty-state
+                        compact
+                        icon="activity"
+                        title="No recorded activity yet"
+                        description="A record appears here whenever an Administrator assigns a role or changes an account status."
+                    />
+                </div>
+            @else
+                <div class="card mt-4 overflow-x-auto">
+                    <table class="w-full min-w-2xl text-left text-sm">
+                        <caption class="sr-only">
+                            The five most recent role and account status changes
+                        </caption>
+                        <thead class="table-head">
+                            <tr>
+                                <th scope="col">Actor</th>
+                                <th scope="col">Target</th>
+                                <th scope="col">Change</th>
+                                <th scope="col">When</th>
+                            </tr>
+                        </thead>
+                        <tbody role="list" class="divide-y divide-line">
+                            @foreach ($recentActivity as $entry)
+                                <tr>
+                                    <td class="table-cell font-medium">{{ $entry->actor?->name ?? 'System' }}</td>
+                                    <td class="table-cell">{{ $entry->targetUser?->name ?? 'Unknown' }}</td>
+                                    <td class="table-cell">
+                                        <x-status
+                                            :value="$entry->event_type->value"
+                                            :label="\App\Support\StatusLabel::words($entry->event_type->value)"
+                                            tone="info"
+                                        />
+                                    </td>
+                                    <td class="table-cell whitespace-nowrap text-ink-muted">
+                                        {{ $entry->created_at->format('M j, Y H:i') }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
         </section>
     </div>
 @endsection

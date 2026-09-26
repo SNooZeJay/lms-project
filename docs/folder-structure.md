@@ -239,6 +239,7 @@ lms-project/
 │   │   ├── Money.php
 │   │   ├── Navigation.php
 │   │   ├── PublicHttps.php
+│   │   ├── PublishedCourses.php
 │   │   ├── StatusLabel.php
 │   │   └── StudentQuizAccess.php
 ├── bootstrap/

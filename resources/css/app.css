@@ -7,6 +7,13 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ | Design tokens
+ |
+ | Every colour the interface may use is named here. Views never hard code a
+ | hex value, so the light and dark themes cannot drift apart and the palette
+ | stays inside the approved set in `docs/design.md`.
+ */
 @theme inline {
     --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
@@ -14,56 +21,114 @@
     --color-canvas: var(--lms-canvas);
     --color-surface: var(--lms-surface);
     --color-surface-muted: var(--lms-surface-muted);
+    --color-surface-sunken: var(--lms-surface-sunken);
     --color-ink: var(--lms-ink);
     --color-ink-muted: var(--lms-ink-muted);
+    --color-ink-subtle: var(--lms-ink-subtle);
     --color-line: var(--lms-line);
+    --color-line-strong: var(--lms-line-strong);
     --color-primary: var(--lms-primary);
     --color-primary-hover: var(--lms-primary-hover);
     --color-primary-text: var(--lms-primary-text);
+    --color-primary-quiet: var(--lms-primary-quiet);
     --color-accent: var(--lms-accent);
+    --color-accent-text: var(--lms-accent-text);
+    --color-accent-quiet: var(--lms-accent-quiet);
     --color-focus: var(--lms-focus);
+
     --color-success-surface: var(--lms-success-surface);
     --color-success-text: var(--lms-success-text);
+    --color-success-line: var(--lms-success-line);
+    --color-warning-surface: var(--lms-warning-surface);
+    --color-warning-text: var(--lms-warning-text);
+    --color-warning-line: var(--lms-warning-line);
     --color-error-surface: var(--lms-error-surface);
     --color-error-text: var(--lms-error-text);
+    --color-error-line: var(--lms-error-line);
+    --color-info-surface: var(--lms-info-surface);
+    --color-info-text: var(--lms-info-text);
+    --color-info-line: var(--lms-info-line);
+    --color-neutral-surface: var(--lms-neutral-surface);
+    --color-neutral-text: var(--lms-neutral-text);
+    --color-neutral-line: var(--lms-neutral-line);
 }
 
 :root {
     color-scheme: light;
+
     --lms-canvas: #f8fafc;
     --lms-surface: #ffffff;
     --lms-surface-muted: #f1f5f9;
+    --lms-surface-sunken: #e8edf4;
     --lms-ink: #0f172a;
     --lms-ink-muted: #475569;
+    --lms-ink-subtle: #64748b;
     --lms-line: #cbd5e1;
+    --lms-line-strong: #94a3b8;
+
     --lms-primary: #1d4ed8;
     --lms-primary-hover: #1e40af;
     --lms-primary-text: #1d4ed8;
+    --lms-primary-quiet: #eff6ff;
     --lms-accent: #0f766e;
+    --lms-accent-text: #0f766e;
+    --lms-accent-quiet: #f0fdfa;
     --lms-focus: #2563eb;
+
     --lms-success-surface: #ecfdf5;
     --lms-success-text: #166534;
+    --lms-success-line: #a7f3d0;
+    --lms-warning-surface: #fffbeb;
+    --lms-warning-text: #92400e;
+    --lms-warning-line: #fde68a;
     --lms-error-surface: #fef2f2;
     --lms-error-text: #991b1b;
+    --lms-error-line: #fecaca;
+    --lms-info-surface: #eff6ff;
+    --lms-info-text: #1e40af;
+    --lms-info-line: #bfdbfe;
+    --lms-neutral-surface: #f1f5f9;
+    --lms-neutral-text: #334155;
+    --lms-neutral-line: #e2e8f0;
 }
 
 .dark {
     color-scheme: dark;
+
     --lms-canvas: #0f172a;
     --lms-surface: #1e293b;
     --lms-surface-muted: #334155;
+    --lms-surface-sunken: #0b1220;
     --lms-ink: #f1f5f9;
     --lms-ink-muted: #cbd5e1;
+    --lms-ink-subtle: #94a3b8;
     --lms-line: #475569;
+    --lms-line-strong: #64748b;
+
     --lms-primary: #2563eb;
     --lms-primary-hover: #1d4ed8;
     --lms-primary-text: #93c5fd;
+    --lms-primary-quiet: #172554;
     --lms-accent: #5eead4;
+    --lms-accent-text: #5eead4;
+    --lms-accent-quiet: #0b3b38;
     --lms-focus: #93c5fd;
-    --lms-success-surface: #14532d;
-    --lms-success-text: #bbf7d0;
-    --lms-error-surface: #7f1d1d;
-    --lms-error-text: #fecaca;
+
+    --lms-success-surface: #0f2f1e;
+    --lms-success-text: #86efac;
+    --lms-success-line: #166534;
+    --lms-warning-surface: #2a1f07;
+    --lms-warning-text: #fcd34d;
+    --lms-warning-line: #78500a;
+    --lms-error-surface: #2f1215;
+    --lms-error-text: #fca5a5;
+    --lms-error-line: #7f1d1d;
+    --lms-info-surface: #101f3d;
+    --lms-info-text: #93c5fd;
+    --lms-info-line: #1e40af;
+    --lms-neutral-surface: #334155;
+    --lms-neutral-text: #e2e8f0;
+    --lms-neutral-line: #475569;
 }
 
 @layer base {
@@ -77,27 +142,481 @@
         text-rendering: optimizeLegibility;
     }
 
+    /*
+     | Focus
+     |
+     | One visible ring for every interactive element, so a keyboard user always
+     | knows where they are. Components drop the native outline only where they
+     | replace it with an equivalent ring.
+     */
+    :focus-visible {
+        outline: 3px solid var(--lms-focus);
+        outline-offset: 2px;
+    }
+
     a,
-    button {
+    button,
+    summary,
+    select,
+    label {
         -webkit-tap-highlight-color: transparent;
     }
 
-    button {
+    button,
+    summary,
+    select {
         cursor: pointer;
     }
 
-    button:disabled {
+    button:disabled,
+    select:disabled,
+    input:disabled,
+    textarea:disabled {
         cursor: not-allowed;
-    }
-
-    :focus-visible {
-        outline: 3px solid var(--lms-focus);
-        outline-offset: 3px;
     }
 
     ::selection {
         background: var(--lms-primary);
         color: #ffffff;
+    }
+
+    /* Keep native controls legible in both themes. */
+    input[type='search']::-webkit-search-cancel-button {
+        cursor: pointer;
+    }
+
+    /*
+     | Scrollbars
+     |
+     | Tinted rather than hidden, so a scrollable table or a long lesson is
+     | visibly scrollable.
+     */
+    * {
+        scrollbar-color: var(--lms-line-strong) transparent;
+        scrollbar-width: thin;
+    }
+}
+
+@layer components {
+    /*
+     | Controls
+     |
+     | Buttons and links share one class so a primary action looks identical on
+     | a form, a card, and a table row. Size is set by the caller through the
+     | `btn-*` size helpers below.
+     */
+    .btn {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border text-sm font-semibold transition-colors duration-150;
+    }
+
+    .btn:focus-visible {
+        @apply outline-none ring-3 ring-focus;
+    }
+
+    .btn-primary {
+        @apply border-transparent bg-primary text-white hover:bg-primary-hover;
+    }
+
+    .btn-secondary {
+        @apply border-line bg-surface text-ink hover:bg-surface-muted;
+    }
+
+    .btn-quiet {
+        @apply border-transparent bg-transparent text-ink hover:bg-surface-muted;
+    }
+
+    .btn-accent {
+        @apply border-accent bg-accent text-white hover:opacity-90;
+    }
+
+    .btn-danger {
+        @apply border-error-line bg-error-surface text-error-text hover:opacity-90;
+    }
+
+    .btn-sm {
+        @apply min-h-11 px-3 py-2 text-xs;
+    }
+
+    .btn-md {
+        @apply px-4 py-2.5;
+    }
+
+    .btn-lg {
+        @apply px-5 py-3;
+    }
+
+    .btn-block {
+        @apply w-full;
+    }
+
+    /*
+     | Surfaces
+     |
+     | Cards carry a border and a surface contrast instead of a shadow, which
+     | keeps the flat direction and stays crisp in both themes. Only the sticky
+     | header, dropdowns, dialogs, and the mobile drawer use elevation.
+     */
+    .card {
+        @apply border border-line bg-surface;
+    }
+
+    .card-muted {
+        @apply border border-line bg-surface-muted;
+    }
+
+    .card-raised {
+        @apply border border-line bg-surface shadow-lg shadow-slate-900/5;
+    }
+
+    .card-accent-edge {
+        @apply border border-line border-t-4 border-t-primary bg-surface;
+    }
+
+    .card-quiet-edge {
+        @apply border border-line border-t-4 border-t-line bg-surface-muted;
+    }
+
+    .card-header {
+        @apply flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-5 py-4;
+    }
+
+    .card-body {
+        @apply p-5;
+    }
+
+    /*
+     | Forms
+     */
+    .field-label {
+        @apply block text-sm font-semibold text-ink;
+    }
+
+    .field-control {
+        @apply mt-2 min-h-11 w-full rounded-md border border-line bg-canvas px-3 py-2 text-ink transition-colors placeholder:text-ink-subtle focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus disabled:bg-surface-muted disabled:text-ink-muted;
+    }
+
+    .field-control-surface {
+        @apply bg-surface;
+    }
+
+    .field-hint {
+        @apply mt-2 text-sm leading-6 text-ink-muted;
+    }
+
+    .field-error {
+        @apply mt-2 flex items-start gap-1.5 text-sm leading-6 text-error-text;
+    }
+
+    /* A checkbox or radio needs a square hit area, not a padded block. */
+    .field-check {
+        @apply size-5 shrink-0 rounded border-line text-primary focus:ring-3 focus:ring-focus;
+    }
+
+    /*
+     | Authentication
+     |
+     | The sign in and sign up pages are one split shell: a brand panel on one
+     | side and a single narrow form on the other. The split is the structure
+     | that matters here, because it puts the product name beside the form
+     | instead of above it, and it keeps the form itself narrow enough to read
+     | in one column. On a phone the brand panel is dropped and the form takes
+     | the full width, so the primary action is never pushed off screen.
+     |
+     | The panel is a solid primary rather than a gradient. A gradient here
+     | would be decoration with no job, and it fights the accent colour that
+     | already means progress elsewhere in the product.
+     */
+    .auth-shell {
+        @apply grid min-h-screen lg:grid-cols-2;
+    }
+
+    .auth-aside {
+        @apply relative hidden flex-col justify-between overflow-hidden bg-primary px-10 py-12 text-white lg:flex xl:px-14;
+    }
+
+    .auth-main {
+        @apply flex w-full flex-col justify-center px-4 py-10 sm:px-8 lg:px-12 xl:px-16;
+    }
+
+    /* The top row pairs the way back with the link to the other form. */
+    .auth-main-top {
+        @apply mb-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-2;
+    }
+
+    .auth-switch {
+        @apply text-sm text-ink-muted;
+    }
+
+    .auth-card {
+        @apply mx-auto w-full max-w-[25rem];
+    }
+
+    /*
+     | An input with a leading icon. The icon sits behind the text, so the
+     | control keeps a real label, a real placeholder, and the same focus ring
+     | as every other field. The padding is what keeps the text clear of it.
+     */
+    .input-icon {
+        @apply relative;
+    }
+
+    .input-icon > .input-icon-mark {
+        @apply pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-subtle;
+    }
+
+    .input-icon > .field-control {
+        @apply pl-[2.75rem];
+    }
+
+    /*
+     | A control that sits inside the field, on the trailing edge. Used by the
+     | password reveal. It is a real button, so it keeps the same hit area and
+     | focus ring as any other control; only its position is unusual.
+     */
+    .input-icon-action {
+        @apply absolute top-1/2 right-1 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-ink-subtle transition-colors hover:bg-surface-muted hover:text-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus;
+    }
+
+    /* The field has to reserve room so the text never runs under the control. */
+    .input-icon:has(> .input-icon-action) > .field-control {
+        @apply pr-12;
+    }
+
+    /*
+     | A checkbox drawn as a box. The real input stays in the layout, hidden but
+     | still focusable, and the drawn box is an aria-hidden mirror, so the
+     | control is reachable by keyboard and announced normally.
+     |
+     | The state is read from the label with :has() rather than from a sibling
+     | combinator on the input. Both can work, but :has() keeps each rule
+     | attached to one element, so the box, its border, and the tick cannot
+     | drift apart as the markup changes.
+     */
+    .check {
+        @apply inline-flex min-h-6 cursor-pointer items-center gap-2.5 text-sm text-ink;
+    }
+
+    .check > input {
+        @apply sr-only;
+    }
+
+    .check > .check-box {
+        @apply flex size-5 shrink-0 items-center justify-center rounded border border-line-strong bg-surface text-white;
+    }
+
+    .check > .check-box > svg {
+        @apply opacity-0;
+    }
+
+    .check:has(> input:checked) > .check-box {
+        @apply border-primary bg-primary;
+    }
+
+    .check:has(> input:checked) > .check-box > svg {
+        @apply opacity-100;
+    }
+
+    .check:has(> input:focus-visible) > .check-box {
+        @apply ring-3 ring-focus;
+    }
+
+    /*
+     | Badges
+     |
+     | Every badge carries a word. Colour is a second signal, never the only one.
+     */
+    .badge {
+        @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold;
+    }
+
+    .badge-neutral { @apply border-neutral-line bg-neutral-surface text-neutral-text; }
+    .badge-info { @apply border-info-line bg-info-surface text-info-text; }
+    .badge-success { @apply border-success-line bg-success-surface text-success-text; }
+    .badge-warning { @apply border-warning-line bg-warning-surface text-warning-text; }
+    .badge-error { @apply border-error-line bg-error-surface text-error-text; }
+    .badge-primary { @apply border-transparent bg-primary-quiet text-primary-text; }
+
+    /*
+     | Notes
+     |
+     | A left rule plus a tinted panel. Used for status messages, hints, and
+     | legal wording so the same message always looks the same.
+     */
+    .note {
+        @apply rounded-r-md border-l-4 px-4 py-3 text-sm leading-6;
+    }
+
+    .note-neutral { @apply border-line bg-surface-muted text-ink-muted; }
+    .note-info { @apply border-info-line bg-info-surface text-info-text; }
+    .note-success { @apply border-success-line bg-success-surface text-success-text; }
+    .note-warning { @apply border-warning-line bg-warning-surface text-warning-text; }
+    .note-error { @apply border-error-line bg-error-surface text-error-text; }
+
+    /*
+     | Tables
+     |
+     | The header is a muted surface, not uppercase tracking, so a wide
+     | Administrator table stays calm.
+     */
+    .table-head {
+        @apply bg-surface-muted text-sm font-semibold text-ink;
+    }
+
+    .table-head th {
+        @apply whitespace-nowrap px-4 py-3 text-left;
+    }
+
+    .table-cell {
+        @apply px-4 py-4 align-top text-sm text-ink;
+    }
+
+    /*
+     | Text helpers
+     |
+     | `eyebrow` replaces the monospace labels the pages used before. It is a
+     | short uppercase marker above a heading, which reads as a section label
+     | without the wide letter spacing the design system rejects.
+     */
+    .eyebrow {
+        @apply text-xs font-semibold tracking-wide text-primary-text uppercase;
+    }
+
+    .meta-label {
+        @apply text-sm text-ink-muted;
+    }
+
+    .meta-value {
+        @apply mt-1 font-medium break-words text-ink;
+    }
+
+    /* Long lesson and report content keeps a readable measure. */
+    .prose-measure {
+        @apply max-w-[70ch];
+    }
+
+    /* A link inside running text stays recognisable without a colour jump. */
+    .link {
+        @apply font-semibold text-primary-text underline decoration-primary-text/40 underline-offset-4 transition-colors hover:decoration-primary-text;
+    }
+
+    .link-quiet {
+        @apply font-semibold text-primary-text hover:text-primary;
+    }
+}
+
+@layer utilities {
+    /* Hides a scrollbar while keeping the element scrollable by keyboard. */
+    .scrollbar-none {
+        scrollbar-width: none;
+    }
+
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+
+    /*
+     | Progress
+     |
+     | A native `progress` element is used rather than a div with an inline
+     | width, because the content security policy allows no inline styles. The
+     | fill is a fixed set of five point widths declared here, and the exact
+     | percentage is always printed next to the bar, so rounding the drawn
+     | length costs no information.
+     */
+    .progress-track {
+        appearance: none;
+        -webkit-appearance: none;
+        display: block;
+        overflow: hidden;
+        border: 0;
+        border-radius: 9999px;
+        background-color: var(--lms-surface-sunken);
+    }
+
+    .progress-track::-webkit-progress-bar {
+        border-radius: 9999px;
+        background-color: var(--lms-surface-sunken);
+    }
+
+    .progress-track::-webkit-progress-value {
+        border-radius: 9999px;
+        background-color: var(--lms-primary);
+    }
+
+    .progress-track::-moz-progress-bar {
+        border-radius: 9999px;
+        background-color: var(--lms-primary);
+    }
+
+    .progress-accent::-webkit-progress-value { background-color: var(--lms-accent); }
+    .progress-accent::-moz-progress-bar { background-color: var(--lms-accent); }
+
+    .progress-success::-webkit-progress-value { background-color: #15803d; }
+    .progress-success::-moz-progress-bar { background-color: #15803d; }
+
+    .progress-step-0   { --lms-progress: 0%; }
+    .progress-step-5   { --lms-progress: 5%; }
+    .progress-step-10  { --lms-progress: 10%; }
+    .progress-step-15  { --lms-progress: 15%; }
+    .progress-step-20  { --lms-progress: 20%; }
+    .progress-step-25  { --lms-progress: 25%; }
+    .progress-step-30  { --lms-progress: 30%; }
+    .progress-step-35  { --lms-progress: 35%; }
+    .progress-step-40  { --lms-progress: 40%; }
+    .progress-step-45  { --lms-progress: 45%; }
+    .progress-step-50  { --lms-progress: 50%; }
+    .progress-step-55  { --lms-progress: 55%; }
+    .progress-step-60  { --lms-progress: 60%; }
+    .progress-step-65  { --lms-progress: 65%; }
+    .progress-step-70  { --lms-progress: 70%; }
+    .progress-step-75  { --lms-progress: 75%; }
+    .progress-step-80  { --lms-progress: 80%; }
+    .progress-step-85  { --lms-progress: 85%; }
+    .progress-step-90  { --lms-progress: 90%; }
+    .progress-step-95  { --lms-progress: 95%; }
+    .progress-step-100 { --lms-progress: 100%; }
+
+    .progress-step-0::-webkit-progress-value   { width: 0%; }
+    .progress-step-5::-webkit-progress-value   { width: 5%; }
+    .progress-step-10::-webkit-progress-value  { width: 10%; }
+    .progress-step-15::-webkit-progress-value  { width: 15%; }
+    .progress-step-20::-webkit-progress-value  { width: 20%; }
+    .progress-step-25::-webkit-progress-value  { width: 25%; }
+    .progress-step-30::-webkit-progress-value  { width: 30%; }
+    .progress-step-35::-webkit-progress-value  { width: 35%; }
+    .progress-step-40::-webkit-progress-value  { width: 40%; }
+    .progress-step-45::-webkit-progress-value  { width: 45%; }
+    .progress-step-50::-webkit-progress-value  { width: 50%; }
+    .progress-step-55::-webkit-progress-value  { width: 55%; }
+    .progress-step-60::-webkit-progress-value  { width: 60%; }
+    .progress-step-65::-webkit-progress-value  { width: 65%; }
+    .progress-step-70::-webkit-progress-value  { width: 70%; }
+    .progress-step-75::-webkit-progress-value  { width: 75%; }
+    .progress-step-80::-webkit-progress-value  { width: 80%; }
+    .progress-step-85::-webkit-progress-value  { width: 85%; }
+    .progress-step-90::-webkit-progress-value  { width: 90%; }
+    .progress-step-95::-webkit-progress-value  { width: 95%; }
+    .progress-step-100::-webkit-progress-value { width: 100%; }
+}
+
+/*
+ | Printing
+ |
+ | A certificate and a receipt are the only pages that are meant on paper, so
+ | the shell, navigation, and secondary panels step aside.
+ */
+@media print {
+    [data-print='hide'] {
+        display: none !important;
+    }
+
+    body {
+        background: #ffffff;
+    }
+
+    .print-sheet {
+        border: 0 !important;
+        box-shadow: none !important;
     }
 }
 
@@ -111,5 +630,6 @@
     *::after {
         scroll-behavior: auto !important;
         transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
     }
 }

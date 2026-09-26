@@ -283,10 +283,24 @@ class PublicCourseCatalogTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee(route('courses.index'), false);
+    }
 
-        $this->get('/login')
-            ->assertOk()
-            ->assertSee(route('courses.index'), false);
+    public function test_the_sign_in_page_offers_a_way_back_to_the_public_pages(): void
+    {
+        // The sign in page is deliberately narrow: one form and a way back. It
+        // does not carry a catalog link, so a visitor who arrives there without
+        // an account must still be able to reach the public pages in one click.
+        $response = $this->get('/login')->assertOk();
+
+        $response->assertSee(route('home'), false);
+
+        $body = (string) $response->getContent();
+
+        $this->assertStringContainsString(
+            'href="'.route('home').'"',
+            $body,
+            'The sign in page must link back to the home page, where the catalog is reachable.'
+        );
     }
 
     public function test_authenticated_student_can_also_browse_the_catalog(): void
@@ -308,9 +322,16 @@ class PublicCourseCatalogTest extends TestCase
             'price_minor' => 125050,
         ]);
 
-        $this->get("/courses/{$course->slug}")
-            ->assertOk()
-            ->assertSee('PHP 1,250.50');
+        $body = $this->get("/courses/{$course->slug}")->assertOk()->getContent();
+
+        // The product plan gives `₱499.00` as the display format for a peso
+        // amount, so a public price is written as `₱1,250.50`.
+        $this->assertStringContainsString('1,250.50', (string) $body);
+
+        // The stored amount is integer minor units, so the raw value is never
+        // printed and never appears as a float.
+        $this->assertStringNotContainsString('125050', (string) $body);
+        $this->assertStringNotContainsString('1250.5', (string) $body);
     }
 
     public function test_phase_five_f_adds_no_lesson_access_payment_or_download_routes(): void

@@ -1,56 +1,74 @@
 @extends('layouts.auth')
 
 @section('title', 'Sign in')
+@section('description', 'Sign in to IT Learning Hub to reach your courses, lessons, and results.')
+
+@section('auth-switch')
+    New here? <a href="{{ route('register') }}" class="link">Create a student account</a>
+@endsection
 
 @section('auth-content')
-    <section class="border-t-4 border-primary bg-surface p-6 shadow-sm sm:p-10" aria-labelledby="login-heading">
-        <p class="font-mono text-sm font-semibold text-primary-text">Welcome back</p>
-        <h1 id="login-heading" class="mt-3 text-3xl font-[650] tracking-tight text-ink">Sign in</h1>
-        <p class="mt-3 leading-7 text-ink-muted">Continue to your IT Learning Hub account.</p>
+    <h1 class="text-2xl font-[650] tracking-tight text-ink">
+        Sign in
+    </h1>
+    <p class="mt-2 text-sm leading-6 text-ink-muted">
+        Use the email address your account was created with.
+    </p>
 
-        <x-form-errors :errors="$errors" />
+    <x-form-errors :errors="$errors" class="mt-6" />
 
-        @if (session('status'))
-            <div role="status" class="mb-6 border-l-4 border-accent bg-success-surface px-4 py-3 text-sm font-semibold text-success-text">
-                {{ session('status') }}
+    @if (session('status'))
+        <x-note tone="success" class="mt-6">
+            {{ session('status') }}
+        </x-note>
+    @endif
+
+    <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-5" data-pending>
+        @csrf
+
+        <div class="field flex min-w-0 flex-col">
+            <label class="field-label" for="email">Email</label>
+            <div class="input-icon">
+                <span class="input-icon-mark" aria-hidden="true">
+                    <x-icon name="mail" size="sm" />
+                </span>
+                <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value="{{ old('email') }}"
+                    class="field-control"
+                    placeholder="you@ncst.edu.ph"
+                    autocomplete="username"
+                    inputmode="email"
+                    maxlength="255"
+                    aria-describedby="email-hint"
+                    required
+                    autofocus
+                >
             </div>
-        @endif
+            <p id="email-hint" class="field-hint">Use your institution account.</p>
+        </div>
 
-        <form method="POST" action="{{ route('login') }}" class="mt-6 space-y-5">
-            @csrf
+        <div class="flex items-center justify-between gap-4">
+            <label class="field-label" for="password">Password</label>
+            <a href="{{ route('password.request') }}" class="link-quiet text-sm">Forgot password?</a>
+        </div>
 
-            <div>
-                <label for="field-email" class="block text-sm font-semibold text-ink">Email</label>
-                <input id="field-email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="username" inputmode="email" class="mt-2 min-h-11 w-full rounded-md border border-line bg-canvas px-3 py-2 text-ink placeholder:text-ink-muted focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
-                @error('email')
-                    <p class="mt-2 text-sm text-error-text" role="alert">{{ $message }}</p>
-                @enderror
-            </div>
+        <x-password-field name="password" id="password" autocomplete="current-password" />
 
-            <div>
-                <div class="flex items-center justify-between gap-4">
-                    <label for="field-password" class="block text-sm font-semibold text-ink">Password</label>
-                    <a href="{{ route('password.request') }}" class="text-sm font-semibold text-primary-text underline underline-offset-4 hover:decoration-primary-text focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Forgot password?</a>
-                </div>
-                <input id="field-password" name="password" type="password" required autocomplete="current-password" class="mt-2 min-h-11 w-full rounded-md border border-line bg-canvas px-3 py-2 text-ink placeholder:text-ink-muted focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
-                @error('password')
-                    <p class="mt-2 text-sm text-error-text" role="alert">{{ $message }}</p>
-                @enderror
-            </div>
+        <label class="check">
+            <input type="checkbox" name="remember" value="1" @checked(old('remember'))>
+            <span class="check-box" aria-hidden="true">
+                <x-icon name="check" size="xs" />
+            </span>
+            Keep me signed in
+        </label>
 
-            <label for="remember" class="flex min-h-11 items-center gap-3 text-sm text-ink-muted">
-                <input id="remember" name="remember" type="checkbox" class="h-5 w-5 rounded border-line text-primary focus:ring-3 focus:ring-focus" @checked(old('remember'))>
-                Remember me on this device
-            </label>
+        <x-btn type="submit" variant="primary" size="lg" block data-pending-button>
+            <span data-pending-text>Sign in</span>
+        </x-btn>
 
-            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
-                Sign in
-            </button>
-        </form>
-
-        <p class="mt-6 text-center text-sm text-ink-muted">
-            New to IT Learning Hub?
-            <a href="{{ route('register') }}" class="font-semibold text-primary-text underline underline-offset-4 hover:decoration-primary-text focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Create a student account</a>
-        </p>
-    </section>
+        <x-consent class="mt-5 text-center" />
+    </form>
 @endsection

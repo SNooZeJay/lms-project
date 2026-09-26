@@ -1,71 +1,206 @@
-@extends('layouts.app')
+@extends('layouts.app-shell')
 
-@section('title', 'Instructor home')
+@section('title', 'Instructor dashboard')
+@section('workspace-context', 'Teaching workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
-        <p class="font-mono text-sm font-semibold text-primary-text">Instructor workspace</p>
-        <h1 class="mt-3 text-3xl font-[650] tracking-tight text-ink">Welcome, {{ $user->name }}</h1>
-        <p class="mt-3 max-w-2xl leading-7 text-ink-muted">Build and publish your courses, then follow how students move through them.</p>
+    <div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <x-page-header
+            eyebrow="Instructor workspace"
+            :title="'Welcome back, '.$user->name"
+            description="Build and publish your courses, then follow how students move through them."
+        >
+            <x-slot:actions>
+                <x-btn :href="route('instructor.courses.index')" variant="secondary" size="md">
+                    <x-icon name="book-open" size="sm" />
+                    My courses
+                </x-btn>
+                <x-btn :href="route('instructor.courses.create')" variant="primary" size="md">
+                    <x-icon name="plus" size="sm" />
+                    Create course
+                </x-btn>
+            </x-slot:actions>
+        </x-page-header>
 
-        <dl class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4" role="list">
-            <div class="border-t-4 border-primary bg-surface p-5">
-                <dt class="text-sm text-ink-muted">Courses</dt>
-                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['courses'] }}</dd>
-            </div>
-            <div class="border-t-4 border-primary bg-surface p-5">
-                <dt class="text-sm text-ink-muted">Published</dt>
-                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['published_courses'] }}</dd>
-            </div>
-            <div class="border-t-4 border-accent bg-surface p-5">
-                <dt class="text-sm text-ink-muted">Students enrolled</dt>
-                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['students_enrolled'] }}</dd>
-            </div>
-            <div class="border-t-4 border-accent bg-surface p-5">
-                <dt class="text-sm text-ink-muted">Quizzes</dt>
-                <dd class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $stats['quizzes'] }}</dd>
-            </div>
-        </dl>
+        {{-- The teaching summary. Every count is scoped to this Instructor, so
+             another Instructor's work is never visible here. --}}
+        <section class="mt-8" aria-labelledby="instructor-summary-heading">
+            <h2 id="instructor-summary-heading" class="sr-only">Your teaching totals</h2>
 
-        <section class="mt-8 border border-line bg-surface p-6" aria-labelledby="instructor-courses-heading">
-            <h2 id="instructor-courses-heading" class="text-lg font-semibold text-ink">Your courses</h2>
-
-            @if ($courses->isEmpty())
-                <p class="mt-3 text-sm leading-6 text-ink-muted">No courses yet. Create your first course to start building an outline.</p>
-                <a href="{{ route('instructor.courses.create') }}" class="mt-4 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Create a course</a>
-            @else
-                <ul class="mt-4 divide-y divide-line border-y border-line" role="list">
-                    @foreach ($courses as $course)
-                        <li class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <p class="font-semibold text-ink">
-                                    <a href="{{ route('instructor.courses.show', $course) }}" class="rounded-md hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">{{ $course->title }}</a>
-                                </p>
-                                <p class="mt-1 text-sm text-ink-muted">{{ ucfirst($course->status->value) }} · {{ $course->active_enrollments }} enrolled</p>
-                            </div>
-                            <a href="{{ route('instructor.courses.show', $course) }}" class="inline-flex min-h-11 items-center text-sm font-semibold text-primary-text underline underline-offset-4 hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open outline</a>
-                        </li>
-                    @endforeach
-                </ul>
-                <a href="{{ route('instructor.courses.index') }}" class="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-primary-text underline underline-offset-4 hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">See all courses</a>
-            @endif
+            <dl role="list" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <x-stat label="Courses" :value="$stats['courses']" tone="primary" hint="That you own" />
+                <x-stat label="Published" :value="$stats['published_courses']" tone="primary" hint="Of your courses" />
+                <x-stat label="Students enrolled" :value="$stats['students_enrolled']" tone="accent" hint="Across your courses" />
+                <x-stat label="Quizzes" :value="$stats['quizzes']" tone="accent" hint="In your courses" />
+            </dl>
         </section>
 
-        <div class="mt-8 grid gap-6 md:grid-cols-2">
-            <section class="border border-line bg-surface p-6" aria-labelledby="instructor-summary-heading">
-                <h2 id="instructor-summary-heading" class="text-lg font-semibold text-ink">Account summary</h2>
-                <dl class="mt-4 space-y-3 text-sm">
-                    <div><dt class="text-ink-muted">Role</dt><dd class="font-medium text-ink">{{ ucfirst($user->profile->role->value) }}</dd></div>
-                    <div><dt class="text-ink-muted">Status</dt><dd class="font-medium text-ink">{{ ucfirst($user->profile->account_status->value) }}</dd></div>
-                    <div><dt class="text-ink-muted">Email</dt><dd class="break-words font-medium text-ink">{{ $user->email }}</dd></div>
-                </dl>
+        <div class="mt-8 grid gap-6 lg:grid-cols-3">
+            {{-- Your courses. The primary working list for this role. --}}
+            <section class="card lg:col-span-2" aria-labelledby="instructor-courses-heading">
+                <div class="card-header">
+                    <div>
+                        <h2 id="instructor-courses-heading" class="text-base font-semibold text-ink">Your courses</h2>
+                        <p class="mt-1 text-sm text-ink-muted">Only the courses you own are listed.</p>
+                    </div>
+                    <x-btn :href="route('instructor.courses.index')" variant="quiet" size="sm">
+                        See all
+                        <x-icon name="chevron-right" size="sm" />
+                    </x-btn>
+                </div>
+
+                @if ($courses->isEmpty())
+                    <x-empty-state
+                        compact
+                        icon="book-open"
+                        title="No courses yet"
+                        description="Create your first course to start building an outline. A course is private until you publish it."
+                    >
+                        <x-btn :href="route('instructor.courses.create')" variant="primary" size="md">
+                            <x-icon name="plus" size="sm" />
+                            Create a course
+                        </x-btn>
+                    </x-empty-state>
+                @else
+                    <ul role="list" class="divide-y divide-line">
+                        @foreach ($courses as $course)
+                            <li class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-ink">
+                                        <a
+                                            href="{{ route('instructor.courses.show', $course) }}"
+                                            class="rounded-sm hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus"
+                                        >{{ $course->title }}</a>
+                                    </p>
+                                    <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-muted">
+                                        <x-status :value="$course->status->value" />
+                                        <span aria-hidden="true">·</span>
+                                        <span>{{ $course->active_enrollments }} enrolled</span>
+                                        <span aria-hidden="true">·</span>
+                                        <x-amount :minor="$course->price_minor" :type="$course->course_type" :currency="$course->currency" />
+                                    </p>
+                                </div>
+                                <x-btn
+                                    :href="route('instructor.courses.show', $course)"
+                                    variant="secondary"
+                                    size="sm"
+                                    class="shrink-0 self-start sm:self-auto"
+                                >Open outline</x-btn>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
             </section>
-            <section class="border border-line bg-surface-muted p-6" aria-labelledby="instructor-next-heading">
-                <h2 id="instructor-next-heading" class="text-lg font-semibold text-ink">Available now</h2>
-                <p class="mt-3 leading-7 text-ink-muted">Course authoring, publishing, reordering, archiving, quizzes, and private materials are available.</p>
-                <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                    <a href="{{ route('instructor.courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open course workspace</a>
-                    <a href="{{ route('account.profile') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open profile</a>
+
+            {{-- Student progress that needs attention. --}}
+            <section class="card" aria-labelledby="instructor-attention-heading">
+                <div class="card-header">
+                    <div>
+                        <h2 id="instructor-attention-heading" class="text-base font-semibold text-ink">
+                            Student progress needing attention
+                        </h2>
+                        <p class="mt-1 text-sm text-ink-muted">Required lessons still open.</p>
+                    </div>
+                </div>
+
+                @if ($needsAttention->isEmpty())
+                    <p class="card-body text-sm leading-6 text-ink-muted">
+                        No student is behind on required lessons right now.
+                    </p>
+                @else
+                    <ul role="list" class="divide-y divide-line">
+                        @foreach ($needsAttention as $enrollment)
+                            <li class="px-5 py-4">
+                                <p class="text-sm font-semibold text-ink">{{ $enrollment->student?->name ?? 'Student' }}</p>
+                                <p class="mt-1 text-sm text-ink-muted">{{ $enrollment->course?->title ?? 'Course' }}</p>
+                                <p class="mt-2 text-sm text-ink-muted">
+                                    {{ $lessonsRemaining[$enrollment->id] ?? 0 }}
+                                    {{ Str::plural('required lesson', $lessonsRemaining[$enrollment->id] ?? 0) }}
+                                    still open.
+                                </p>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
+        </div>
+
+        <div class="mt-8 grid gap-6 lg:grid-cols-2">
+            {{-- Recent assessment results. --}}
+            <section class="card" aria-labelledby="instructor-results-heading">
+                <div class="card-header">
+                    <div>
+                        <h2 id="instructor-results-heading" class="text-base font-semibold text-ink">
+                            Recent assessment results
+                        </h2>
+                        <p class="mt-1 text-sm text-ink-muted">Submitted attempts on your quizzes.</p>
+                    </div>
+                </div>
+
+                @if ($recentResults->isEmpty())
+                    <p class="card-body text-sm leading-6 text-ink-muted">
+                        No submitted attempt yet. A result appears here once a student submits a quiz.
+                    </p>
+                @else
+                    <ul role="list" class="divide-y divide-line">
+                        @foreach ($recentResults as $attempt)
+                            <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-4">
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold text-ink">{{ $attempt->student?->name ?? 'Student' }}</p>
+                                    <p class="mt-0.5 truncate text-sm text-ink-muted">
+                                        {{ $attempt->quiz?->title ?? 'Quiz' }}
+                                        <span aria-hidden="true">·</span>
+                                        Attempt {{ $attempt->attempt_number }}
+                                    </p>
+                                </div>
+                                <div class="flex shrink-0 items-center gap-2">
+                                    <span class="text-sm font-semibold text-ink tabular-nums">{{ (int) $attempt->score_percent }}%</span>
+                                    <x-status :value="$attempt->status->value" />
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
+
+            {{-- Account facts. --}}
+            <section class="card" aria-labelledby="instructor-account-heading">
+                <div class="card-header">
+                    <h2 id="instructor-account-heading" class="text-base font-semibold text-ink">Your account</h2>
+                </div>
+
+                <dl class="card-body space-y-4">
+                    <div>
+                        <dt class="meta-label">Name</dt>
+                        <dd class="meta-value">{{ $user->name }}</dd>
+                    </div>
+                    <div>
+                        <dt class="meta-label">Email</dt>
+                        <dd class="meta-value">{{ $user->email }}</dd>
+                    </div>
+                    <div>
+                        <dt class="meta-label">Role</dt>
+                        <dd class="mt-1">
+                            <x-status
+                                :value="$user->profile->role->value"
+                                :label="\App\Support\StatusLabel::words($user->profile->role->value)"
+                                tone="primary"
+                            />
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="meta-label">Account status</dt>
+                        <dd class="mt-1">
+                            <x-status :value="$user->profile->account_status->value" />
+                        </dd>
+                    </div>
+                </dl>
+
+                <div class="border-t border-line p-4">
+                    <x-btn :href="route('account.profile')" variant="secondary" size="md" block>
+                        <x-icon name="user" size="sm" />
+                        Edit your profile
+                    </x-btn>
                 </div>
             </section>
         </div>

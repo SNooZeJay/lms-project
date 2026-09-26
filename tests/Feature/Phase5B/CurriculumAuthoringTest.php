@@ -187,7 +187,14 @@ class CurriculumAuthoringTest extends TestCase
             ->assertSee('Check the highlighted fields')
             ->assertSee('Long lesson draft text.', false)
             ->assertSee('The title field is required.')
-            ->assertSee('<details class="border-t border-line bg-surface-muted px-5 py-4" open>', false);
+            // The rejected form must be the one that is open again, and the hook
+            // is asserted rather than a class string, so a restyle cannot change
+            // the behaviour without a test noticing.
+            ->assertSee('data-form-context="lesson:'.$module->id.'"', false)
+            ->assertSeeInOrder(
+                ['data-form-context="lesson:'.$module->id.'"', 'open'],
+                escape: false,
+            );
     }
 
     public function test_failed_module_form_keeps_input(): void

@@ -1,69 +1,135 @@
-@extends('layouts.app')
+@extends('layouts.app-shell')
 
 @section('title', 'My certificates')
+@section('workspace-context', 'Learning workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
-        <p class="font-mono text-sm font-semibold text-primary-text">Student workspace</p>
-        <h1 class="mt-3 text-3xl font-[650] tracking-tight text-ink">My certificates</h1>
-        <p class="mt-3 max-w-2xl leading-7 text-ink-muted">Finish every required lesson and pass every required quiz to earn a certificate.</p>
+    <div class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <x-breadcrumbs :items="[
+            ['label' => 'Dashboard', 'href' => route('student.dashboard')],
+            ['label' => 'My certificates'],
+        ]" class="mb-6" />
+
+        <x-page-header
+            eyebrow="Student workspace"
+            title="My certificates"
+            description="Finish every required lesson and pass every required quiz to earn a certificate."
+        >
+            <x-slot:actions>
+                <x-btn :href="route('student.courses.index')" variant="secondary" size="md">
+                    <x-icon name="book-open" size="sm" />
+                    My courses
+                </x-btn>
+            </x-slot:actions>
+        </x-page-header>
 
         @if (session('status'))
-            <div role="status" class="mt-6 border-l-4 border-accent bg-success-surface px-4 py-3 text-sm font-semibold text-success-text">{{ session('status') }}</div>
+            <x-note tone="success" class="mt-6">{{ session('status') }}</x-note>
         @endif
 
-        <x-form-errors :errors="$errors" />
+        <x-form-errors :errors="$errors" class="mt-6" />
 
         @if ($rows->isEmpty())
-            <section class="mt-10 border-t border-line py-16 text-center" aria-labelledby="no-certificates-heading">
-                <h2 id="no-certificates-heading" class="text-lg font-semibold text-ink">No enrollments yet</h2>
-                <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-muted">Enroll in a published free course to start your learning record.</p>
-                <a href="{{ route('student.courses.index') }}" class="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open My courses</a>
-            </section>
+            <div class="card mt-8">
+                <x-empty-state
+                    icon="award"
+                    title="No enrollments yet"
+                    description="Enroll in a published course to start your learning record. A certificate appears here once every requirement is met."
+                >
+                    <x-btn :href="route('student.courses.index')" variant="primary" size="md">
+                        Open my courses
+                    </x-btn>
+                    <x-btn :href="route('courses.index')" variant="secondary" size="md">
+                        Browse the catalog
+                    </x-btn>
+                </x-empty-state>
+            </div>
         @else
-            <ul class="mt-8 grid gap-5 sm:grid-cols-2" role="list">
+            {{-- Lessons and quizzes are stated as `x of y`, so nothing about the
+                 remaining work is a mystery. --}}
+            <ul role="list" class="mt-8 grid gap-5 sm:grid-cols-2">
                 @foreach ($rows as $row)
                     @php
                         $certificate = $row['certificate'];
                         $summary = $row['summary'];
                     @endphp
-                    <li class="border border-line bg-surface p-5">
-                        <h2 class="font-semibold text-ink">{{ $row['course']->title }}</h2>
-                        <p class="mt-1 text-sm text-ink-muted">{{ $row['course']->instructor?->name ?? 'IT Learning Hub' }}</p>
+                    <li class="card flex flex-col p-5">
+                        <h2 class="text-base font-semibold text-ink">{{ $row['course']->title }}</h2>
+                        <p class="mt-1 text-sm text-ink-muted">
+                            {{ $row['course']->instructor?->name ?? 'IT Learning Hub' }}
+                        </p>
 
                         <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
                             <div>
-                                <dt class="text-ink-muted">Lessons</dt>
-                                <dd class="mt-1 font-semibold text-ink">{{ $summary['lessons_completed'] }} of {{ $summary['lessons_total'] }}</dd>
+                                <dt class="meta-label">Lessons</dt>
+                                <dd class="mt-1 font-semibold text-ink tabular-nums">
+                                    {{ $summary['lessons_completed'] }} of {{ $summary['lessons_total'] }}
+                                </dd>
                             </div>
                             <div>
-                                <dt class="text-ink-muted">Quizzes</dt>
-                                <dd class="mt-1 font-semibold text-ink">{{ $summary['quizzes_passed'] }} of {{ $summary['quizzes_total'] }}</dd>
+                                <dt class="meta-label">Quizzes</dt>
+                                <dd class="mt-1 font-semibold text-ink tabular-nums">
+                                    {{ $summary['quizzes_passed'] }} of {{ $summary['quizzes_total'] }}
+                                </dd>
                             </div>
                         </dl>
 
-                        @if ($certificate)
-                            <p class="mt-4 inline-flex items-center gap-2 rounded-md border border-success-text bg-success-surface px-3 py-1.5 text-sm font-semibold text-success-text">
-                                <span aria-hidden="true">✓</span>
-                                {{ $certificate->isValid() ? 'Valid' : 'Revoked' }}
-                            </p>
-                            <a href="{{ route('student.certificates.show', $certificate) }}" class="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">View certificate</a>
-                        @elseif ($summary['eligible'])
-                            <p class="mt-4 text-sm leading-6 text-ink-muted">You meet every requirement. Claim your certificate.</p>
-                            <form method="POST" action="{{ route('student.courses.complete', $row['course']) }}" class="mt-3">
-                                @csrf
-                                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Claim certificate</button>
-                            </form>
-                        @else
-                            <div class="mt-4 border-l-4 border-line bg-surface-muted px-4 py-3">
-                                <p class="text-sm font-semibold text-ink">Still to do</p>
-                                <ul class="mt-1 space-y-1" role="list">
-                                    @foreach ($summary['reasons'] as $reason)
-                                        <li class="text-sm leading-6 text-ink-muted">{{ $reason }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
+                        <div class="mt-5 flex flex-1 flex-col">
+                            @if ($certificate)
+                                <div>
+                                    {{-- A Student reads the state as `Valid` or `Revoked`, which is
+                                         the plainest word for the record they own. --}}
+                                    <x-status
+                                        :value="$certificate->isValid() ? 'issued' : 'revoked'"
+                                        :label="$certificate->isValid() ? 'Valid' : 'Revoked'"
+                                    />
+                                    @if (! $certificate->isValid() && $certificate->revocation_reason)
+                                        <x-note tone="error" class="mt-3">
+                                            {{ $certificate->revocation_reason }}
+                                        </x-note>
+                                    @endif
+                                </div>
+
+                                <x-btn
+                                    :href="route('student.certificates.show', $certificate)"
+                                    variant="primary"
+                                    size="md"
+                                    block
+                                    class="mt-4"
+                                >
+                                    <x-icon name="award" size="sm" />
+                                    View certificate
+                                </x-btn>
+                            @elseif ($summary['eligible'])
+                                <p class="text-sm leading-6 text-ink-muted">
+                                    You meet every requirement. Claim your certificate.
+                                </p>
+
+                                <form
+                                    method="POST"
+                                    action="{{ route('student.courses.complete', $row['course']) }}"
+                                    class="mt-4"
+                                    data-pending
+                                >
+                                    @csrf
+                                    <x-btn type="submit" variant="primary" size="md" block data-pending-button>
+                                        <span data-pending-text>Claim certificate</span>
+                                    </x-btn>
+                                </form>
+                            @else
+                                <div>
+                                    <p class="text-sm font-semibold text-ink">Still to do</p>
+                                    <ul role="list" class="mt-2 space-y-1.5">
+                                        @foreach ($summary['reasons'] as $reason)
+                                            <li class="flex gap-2 text-sm leading-6 text-ink-muted">
+                                                <x-icon name="close" size="sm" class="mt-1 shrink-0 text-ink-subtle" />
+                                                <span>{{ $reason }}</span>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+                        </div>
                     </li>
                 @endforeach
             </ul>

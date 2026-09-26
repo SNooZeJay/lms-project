@@ -1,107 +1,172 @@
-@extends('layouts.app')
+@extends('layouts.app-shell')
 
 @section('title', $course->title)
+@section('workspace-context', 'My courses')
 
 @section('content')
-    <div class="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
-        <a href="{{ route('student.courses.index') }}" class="inline-flex min-h-11 items-center text-sm font-semibold text-primary-text hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">← Back to my courses</a>
+    <div class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <x-breadcrumbs :items="[
+            ['label' => 'My courses', 'href' => route('student.courses.index')],
+            ['label' => $course->title],
+        ]" class="mb-6" />
 
-        <header class="mt-8 border-b border-line pb-8">
-            <p class="font-mono text-sm font-semibold text-primary-text">Enrolled course</p>
-            <h1 class="mt-3 text-3xl font-[650] tracking-tight text-ink">{{ $course->title }}</h1>
+        <header class="border-b border-line pb-8">
+            <div class="flex flex-wrap items-center gap-2">
+                <p class="eyebrow">Enrolled course</p>
+                <x-status :value="$enrollment->status->value" />
+            </div>
+
+            <h1 class="mt-3 text-3xl font-[650] tracking-tight text-balance text-ink sm:text-4xl">
+                {{ $course->title }}
+            </h1>
 
             @if ($course->description)
-                <p class="mt-4 max-w-3xl text-lg leading-8 text-ink-muted">{{ $course->description }}</p>
+                <p class="prose-measure mt-4 text-lg leading-8 text-ink-muted">{{ $course->description }}</p>
             @endif
 
             <dl class="mt-6 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                 <div>
-                    <dt class="text-ink-muted">Instructor</dt>
-                    <dd class="mt-1 font-semibold text-ink">{{ $course->instructor?->name ?? 'IT Learning Hub' }}</dd>
+                    <dt class="meta-label">Instructor</dt>
+                    <dd class="meta-value">{{ $course->instructor?->name ?? 'IT Learning Hub' }}</dd>
                 </div>
                 <div>
-                    <dt class="text-ink-muted">Level</dt>
-                    <dd class="mt-1 font-semibold text-ink">{{ ucfirst($course->level->value) }}</dd>
+                    <dt class="meta-label">Level</dt>
+                    <dd class="meta-value">{{ \App\Support\StatusLabel::words($course->level->value) }}</dd>
                 </div>
                 <div>
-                    <dt class="text-ink-muted">Modules</dt>
-                    <dd class="mt-1 font-semibold text-ink">{{ $course->modules->count() }}</dd>
+                    <dt class="meta-label">Modules</dt>
+                    <dd class="meta-value tabular-nums">{{ $course->modules->count() }}</dd>
                 </div>
                 <div>
-                    <dt class="text-ink-muted">Lessons</dt>
-                    <dd class="mt-1 font-semibold text-ink">{{ $course->modules->sum(fn ($module) => $module->lessons->count()) }}</dd>
+                    <dt class="meta-label">Lessons</dt>
+                    <dd class="meta-value tabular-nums">{{ $course->modules->sum(fn ($module) => $module->lessons->count()) }}</dd>
                 </div>
             </dl>
 
-            <div class="mt-5 border-l-4 {{ $showProgress ? 'border-accent bg-success-surface' : 'border-line bg-surface-muted' }} px-4 py-3">
-                @if ($showProgress)
-                    <p class="text-sm font-semibold text-ink">Progress: {{ $progress['percentage'] }}%</p>
-                    <p class="mt-1 text-sm text-ink-muted">{{ $progress['completed'] }} of {{ $progress['total'] }} required published lessons completed.</p>
-                @else
-                    <p class="text-sm font-semibold text-ink">Progress is hidden</p>
-                    <p class="mt-1 text-sm leading-6 text-ink-muted">This course is not published, so the percentage is hidden. Your completed lessons are kept.</p>
-                @endif
-            </div>
-
-            <div class="mt-3 border-l-4 border-line bg-surface-muted px-4 py-3">
-                <p class="text-sm font-semibold text-ink">Certificate</p>
-                @if ($certificate)
-                    <p class="mt-1 text-sm leading-6 text-ink-muted">You completed this course on {{ $certificate->completion_date->format('M j, Y') }}.</p>
-                    <a href="{{ route('student.certificates.show', $certificate) }}" class="mt-3 inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">View certificate</a>
-                @elseif ($completion['eligible'])
-                    <p class="mt-1 text-sm leading-6 text-ink-muted">You meet every requirement for this course.</p>
-                    <form method="POST" action="{{ route('student.courses.complete', $course) }}" class="mt-3">
-                        @csrf
-                        <button type="submit" class="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Claim certificate</button>
-                    </form>
-                @else
-                    <p class="mt-1 text-sm leading-6 text-ink-muted">Still to do before you can claim a certificate:</p>
-                    <ul class="mt-1 space-y-1" role="list">
-                        @foreach ($completion['reasons'] as $reason)
-                            <li class="text-sm leading-6 text-ink-muted">{{ $reason }}</li>
-                        @endforeach
-                    </ul>
-                @endif
-            </div>
-
             @if ($course->status !== \App\Enums\CourseStatus::Published)
-                <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">This course is not published right now. Your enrollment is kept, and published lessons stay available.</p>
+                <x-note tone="warning" class="mt-6">
+                    This course is not published right now. Your enrollment and your completed lessons are kept,
+                    and you keep your access to the lessons that are still published.
+                </x-note>
             @endif
         </header>
 
+        <div class="mt-8 grid gap-6 lg:grid-cols-3">
+            {{-- Progress. One real percentage, calculated on the server. --}}
+            <section class="card p-5 lg:col-span-2" aria-labelledby="course-progress-heading">
+                <h2 id="course-progress-heading" class="text-base font-semibold text-ink">Course progress</h2>
+
+                <div class="mt-4">
+                    @if ($showProgress)
+                        <x-progress
+                            :percentage="$progress['percentage']"
+                            label="Lesson progress"
+                            :detail="$progress['completed'].' of '.$progress['total'].' required published lessons completed. Optional lessons are not counted.'"
+                        />
+                    @else
+                        <x-note tone="neutral">
+                            <span class="font-semibold">Progress is hidden.</span>
+                            This course is not published, so the percentage is hidden. Your completed lessons are
+                            kept and reappear when the course is published again.
+                        </x-note>
+                    @endif
+                </div>
+            </section>
+
+            {{-- The certificate panel. Either the certificate, a claim button,
+                 or the exact list of what is still missing. --}}
+            <section class="card p-5" aria-labelledby="course-certificate-heading">
+                <h2 id="course-certificate-heading" class="text-base font-semibold text-ink">Certificate</h2>
+
+                <div class="mt-4">
+                    @if ($certificate)
+                        <p class="text-sm leading-6 text-ink-muted">
+                            You completed this course on
+                            {{ $certificate->completion_date->format('M j, Y') }}.
+                        </p>
+                        <x-btn
+                            :href="route('student.certificates.show', $certificate)"
+                            variant="primary"
+                            size="md"
+                            class="mt-4"
+                        >
+                            <x-icon name="award" size="sm" />
+                            View certificate
+                        </x-btn>
+                    @elseif ($completion['eligible'])
+                        <p class="text-sm leading-6 text-ink-muted">You meet every requirement for this course.</p>
+                        <form method="POST" action="{{ route('student.courses.complete', $course) }}" class="mt-4" data-pending>
+                            @csrf
+                            <x-btn type="submit" variant="primary" size="md" block data-pending-button>
+                                <x-icon name="award" size="sm" />
+                                <span data-pending-text>Claim certificate</span>
+                            </x-btn>
+                        </form>
+                    @else
+                        <p class="text-sm leading-6 text-ink-muted">Still to do before you can claim a certificate:</p>
+                        <ul role="list" class="mt-2 space-y-1.5">
+                            @foreach ($completion['reasons'] as $reason)
+                                <li class="flex gap-2 text-sm leading-6 text-ink-muted">
+                                    <x-icon name="close" size="sm" class="mt-1 shrink-0 text-ink-subtle" />
+                                    <span>{{ $reason }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            </section>
+        </div>
+
         <section class="mt-10" aria-labelledby="student-outline-heading">
-            <h2 id="student-outline-heading" class="text-xl font-semibold text-ink">Your lessons</h2>
-            <p class="mt-2 text-sm leading-6 text-ink-muted">Open any lesson to read its content and materials.</p>
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <h2 id="student-outline-heading" class="text-xl font-semibold text-ink">Your lessons</h2>
+                    <p class="mt-1 text-sm leading-6 text-ink-muted">
+                        Open any lesson to read its content and materials, then mark it complete.
+                    </p>
+                </div>
+            </div>
 
             @forelse ($course->modules as $module)
-                <section class="mt-6 border border-line bg-surface shadow-sm" aria-labelledby="student-module-{{ $module->id }}">
+                <section class="card mt-4 overflow-hidden" aria-labelledby="student-module-{{ $module->id }}">
                     <div class="border-b border-line bg-surface-muted px-5 py-4">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-primary-text">Module {{ $module->position }}</p>
-                        <h3 id="student-module-{{ $module->id }}" class="mt-1 text-lg font-semibold text-ink">{{ $module->title }}</h3>
+                        <p class="eyebrow">Module {{ $module->position }}</p>
+                        <h3 id="student-module-{{ $module->id }}" class="mt-1 text-lg font-semibold text-ink">
+                            {{ $module->title }}
+                        </h3>
                     </div>
 
                     @if ($module->lessons->isEmpty())
                         <p class="px-5 py-5 text-sm text-ink-muted">No published lessons in this module yet.</p>
                     @else
-                        <ol class="divide-y divide-line" role="list">
+                        <ol role="list" class="divide-y divide-line">
                             @foreach ($module->lessons as $lesson)
+                                @php $isComplete = $completedLessonIds->has($lesson->id); @endphp
                                 <li class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <div>
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-ink-muted">Lesson {{ $lesson->position }}</p>
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-semibold tracking-wide text-ink-subtle uppercase">
+                                            Lesson {{ $lesson->position }}
+                                        </p>
                                         <p class="mt-1 font-semibold text-ink">
-                                            <a href="{{ route('student.lessons.show', [$course, $lesson]) }}" class="rounded-md hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">{{ $lesson->title }}</a>
+                                            <a
+                                                href="{{ route('student.lessons.show', [$course, $lesson]) }}"
+                                                class="rounded-sm hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus"
+                                            >{{ $lesson->title }}</a>
                                         </p>
                                         @if ($lesson->summary)
                                             <p class="mt-1 max-w-2xl text-sm leading-6 text-ink-muted">{{ $lesson->summary }}</p>
                                         @endif
                                     </div>
-                                    <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-muted">
-                                        @if ($completedLessonIds->has($lesson->id))
-                                            <span class="rounded-full bg-success-surface px-2.5 py-1 text-success-text">Completed</span>
+                                    <div class="flex shrink-0 flex-wrap items-center gap-2">
+                                        @if ($isComplete)
+                                            <x-badge tone="success">
+                                                <x-icon name="check" size="xs" />
+                                                Completed
+                                            </x-badge>
                                         @endif
-                                        <span class="rounded-full bg-surface-muted px-2.5 py-1">{{ $lesson->is_required ? 'Required' : 'Optional' }}</span>
+                                        <x-badge tone="neutral">{{ $lesson->is_required ? 'Required' : 'Optional' }}</x-badge>
                                         @if ($lesson->estimated_minutes)
-                                            <span class="rounded-full bg-surface-muted px-2.5 py-1">{{ $lesson->estimated_minutes }} min</span>
+                                            <x-badge tone="neutral">{{ $lesson->estimated_minutes }} min</x-badge>
                                         @endif
                                     </div>
                                 </li>
@@ -110,38 +175,53 @@
                     @endif
                 </section>
             @empty
-                <p class="mt-6 border-t border-line py-10 text-sm text-ink-muted">This course has no published lessons yet.</p>
+                <div class="card mt-4">
+                    <x-empty-state
+                        compact
+                        icon="book-open"
+                        title="This course has no published lessons yet"
+                        description="Your enrollment is kept. Lessons appear here as soon as the Instructor publishes them."
+                    />
+                </div>
             @endforelse
         </section>
 
         @if ($quizzes->isNotEmpty())
             <section class="mt-12" aria-labelledby="course-quizzes-heading">
-                <h2 id="course-quizzes-heading" class="text-xl font-semibold text-ink">Quizzes</h2>
-                <p class="mt-1 text-sm text-ink-muted">Answer every question, then submit once. Attempts are limited.</p>
+                <div>
+                    <h2 id="course-quizzes-heading" class="text-xl font-semibold text-ink">Quizzes</h2>
+                    <p class="mt-1 text-sm leading-6 text-ink-muted">
+                        Answer every question, then submit once. Three attempts are allowed, and the answer key is
+                        never shown before you submit.
+                    </p>
+                </div>
 
-                <ul class="mt-5 divide-y divide-line border-y border-line" role="list">
+                <ul role="list" class="mt-5 space-y-3">
                     @foreach ($quizzes as $quiz)
-                        <li class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
+                        <li class="card flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="min-w-0">
                                 <p class="font-semibold text-ink">
-                                    <a href="{{ route('student.quizzes.show', [$course, $quiz]) }}" class="rounded-md hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">{{ $quiz->title }}</a>
+                                    <a
+                                        href="{{ route('student.quizzes.show', [$course, $quiz]) }}"
+                                        class="rounded-sm hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus"
+                                    >{{ $quiz->title }}</a>
                                 </p>
                                 @if ($quiz->description)
                                     <p class="mt-1 max-w-2xl text-sm leading-6 text-ink-muted">{{ $quiz->description }}</p>
                                 @endif
                             </div>
-                            <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-muted">
+                            <div class="flex shrink-0 flex-wrap items-center gap-2">
                                 @if ($quiz->is_required)
-                                    <span class="rounded-full bg-surface-muted px-2.5 py-1">Required</span>
+                                    <x-badge tone="primary">Required</x-badge>
                                 @endif
-                                <span class="rounded-full bg-surface-muted px-2.5 py-1">{{ $quizState[$quiz->id] ?? 'Not attempted' }}</span>
+                                <x-status
+                                    :value="$quizState[$quiz->id] ?? 'not_attempted'"
+                                />
                             </div>
                         </li>
                     @endforeach
                 </ul>
             </section>
         @endif
-
-        <p class="mt-10 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">Mark a lesson complete to update your progress. Pass every required quiz to unlock your certificate.</p>
     </div>
 @endsection

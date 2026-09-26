@@ -1,115 +1,150 @@
-@extends('layouts.app')
+@extends('layouts.app-shell')
 
 @section('title', 'My courses')
+@section('workspace-context', 'Teaching workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-                <p class="font-mono text-sm font-semibold text-primary-text">Instructor workspace</p>
-                <h1 class="mt-3 text-3xl font-[650] tracking-tight text-ink">My courses</h1>
-                <p class="mt-3 max-w-2xl leading-7 text-ink-muted">Create a private Course draft, then review its ordered outline.</p>
-            </div>
-            <a href="{{ route('instructor.courses.create') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Create course</a>
-        </div>
+    <div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <x-breadcrumbs :items="[
+            ['label' => 'Dashboard', 'href' => route('instructor.dashboard')],
+            ['label' => 'My courses'],
+        ]" class="mb-6" />
+
+        <x-page-header
+            eyebrow="Instructor workspace"
+            title="My courses"
+            description="Create a private course draft, build its ordered outline, then publish it when it is ready."
+        >
+            <x-slot:actions>
+                <x-btn :href="route('instructor.courses.create')" variant="primary" size="md">
+                    <x-icon name="plus" size="sm" />
+                    Create course
+                </x-btn>
+            </x-slot:actions>
+        </x-page-header>
 
         @if (session('status'))
-            <div role="status" class="mt-6 border-l-4 border-accent bg-success-surface px-4 py-3 text-sm font-semibold text-success-text">{{ session('status') }}</div>
+            <x-note tone="success" class="mt-6">{{ session('status') }}</x-note>
         @endif
 
+        <x-form-errors :errors="$errors" class="mt-6" />
+
         @if ($courses->isEmpty())
-            <section class="mt-10 border-t border-line py-16 text-center" aria-labelledby="empty-courses-heading">
-                <h2 id="empty-courses-heading" class="text-lg font-semibold text-ink">No courses yet</h2>
-                <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-muted">Create your first Course as a private draft, then publish it when it is ready.</p>
-                <a href="{{ route('instructor.courses.create') }}" class="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Create your first course</a>
-            </section>
+            <div class="card mt-8">
+                <x-empty-state
+                    icon="book-open"
+                    title="No courses yet"
+                    description="Create your first course as a private draft. Only you can see it until you publish it."
+                >
+                    <x-btn :href="route('instructor.courses.create')" variant="primary" size="md">
+                        <x-icon name="plus" size="sm" />
+                        Create your first course
+                    </x-btn>
+                </x-empty-state>
+            </div>
         @else
-            <div class="mt-8 space-y-4 md:hidden">
+            <p class="mt-6 text-sm text-ink-muted" role="status">
+                {{ $courses->total() }} {{ Str::plural('course', $courses->total()) }}
+            </p>
+
+            {{-- Stacked cards on a phone, a table from a tablet up. The table
+                 scrolls inside its own container rather than widening the page. --}}
+            <div class="mt-4 space-y-4 md:hidden">
                 @foreach ($courses as $course)
-                    @php
-                        $pesos = intdiv($course->price_minor, 100);
-                        $cents = $course->price_minor % 100;
-                    @endphp
-                    <article class="border border-line bg-surface p-5 shadow-sm">
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <h2 class="text-lg font-semibold text-ink">{{ $course->title }}</h2>
-                                <p class="mt-1 text-sm text-ink-muted">{{ $course->category ?: 'Uncategorized' }}</p>
-                            </div>
-                            <span class="inline-flex rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-ink">{{ ucfirst($course->status->value) }}</span>
-                        </div>
-                        <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                            <div><dt class="text-ink-muted">Type</dt><dd class="mt-1 font-medium text-ink">{{ ucfirst($course->course_type->value) }}</dd></div>
-                            <div><dt class="text-ink-muted">Level</dt><dd class="mt-1 font-medium text-ink">{{ ucfirst($course->level->value) }}</dd></div>
-                            <div><dt class="text-ink-muted">Price</dt><dd class="mt-1 font-medium text-ink">PHP {{ number_format($pesos) }}.{{ str_pad($cents, 2, '0', STR_PAD_LEFT) }}</dd></div>
-                            <div><dt class="text-ink-muted">Outline</dt><dd class="mt-1 font-medium text-ink">{{ $course->modules_count }} modules</dd></div>
-                        </dl>
-                        <a href="{{ route('instructor.courses.show', $course) }}" class="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">View outline</a>
-                        @if ($course->status === \App\Enums\CourseStatus::Draft)
-                            <form method="POST" action="{{ route('instructor.courses.publish', $course) }}" class="mt-3">
-                                @csrf
-                                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Publish course</button>
-                            </form>
-                        @else
-                            <form method="POST" action="{{ route('instructor.courses.unpublish', $course) }}" class="mt-3">
-                                @csrf
-                                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Unpublish course</button>
-                            </form>
-                        @endif
-                    </article>
+                    @include('instructor.courses.course-card', ['course' => $course])
                 @endforeach
             </div>
 
-            <div class="mt-8 hidden overflow-x-auto border-t border-line md:block">
-                <table class="min-w-full divide-y divide-line text-left text-sm">
-                    <thead class="bg-surface-muted text-xs uppercase tracking-wide text-ink-muted">
-                        <tr>
-                            <th scope="col" class="px-4 py-3 font-semibold">Course</th>
-                            <th scope="col" class="px-4 py-3 font-semibold">Status</th>
-                            <th scope="col" class="px-4 py-3 font-semibold">Type</th>
-                            <th scope="col" class="px-4 py-3 font-semibold">Level</th>
-                            <th scope="col" class="px-4 py-3 font-semibold">Price</th>
-                            <th scope="col" class="px-4 py-3 font-semibold">Outline</th>
-                            <th scope="col" class="px-4 py-3 font-semibold"><span class="sr-only">Action</span></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line bg-surface">
-                        @foreach ($courses as $course)
-                            @php
-                                $pesos = intdiv($course->price_minor, 100);
-                                $cents = $course->price_minor % 100;
-                            @endphp
+            <div class="card mt-4 hidden overflow-hidden md:block">
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-4xl text-left text-sm">
+                        <caption class="sr-only">
+                            One row per course you own, with its status, type, level, price, outline size, and the
+                            available actions
+                        </caption>
+                        <thead class="table-head">
                             <tr>
-                                <td class="px-4 py-5 align-top">
-                                    <p class="font-semibold text-ink">{{ $course->title }}</p>
-                                    <p class="mt-1 text-ink-muted">{{ $course->category ?: 'Uncategorized' }}</p>
-                                </td>
-                                <td class="px-4 py-5 align-top"><span class="font-medium text-ink">{{ ucfirst($course->status->value) }}</span></td>
-                                <td class="px-4 py-5 align-top text-ink">{{ ucfirst($course->course_type->value) }}</td>
-                                <td class="px-4 py-5 align-top text-ink">{{ ucfirst($course->level->value) }}</td>
-                                <td class="px-4 py-5 align-top text-ink">PHP {{ number_format($pesos) }}.{{ str_pad($cents, 2, '0', STR_PAD_LEFT) }}</td>
-                                <td class="px-4 py-5 align-top text-ink-muted">{{ $course->modules_count }} modules</td>
-                                <td class="px-4 py-5 align-top text-right">
-                                    <div class="flex flex-col items-end gap-2">
-                                        <a href="{{ route('instructor.courses.show', $course) }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">View outline</a>
-                                        @if ($course->status === \App\Enums\CourseStatus::Draft)
-                                            <form method="POST" action="{{ route('instructor.courses.publish', $course) }}">
-                                                @csrf
-                                                <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Publish course</button>
-                                            </form>
-                                        @else
-                                            <form method="POST" action="{{ route('instructor.courses.unpublish', $course) }}">
-                                                @csrf
-                                                <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Unpublish course</button>
-                                            </form>
-                                        @endif
-                                    </div>
-                                </td>
+                                <th scope="col">Course</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Level</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Outline</th>
+                                <th scope="col"><span class="sr-only">Actions</span></th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody role="list" class="divide-y divide-line">
+                            @foreach ($courses as $course)
+                                <tr>
+                                    <td class="table-cell">
+                                        <p class="font-semibold text-ink">
+                                            <a
+                                                href="{{ route('instructor.courses.show', $course) }}"
+                                                class="rounded-sm hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus"
+                                            >{{ $course->title }}</a>
+                                        </p>
+                                        <p class="mt-1 text-ink-muted">{{ $course->category ?: 'Uncategorized' }}</p>
+                                    </td>
+                                    <td class="table-cell">
+                                        <x-status :value="$course->status->value" />
+                                    </td>
+                                    <td class="table-cell">
+                                        {{ \App\Support\StatusLabel::words($course->course_type->value) }}
+                                    </td>
+                                    <td class="table-cell">
+                                        {{ \App\Support\StatusLabel::words($course->level->value) }}
+                                    </td>
+                                    <td class="table-cell font-semibold">
+                                        <x-amount
+                                            :minor="$course->price_minor"
+                                            :type="$course->course_type"
+                                            :currency="$course->currency"
+                                        />
+                                    </td>
+                                    <td class="table-cell text-ink-muted tabular-nums">
+                                        {{ $course->modules_count }} {{ Str::plural('module', $course->modules_count) }}
+                                    </td>
+                                    <td class="table-cell">
+                                        <div class="flex flex-col items-end gap-2">
+                                            <x-btn
+                                                :href="route('instructor.courses.show', $course)"
+                                                variant="secondary"
+                                                size="sm"
+                                            >View outline</x-btn>
+
+                                            @if ($course->status === \App\Enums\CourseStatus::Draft)
+                                                <form
+                                                    method="POST"
+                                                    action="{{ route('instructor.courses.publish', $course) }}"
+                                                    data-pending
+                                                >
+                                                    @csrf
+                                                    <x-btn type="submit" variant="primary" size="sm" data-pending-button>
+                                                        <span data-pending-text>Publish course</span>
+                                                    </x-btn>
+                                                </form>
+                                            @else
+                                                <form
+                                                    method="POST"
+                                                    action="{{ route('instructor.courses.unpublish', $course) }}"
+                                                    data-confirm="Unpublish this course? It leaves the catalog, and existing access is kept."
+                                                    data-pending
+                                                >
+                                                    @csrf
+                                                    <x-btn type="submit" variant="secondary" size="sm" data-pending-button>
+                                                        <span data-pending-text>Unpublish course</span>
+                                                    </x-btn>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
             <div class="mt-6">{{ $courses->links() }}</div>
         @endif
     </div>

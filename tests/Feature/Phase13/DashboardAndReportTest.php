@@ -186,7 +186,10 @@ class DashboardAndReportTest extends TestCase
 
         $body = $this->actingAs($administrator)->get(route('admin.reports.index'))->assertOk()->getContent();
 
+        // The amount is formatted as a peso amount, such as ₱500.00, and the
+        // stored minor units are never printed raw.
         $this->assertStringContainsString('500.00', $body);
+        $this->assertStringNotContainsString('50000', $body);
         $this->assertStringNotContainsString('sk_test', $body);
         $this->assertStringNotContainsString('PAYMONGO_SECRET', $body);
     }

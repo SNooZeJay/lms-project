@@ -16,6 +16,10 @@ class InstructorController extends Controller
     {
         $user = $request->user()->load('profile');
 
+        // Every query below is scoped to the signed in Instructor, so another
+        // Instructor's courses, students, and results are never loaded.
+        $attention = $this->report->studentsNeedingAttention($user);
+
         return view('roles.instructor', [
             'user' => $user,
             'stats' => $this->report->forInstructor($user),
@@ -25,6 +29,9 @@ class InstructorController extends Controller
                 ->latest('id')
                 ->limit(5)
                 ->get(),
+            'needsAttention' => $attention['enrollments'],
+            'lessonsRemaining' => $attention['lessons'],
+            'recentResults' => $this->report->recentQuizResults($user, 5),
         ]);
     }
 }

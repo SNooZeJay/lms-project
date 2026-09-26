@@ -28,6 +28,10 @@ final class StudentPaymentState
      */
     private const EXPIRY_HOURS = 24;
 
+    /**
+     * The tone names a status colour in the design token set, so a view can
+     * hand the value straight to a badge or a note without translating it.
+     */
     private function __construct(
         public readonly string $key,
         public readonly string $label,
@@ -71,7 +75,7 @@ final class StudentPaymentState
                 key: 'failed',
                 label: 'Payment failed',
                 message: 'The payment was not completed, so nothing was charged. You can try again.',
-                tone: 'danger',
+                tone: 'error',
                 offersPayment: true,
                 actionLabel: 'Try payment again',
             ),
@@ -98,7 +102,7 @@ final class StudentPaymentState
                 key: 'expired',
                 label: 'Payment expired',
                 message: 'The checkout was left unfinished and can no longer be paid. Start a new one.',
-                tone: 'danger',
+                tone: 'error',
                 offersPayment: true,
                 actionLabel: 'Start payment again',
             ),
@@ -144,12 +148,16 @@ final class StudentPaymentState
         return $createdAt->lt(now()->subHours(self::EXPIRY_HOURS));
     }
 
+    /**
+     * The checkout button always names the exact amount from the course record.
+     *
+     * The amount is formatted through `Money`, so the stored integer minor
+     * units are never divided into a float and never printed raw. A Student is
+     * told what they will be charged before they start, and a tampered browser
+     * value cannot change it.
+     */
     private static function payAction(Course $course): string
     {
-        return sprintf(
-            'Pay %s %s',
-            $course->currency,
-            number_format($course->price_minor / 100, 2),
-        );
+        return 'Pay '.Money::format($course->price_minor, $course->currency);
     }
 }

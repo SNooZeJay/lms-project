@@ -40,8 +40,34 @@ The application should not feel like:
 - A social media product
 - A gaming interface
 - A hacker-themed website
-- A copied Adminator dashboard
 - A generic AI-generated template
+
+### Structural reference
+
+Adminator, the dashboard reference kept in `FOR_UI/`, is the structural
+reference for this interface. Its split authentication shell, its narrow single
+form, its icon led inputs, and its top row pairing a way back with a link to the
+other form are the patterns to follow.
+
+What that means in practice:
+
+- **Structure is taken from Adminator.** The layout, the split shell, the shape of
+  the controls, and the arrangement of a form.
+- **The palette is not.** Adminator's own dark teal, and its blue to purple aside
+  gradient, are not adopted. The two core colours, one accent, and the neutral
+  surfaces defined in this document are the palette, so every page stays one
+  system rather than two.
+- **Its content is not.** The sample testimonial, the "2026 preview" eyebrow, the
+  location footer, the free trial line, and the social sign in buttons are not
+  copied. A fictional quote and a claim about software that does not exist here
+  would be untrue, and buttons for sign in methods this application does not
+  offer would not work.
+- **No code or asset is imported from it.** `FOR_UI` is a read-only reference.
+  Every page here is written as Blade against the tokens in this document.
+
+Adminator is a commercial template, so lifting its markup or its branding into a
+student project is not something to do quietly. Reference the design, write the
+code.
 
 ## 3. Design goals
 

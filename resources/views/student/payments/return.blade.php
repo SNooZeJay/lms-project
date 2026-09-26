@@ -1,81 +1,133 @@
-@extends('layouts.app')
+@extends('layouts.app-shell')
 
 @section('title', 'Payment status')
+@section('workspace-context', 'Checkout')
 
 @section('content')
-    <div class="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
-        <a href="{{ route('student.courses.index') }}" class="inline-flex min-h-11 items-center text-sm font-semibold text-primary-text hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">← Back to my courses</a>
+    <div class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <x-breadcrumbs :items="[
+            ['label' => 'My courses', 'href' => route('student.courses.index')],
+            ['label' => 'Payment status'],
+        ]" class="mb-6" />
 
         @if (session('status'))
-            <div role="status" class="mt-6 border-l-4 border-accent bg-success-surface px-4 py-3 text-sm font-semibold text-success-text">{{ session('status') }}</div>
+            <x-note tone="success" class="mb-6">{{ session('status') }}</x-note>
         @endif
 
-        <x-form-errors :errors="$errors" />
+        <x-form-errors :errors="$errors" class="mb-6" />
 
-        <header class="mt-6">
-            <p class="font-mono text-sm font-semibold text-primary-text">Checkout</p>
-            <h1 class="mt-2 text-3xl font-[650] tracking-tight text-ink">{{ $course->title }}</h1>
+        <header class="border-b border-line pb-8">
+            <p class="eyebrow">Checkout</p>
+            <h1 class="mt-2 text-3xl font-[650] tracking-tight text-balance text-ink sm:text-4xl">
+                {{ $course->title }}
+            </h1>
         </header>
 
-        <section class="mt-6 border-l-4 {{ $paid ? 'border-accent bg-success-surface' : 'border-line bg-surface-muted' }} px-4 py-4" aria-labelledby="payment-state-heading">
-            @if ($paid)
-                <h2 id="payment-state-heading" class="text-lg font-semibold text-ink">Payment confirmed</h2>
-                <p class="mt-1 text-sm leading-6 text-ink-muted">The payment provider confirmed this payment and your enrollment is active.</p>
-                <a href="{{ route('student.courses.show', $course) }}" class="mt-4 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open course</a>
-            @elseif ($failed)
-                <h2 id="payment-state-heading" class="text-lg font-semibold text-ink">Payment did not go through</h2>
-                <p class="mt-1 text-sm leading-6 text-ink-muted">Your enrollment is still pending, so you can try again.</p>
-            @else
-                <h2 id="payment-state-heading" class="text-lg font-semibold text-ink">Waiting for payment confirmation</h2>
-                <p class="mt-1 text-sm leading-6 text-ink-muted">
-                    This page does not confirm payment by itself. Your enrollment becomes active only after the payment provider sends a verified confirmation.
-                </p>
-                <p class="mt-3 text-sm leading-6 text-ink-muted" data-payment-poll>
-                    This page checks for you every few seconds. You can also reload it.
-                </p>
-            @endif
+        {{-- The payment state, written in words. A Student is never misled into
+             thinking a browser return confirmed anything. --}}
+        <section class="mt-8" aria-labelledby="payment-state-heading">
+            <div class="card p-5">
+                @if ($paid)
+                    <div class="flex items-start gap-3">
+                        <x-icon name="check-circle" size="lg" class="mt-0.5 shrink-0 text-success-text" />
+                        <div>
+                            <h2 id="payment-state-heading" class="text-xl font-semibold text-ink">Payment confirmed</h2>
+                            <p class="mt-1 text-sm leading-6 text-ink-muted">
+                                The payment provider confirmed this payment and your enrollment is active.
+                            </p>
+                        </div>
+                    </div>
+
+                    <x-btn :href="route('student.courses.show', $course)" variant="primary" size="lg" class="mt-5">
+                        <x-icon name="book-open" size="sm" />
+                        Open course
+                    </x-btn>
+                @elseif ($failed)
+                    <div class="flex items-start gap-3">
+                        <x-icon name="x-circle" size="lg" class="mt-0.5 shrink-0 text-error-text" />
+                        <div>
+                            <h2 id="payment-state-heading" class="text-xl font-semibold text-ink">
+                                Payment did not go through
+                            </h2>
+                            <p class="mt-1 text-sm leading-6 text-ink-muted">
+                                Nothing was charged, and your enrollment is still waiting. You can start the payment
+                                again.
+                            </p>
+                        </div>
+                    </div>
+                @else
+                    <div class="flex items-start gap-3">
+                        <x-icon name="clock" size="lg" class="mt-0.5 shrink-0 text-warning-text" />
+                        <div>
+                            <h2 id="payment-state-heading" class="text-xl font-semibold text-ink">
+                                Waiting for payment confirmation
+                            </h2>
+                            <p class="mt-1 text-sm leading-6 text-ink-muted">
+                                This page does not confirm payment by itself. Your enrollment becomes active only
+                                after the payment provider sends a verified confirmation to the server.
+                            </p>
+                            <p class="mt-3 text-sm leading-6 text-ink-muted" data-payment-poll>
+                                This page checks for you every few seconds. You can also reload it.
+                            </p>
+                        </div>
+                    </div>
+                @endif
+            </div>
         </section>
 
-        @unless ($paid)
-            <section class="mt-6" aria-labelledby="what-next-heading">
-                <h2 id="what-next-heading" class="text-lg font-semibold text-ink">If you chose a test payment option</h2>
-                <p class="mt-2 text-sm leading-6 text-ink-muted">
-                    The provider's test page offers buttons such as <span class="font-semibold text-ink">Authorize test payment</span> and <span class="font-semibold text-ink">Fail or expire test payment</span>. The result shows up here on its own:
-                </p>
-                <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-ink-muted">
-                    <li><span class="font-semibold text-ink">Authorize</span> becomes <span class="font-semibold text-ink">Payment confirmed</span> and the course opens.</li>
-                    <li><span class="font-semibold text-ink">Fail or expire</span> becomes <span class="font-semibold text-ink">Payment did not go through</span>, and you can pay again.</li>
-                </ul>
-                <p class="mt-3 text-sm leading-6 text-ink-muted">
-                    This page cannot report which button was pressed. The provider sends that to the server, not to the browser, and only a verified provider event may change what is shown above.
-                </p>
-            </section>
-        @endunless
-
-        <section class="mt-8" aria-labelledby="payment-amount-heading">
+        {{-- The amount, always read from the course record. --}}
+        <section class="mt-6" aria-labelledby="payment-amount-heading">
             <h2 id="payment-amount-heading" class="text-lg font-semibold text-ink">Amount</h2>
-            <dl class="mt-3 grid grid-cols-2 gap-4 border-y border-line py-4 text-sm sm:grid-cols-3">
+
+            <dl class="card mt-3 grid grid-cols-1 gap-4 p-5 text-sm sm:grid-cols-3">
                 <div>
-                    <dt class="text-ink-muted">Course price</dt>
-                    <dd class="mt-1 font-semibold text-ink">{{ $amount['currency'] }} {{ number_format($amount['amount_minor'] / 100, 2) }}</dd>
+                    <dt class="meta-label">Course price</dt>
+                    <dd class="mt-1 font-semibold text-ink">
+                        <x-amount
+                            :minor="$amount['amount_minor']"
+                            :currency="$amount['currency']"
+                            :code="true"
+                        />
+                    </dd>
                 </div>
                 <div>
-                    <dt class="text-ink-muted">Your payment</dt>
-                    <dd class="mt-1 font-semibold text-ink">
+                    <dt class="meta-label">Your payment</dt>
+                    <dd class="mt-1">
                         @if ($payment)
-                            {{ $payment->status->value === 'paid' ? 'Paid' : ucfirst($payment->status->value) }}
+                            <x-status :value="$payment->status->value" />
                         @else
-                            Not started
+                            <x-badge tone="neutral">Not started</x-badge>
                         @endif
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-ink-muted">Reference</dt>
-                    <dd class="mt-1 break-all font-mono text-xs text-ink-muted">{{ $payment?->idempotency_key ?? 'Not created' }}</dd>
+                    <dt class="meta-label">Reference</dt>
+                    <dd class="mt-1 font-mono text-xs break-all text-ink">
+                        {{ $payment?->idempotency_key ?? 'Not created' }}
+                    </dd>
                 </div>
             </dl>
-            <p class="mt-3 text-sm leading-6 text-ink-muted">The amount always comes from the course record. It can never be changed in the browser.</p>
+
+            <x-note tone="info" class="mt-3">
+                Quote the reference above if you need to ask for help.
+            </x-note>
         </section>
+
+        @unless ($paid)
+            <x-note tone="info" class="mt-6">
+                This page cannot report which button was pressed, so it waits for the provider's signed event and
+                updates itself. On the test page, choose
+                <span class="font-semibold text-ink">Authorize test payment</span> to complete the payment, or
+                <span class="font-semibold text-ink">Fail or expire test payment</span> to see the retry path.
+            </x-note>
+        @endunless
+
+        <div class="mt-8 border-t border-line pt-6">
+            <x-btn :href="route('student.courses.index')" variant="secondary" size="lg">
+                <x-icon name="arrow-left" size="sm" />
+                Back to my courses
+            </x-btn>
+        </div>
     </div>
 @endsection
 

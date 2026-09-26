@@ -1,51 +1,110 @@
-<article class="border border-line bg-surface p-5 shadow-sm">
+{{--
+    One account, as a stacked card.
+
+    The Administrator user list uses this layout below the tablet breakpoint, so
+    a phone is not given a table it would have to squeeze sideways. Every control
+    keeps a 44 pixel target and a visible label.
+--}}
+<article class="card p-5">
     <div class="flex flex-col gap-2">
-        <h3 class="font-semibold text-ink">{{ $user->name }}</h3>
+        <h3 class="text-base font-semibold text-ink">{{ $user->name }}</h3>
         <p class="break-all text-sm text-ink-muted">{{ $user->email }}</p>
+
         @unless ($user->hasVerifiedEmail())
-            <p class="text-xs font-semibold text-error-text">Email not verified</p>
+            <p class="mt-1"><x-status value="unverified" /></p>
         @endunless
     </div>
 
     <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
         <div>
-            <dt class="text-ink-muted">Role</dt>
-            <dd class="mt-1 font-medium text-ink">{{ ucfirst($user->profile->role->value) }}</dd>
+            <dt class="meta-label">Role</dt>
+            <dd class="mt-1">
+                <x-status
+                    :value="$user->profile->role->value"
+                    :label="\App\Support\StatusLabel::words($user->profile->role->value)"
+                    tone="primary"
+                />
+            </dd>
         </div>
         <div>
-            <dt class="text-ink-muted">Status</dt>
-            <dd class="mt-1"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $user->profile->account_status->value === 'active' ? 'bg-success-surface text-success-text' : 'bg-error-surface text-error-text' }}">{{ ucfirst($user->profile->account_status->value) }}</span></dd>
+            <dt class="meta-label">Account status</dt>
+            <dd class="mt-1">
+                <x-status :value="$user->profile->account_status->value" />
+            </dd>
         </div>
     </dl>
 
     <div class="mt-5 flex flex-col gap-3">
         @if ($user->hasVerifiedEmail())
-            <form method="POST" action="{{ route('admin.users.role.update', $user) }}" data-confirm="Apply this role change for {{ $user->name }}?" class="flex flex-col gap-2 sm:flex-row">
+            <form
+                method="POST"
+                action="{{ route('admin.users.role.update', $user) }}"
+                data-confirm="Apply this role change for {{ $user->name }}?"
+                data-pending
+            >
                 @csrf
                 @method('PATCH')
-                <div class="min-w-0 flex-1">
-                    <label for="mobile-role-{{ $user->id }}" class="sr-only">Role for {{ $user->name }}</label>
-                    <select id="mobile-role-{{ $user->id }}" name="role" class="min-h-11 w-full rounded-md border border-line bg-canvas px-3 py-2 text-sm text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus" @disabled($user->is(request()->user()))>
-                        @foreach ($roles as $roleOption)
-                            <option value="{{ $roleOption->value }}" @selected($user->profile->role === $roleOption)>{{ ucfirst($roleOption->value) }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <button type="submit" class="min-h-11 rounded-md border border-line bg-surface px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus" @disabled($user->is(request()->user()))>Save role</button>
+
+                <label for="mobile-role-{{ $user->id }}" class="field-label">
+                    Change role for {{ $user->name }}
+                </label>
+                <select
+                    id="mobile-role-{{ $user->id }}"
+                    name="role"
+                    class="field-control field-control-surface"
+                    @disabled($user->is(request()->user()))
+                >
+                    @foreach ($roles as $roleOption)
+                        <option value="{{ $roleOption->value }}" @selected($user->profile->role === $roleOption)>
+                            {{ \App\Support\StatusLabel::words($roleOption->value) }}
+                        </option>
+                    @endforeach
+                </select>
+
+                <x-btn
+                    type="submit"
+                    variant="secondary"
+                    size="md"
+                    block
+                    class="mt-3"
+                    data-pending-button
+                    :disabled="$user->is(request()->user())"
+                >
+                    <span data-pending-text>Save role</span>
+                </x-btn>
             </form>
         @else
-            <p class="rounded-md border border-line bg-surface-muted px-3 py-3 text-xs leading-5 text-ink-muted">Role changes unlock after email verification.</p>
+            <x-note tone="warning">Role changes unlock after email verification.</x-note>
         @endif
 
         @if (! $user->is(request()->user()))
-            <form method="POST" action="{{ route('admin.users.status.update', $user) }}" data-confirm="{{ $user->profile->account_status->value === 'active' ? 'Suspend' : 'Reactivate' }} this account?">
+            <form
+                method="POST"
+                action="{{ route('admin.users.status.update', $user) }}"
+                data-confirm="{{ $user->profile->account_status->value === 'active' ? 'Suspend' : 'Reactivate' }} this account?"
+                data-pending
+            >
                 @csrf
                 @method('PATCH')
-                <input type="hidden" name="status" value="{{ $user->profile->account_status->value === 'active' ? 'suspended' : 'active' }}">
-                <button type="submit" class="min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
-                    {{ $user->profile->account_status->value === 'active' ? 'Suspend account' : 'Reactivate account' }}
-                </button>
+                <input
+                    type="hidden"
+                    name="status"
+                    value="{{ $user->profile->account_status->value === 'active' ? 'suspended' : 'active' }}"
+                >
+                <x-btn
+                    type="submit"
+                    :variant="$user->profile->account_status->value === 'active' ? 'danger' : 'secondary'"
+                    size="md"
+                    block
+                    data-pending-button
+                >
+                    <span data-pending-text>
+                        {{ $user->profile->account_status->value === 'active' ? 'Suspend account' : 'Reactivate account' }}
+                    </span>
+                </x-btn>
             </form>
+        @else
+            <x-note tone="neutral">Your own role and account status cannot be changed here.</x-note>
         @endif
     </div>
 </article>

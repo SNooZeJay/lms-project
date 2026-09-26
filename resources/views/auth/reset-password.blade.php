@@ -3,42 +3,50 @@
 @section('title', 'Reset password')
 
 @section('auth-content')
-    <section class="border-t-4 border-primary bg-surface p-6 shadow-sm sm:p-10" aria-labelledby="reset-password-heading">
-        <p class="font-mono text-sm font-semibold text-primary-text">Account recovery</p>
-        <h1 id="reset-password-heading" class="mt-3 text-3xl font-[650] tracking-tight text-ink">Reset password</h1>
+    <section class="card-accent-edge p-6 shadow-sm sm:p-8" aria-labelledby="reset-password-heading">
+        <p class="eyebrow">Account recovery</p>
+        <h1 id="reset-password-heading" class="mt-2 text-3xl font-[650] tracking-tight text-ink">Reset password</h1>
         <p class="mt-3 leading-7 text-ink-muted">Choose a new password for your account.</p>
 
-        <x-form-errors :errors="$errors" />
+        <x-form-errors :errors="$errors" class="mt-6" />
 
-        <form method="POST" action="{{ route('password.update') }}" class="mt-6 space-y-5">
+        <form method="POST" action="{{ route('password.update') }}" class="mt-6 space-y-5" data-pending>
             @csrf
             <input type="hidden" name="token" value="{{ request()->route('token') }}">
 
-            <div>
-                <label for="field-email" class="block text-sm font-semibold text-ink">Email</label>
-                <input id="field-email" name="email" type="email" value="{{ old('email', request()->input('email')) }}" required autocomplete="username" inputmode="email" class="mt-2 min-h-11 w-full rounded-md border border-line bg-canvas px-3 py-2 text-ink placeholder:text-ink-muted focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
-                @error('email')
-                    <p class="mt-2 text-sm text-error-text" role="alert">{{ $message }}</p>
-                @enderror
-            </div>
+            <x-form-field
+                name="email"
+                label="Email"
+                type="email"
+                :value="request()->input('email')"
+                :autocomplete="'username'"
+                inputmode="email"
+                :maxlength="255"
+                required
+            />
 
-            <div>
-                <label for="field-password" class="block text-sm font-semibold text-ink">New password</label>
-                <input id="field-password" name="password" type="password" required autofocus autocomplete="new-password" class="mt-2 min-h-11 w-full rounded-md border border-line bg-canvas px-3 py-2 text-ink placeholder:text-ink-muted focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
-                <p class="mt-2 text-sm text-ink-muted">Use at least 12 characters.</p>
-                @error('password')
-                    <p class="mt-2 text-sm text-error-text" role="alert">{{ $message }}</p>
-                @enderror
-            </div>
+            <x-form-field
+                name="password"
+                label="New password"
+                type="password"
+                :autocomplete="'new-password'"
+                hint="Use at least 12 characters. A short phrase of a few words works well."
+                required
+                autofocus
+            />
 
-            <div>
-                <label for="field-password-confirmation" class="block text-sm font-semibold text-ink">Confirm new password</label>
-                <input id="field-password-confirmation" name="password_confirmation" type="password" required autocomplete="new-password" class="mt-2 min-h-11 w-full rounded-md border border-line bg-canvas px-3 py-2 text-ink placeholder:text-ink-muted focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
-            </div>
+            <x-form-field
+                name="password_confirmation"
+                label="Confirm new password"
+                type="password"
+                :autocomplete="'new-password'"
+                hint="Type the same password again."
+                required
+            />
 
-            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
-                Reset password
-            </button>
+            <x-btn type="submit" variant="primary" size="lg" block data-pending-button>
+                <span data-pending-text>Reset password</span>
+            </x-btn>
         </form>
     </section>
 @endsection

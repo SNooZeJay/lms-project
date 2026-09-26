@@ -7,13 +7,17 @@
         role="alert"
         tabindex="-1"
         aria-labelledby="form-error-summary-title"
-        class="mb-6 border-l-4 border-error-text bg-error-surface px-4 py-4 text-sm text-error-text"
+        class="note note-error items-start"
     >
-        <h2 id="form-error-summary-title" class="font-semibold">Check the highlighted fields</h2>
-        <ul class="mt-2 list-disc space-y-1 pl-5">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
+        <x-icon name="alert" size="md" class="mt-0.5" />
+        <div>
+            <h2 id="form-error-summary-title" class="font-semibold">Check the highlighted fields</h2>
+            <p class="mt-1">Fix each item below, then submit the form again.</p>
+            <ul role="list" class="mt-2 list-disc space-y-1 pl-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
     </div>
 @endif

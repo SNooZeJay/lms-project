@@ -16,6 +16,11 @@ class AdministratorController extends Controller
         return view('roles.administrator', [
             'user' => $request->user()->load('profile'),
             'stats' => $this->report->forAdministrator(),
+            'courseStatusCounts' => $this->report->courseStatusCounts(),
+            'recentUsers' => $this->report->recentUsers(5),
+            'recentEnrollments' => $this->report->recentEnrollments(5),
+            'recentPayments' => $this->report->recentPayments(5),
+            'recentActivity' => $this->report->recentActivity(5),
         ]);
     }
 }

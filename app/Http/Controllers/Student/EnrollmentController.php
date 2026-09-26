@@ -108,15 +108,19 @@ class EnrollmentController extends Controller
         foreach ($quizzes as $quiz) {
             $latest = $attemptsByQuiz->get($quiz->id)?->first();
 
+            // These are the stored state keys the interface reads, so the page
+            // renders one consistent sentence per state instead of a sentence
+            // written here.
             $quizState[$quiz->id] = match (true) {
-                $latest === null => 'Not attempted',
-                $latest->passed === true => 'Passed',
-                default => 'Not passed',
+                $latest === null => 'not_attempted',
+                $latest->passed === true => 'passed',
+                default => 'not_passed',
             };
         }
 
         return view('student.courses.show', [
             'course' => $course,
+            'enrollment' => $enrollment,
             'progress' => $this->progress->forEnrollment($enrollment),
             'showProgress' => $this->progress->isVisibleFor($course),
             'completedLessonIds' => $this->progress->completedLessonIds($enrollment),
