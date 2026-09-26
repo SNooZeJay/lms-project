@@ -49,6 +49,16 @@ return [
         'secret_key' => env('PAYMONGO_SECRET_KEY'),
         'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET'),
         'enabled' => (bool) env('PAYMONGO_ENABLED', false),
+        // false for test mode, true for live. A webhook event whose livemode
+        // does not match is acknowledged and ignored, so a test server can
+        // never act on a real payment.
+        'expected_livemode' => (bool) env('PAYMONGO_LIVEMODE', false),
+        // The payment methods offered on the hosted checkout page. QR Ph is
+        // the common Philippine option.
+        'payment_method_types' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('PAYMONGO_PAYMENT_METHODS', 'qrph,card'))
+        ))),
     ],
 
 ];

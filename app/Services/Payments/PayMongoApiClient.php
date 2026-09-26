@@ -18,11 +18,13 @@ use RuntimeException;
  */
 class PayMongoApiClient implements PayMongoClient
 {
-    private const BASE_URL = 'https://api.paymongo.com/v1';
+    private const BASE_URL = 'https://api.paymongo.com/v2';
 
     public function createCheckout(Payment $payment): array
     {
         $this->guardEnabled();
+
+        $methods = (array) config('services.paymongo.payment_method_types', ['qrph', 'card']);
 
         try {
             $response = Http::withBasicAuth($this->secretKey(), '')
@@ -32,10 +34,6 @@ class PayMongoApiClient implements PayMongoClient
                 ->post(self::BASE_URL.'/checkout_sessions', [
                     'data' => [
                         'attributes' => [
-                            'billing' => [
-                                'email' => $payment->student?->email,
-                                'name' => $payment->student?->name,
-                            ],
                             'description' => 'Course enrollment payment',
                             'line_items' => [
                                 [
@@ -45,15 +43,14 @@ class PayMongoApiClient implements PayMongoClient
                                     'quantity' => 1,
                                 ],
                             ],
-                            'payment_method_types' => ['card'],
+                            'payment_method_types' => $methods !== [] ? $methods : ['qrph'],
                             // The provider requires a real boolean here. A string
                             // "true" is rejected with invalid_request_body.
                             'show_description' => true,
                             'success_url' => route('student.payments.return', $payment->course),
                             'cancel_url' => route('student.payments.return', $payment->course),
-                            'metadata' => [
-                                'reference_number' => $payment->idempotency_key,
-                            ],
+                            // This is the correlation key the webhook echoes back.
+                            'reference_number' => $payment->idempotency_key,
                         ],
                     ],
                 ]);

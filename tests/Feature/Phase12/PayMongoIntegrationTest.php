@@ -18,6 +18,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Tests\Support\PayMongoEventFactory;
 use Tests\TestCase;
 
 class PayMongoIntegrationTest extends TestCase
@@ -228,7 +229,7 @@ class PayMongoIntegrationTest extends TestCase
                 && is_array($attributes['payment_method_types'] ?? null)
                 && is_string($attributes['success_url'] ?? null)
                 && is_string($attributes['cancel_url'] ?? null)
-                && is_string($attributes['metadata']['reference_number'] ?? null);
+                && is_string($attributes['reference_number'] ?? null);
         });
     }
 
@@ -237,14 +238,7 @@ class PayMongoIntegrationTest extends TestCase
         [$student, $enrollment, $course] = $this->pendingEnrollment(125000);
         $payment = $this->pendingPayment($enrollment, $course);
 
-        $payload = [
-            'id' => 'evt_live_1',
-            'type' => 'checkout.payment.paid',
-            'data' => [
-                'id' => 'pay_live_1',
-                'attributes' => ['reference_number' => $payment->idempotency_key],
-            ],
-        ];
+        $payload = PayMongoEventFactory::checkoutSessionPaid($payment, 'evt_live_1');
 
         $this->postJson($this->webhookUrl(), $payload, $this->signatureHeaders($payload))
             ->assertOk()
@@ -259,11 +253,7 @@ class PayMongoIntegrationTest extends TestCase
         [$student, $enrollment, $course] = $this->pendingEnrollment(125000);
         $payment = $this->pendingPayment($enrollment, $course);
 
-        $payload = [
-            'id' => 'evt_live_1',
-            'type' => 'checkout.payment.paid',
-            'data' => ['attributes' => ['reference_number' => $payment->idempotency_key]],
-        ];
+        $payload = PayMongoEventFactory::checkoutSessionPaid($payment, 'evt_live_1');
 
         $this->postJson($this->webhookUrl(), $payload, $this->signatureHeaders($payload))->assertOk();
         $this->postJson($this->webhookUrl(), $payload, $this->signatureHeaders($payload))->assertOk();
@@ -278,20 +268,14 @@ class PayMongoIntegrationTest extends TestCase
         [$student, $enrollment, $course] = $this->pendingEnrollment(125000);
         $payment = $this->pendingPayment($enrollment, $course);
 
-        $payload = [
-            'id' => 'evt_live_2',
-            'type' => 'checkout.payment.paid',
-            'data' => ['attributes' => ['reference_number' => $payment->idempotency_key]],
-        ];
-
+        $payload = PayMongoEventFactory::checkoutSessionPaid($payment, 'evt_live_2');
         $headers = $this->signatureHeaders($payload);
 
         // The attacker changes the body but keeps the original signature.
-        $this->postJson($this->webhookUrl(), [
-            'id' => 'evt_live_2',
-            'type' => 'checkout.payment.paid',
-            'data' => ['attributes' => ['reference_number' => 'enrollment-someone-else']],
-        ], $headers)
+        $tampered = PayMongoEventFactory::checkoutSessionPaid($payment, 'evt_live_2');
+        $tampered['data']['attributes']['data']['attributes']['reference_number'] = 'enrollment-someone-else';
+
+        $this->postJson($this->webhookUrl(), $tampered, $headers)
             ->assertOk()
             ->assertJsonPath('status', 'ignored');
 
@@ -312,17 +296,14 @@ class PayMongoIntegrationTest extends TestCase
         [$student, $enrollment, $course] = $this->pendingEnrollment(125000);
         $payment = $this->pendingPayment($enrollment, $course);
 
-        $headers = ['PayMongo-Signature' => hash_hmac('sha256', 'x', $this->webhookSecret)];
+        $payload = PayMongoEventFactory::checkoutSessionPaid($payment, 'evt_direct_1');
+        $raw = (string) json_encode($payload);
+        $headers = ['PayMongo-Signature' => hash_hmac('sha256', $raw, $this->webhookSecret)];
 
         $processor = app(ProcessPayMongoEvent::class);
 
-        $processor->handle('evt_direct_1', 'checkout.payment.paid', [
-            'data' => ['attributes' => ['reference_number' => $payment->idempotency_key]],
-        ], $headers);
-
-        $processor->handle('evt_direct_1', 'checkout.payment.paid', [
-            'data' => ['attributes' => ['reference_number' => $payment->idempotency_key]],
-        ], $headers);
+        $processor->handle('evt_direct_1', 'checkout_session.payment.paid', $payload, $headers, $raw);
+        $processor->handle('evt_direct_1', 'checkout_session.payment.paid', $payload, $headers, $raw);
 
         $this->assertSame(1, PaymentEvent::query()->count());
     }

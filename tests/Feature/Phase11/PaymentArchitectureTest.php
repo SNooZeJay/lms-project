@@ -19,6 +19,7 @@ use App\Models\PaymentEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\FakePayMongoClient;
+use Tests\Support\PayMongoEventFactory;
 use Tests\TestCase;
 
 class PaymentArchitectureTest extends TestCase
@@ -27,12 +28,19 @@ class PaymentArchitectureTest extends TestCase
 
     private FakePayMongoClient $client;
 
+    private string $webhookSecret = 'whsec_phase11';
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->client = new FakePayMongoClient;
         $this->app->instance(PayMongoClient::class, $this->client);
+
+        config([
+            'services.paymongo.webhook_secret' => $this->webhookSecret,
+            'services.paymongo.expected_livemode' => false,
+        ]);
     }
 
     public function test_amount_comes_from_the_course_not_the_request(): void
@@ -132,19 +140,13 @@ class PaymentArchitectureTest extends TestCase
         $this->actingAs($student)->post($this->checkoutUrl($course));
         $payment = Payment::query()->firstOrFail();
 
-        $this->processEvent('evt_paid_1', 'checkout.payment.paid', [
-            'data' => [
-                'id' => 'pay_123',
-                'attributes' => ['reference_number' => $payment->idempotency_key],
-            ],
-        ]);
+        $this->processEvent('evt_paid_1', 'checkout_session.payment.paid', $payment);
 
         $payment->refresh();
         $enrollment->refresh();
 
         $this->assertSame(PaymentStatus::Paid, $payment->status);
         $this->assertNotNull($payment->paid_at);
-        $this->assertSame('pay_123', $payment->provider_payment_id);
         $this->assertSame(EnrollmentStatus::Active, $enrollment->status);
         $this->assertNotNull($enrollment->activated_at);
     }
@@ -155,12 +157,10 @@ class PaymentArchitectureTest extends TestCase
         $this->actingAs($student)->post($this->checkoutUrl($course));
         $payment = Payment::query()->firstOrFail();
 
-        $payload = ['reference_number' => $payment->idempotency_key, 'id' => 'pay_123'];
-
-        $this->processEvent('evt_paid_1', 'checkout.payment.paid', $payload);
+        $this->processEvent('evt_paid_1', 'checkout_session.payment.paid', $payment);
         $paidAt = $payment->fresh()->paid_at;
 
-        $this->processEvent('evt_paid_1', 'checkout.payment.paid', $payload);
+        $this->processEvent('evt_paid_1', 'checkout_session.payment.paid', $payment);
 
         $this->assertSame(1, PaymentEvent::query()->count());
         $this->assertSame(1, Payment::query()->count());
@@ -173,8 +173,8 @@ class PaymentArchitectureTest extends TestCase
         $this->actingAs($student)->post($this->checkoutUrl($course));
         $payment = Payment::query()->firstOrFail();
 
-        $this->processEvent('evt_paid_1', 'checkout.payment.paid', ['reference_number' => $payment->idempotency_key]);
-        $this->processEvent('evt_paid_2', 'checkout.payment.paid', ['reference_number' => $payment->idempotency_key]);
+        $this->processEvent('evt_paid_1', 'checkout_session.payment.paid', $payment);
+        $this->processEvent('evt_paid_2', 'checkout_session.payment.paid', $payment);
 
         $this->assertSame(2, PaymentEvent::query()->count());
         $this->assertSame(PaymentStatus::Paid, $payment->fresh()->status);
@@ -187,11 +187,9 @@ class PaymentArchitectureTest extends TestCase
         $this->actingAs($student)->post($this->checkoutUrl($course));
         $payment = Payment::query()->firstOrFail();
 
-        $this->client->signatureValid = false;
+        $this->client->forceSignatureResult = false;
 
-        $event = $this->processEvent('evt_bad_sig', 'checkout.payment.paid', [
-            'reference_number' => $payment->idempotency_key,
-        ]);
+        $event = $this->processEvent('evt_bad_sig', 'checkout_session.payment.paid', $payment);
 
         $this->assertFalse($event->signature_verified);
         $this->assertSame(PaymentEventStatus::Ignored, $event->processing_status);
@@ -205,10 +203,7 @@ class PaymentArchitectureTest extends TestCase
         $this->actingAs($student)->post($this->checkoutUrl($course));
         $payment = Payment::query()->firstOrFail();
 
-        $this->processEvent('evt_failed_1', 'checkout.payment.failed', [
-            'reference_number' => $payment->idempotency_key,
-            'data' => ['attributes' => ['failure_code' => 'card_declined', 'failure_message' => 'Declined']],
-        ]);
+        $this->processEvent('evt_failed_1', 'payment.failed', $payment);
 
         $payment->refresh();
 
@@ -217,18 +212,18 @@ class PaymentArchitectureTest extends TestCase
         $this->assertSame(EnrollmentStatus::PendingPayment, $enrollment->fresh()->status);
     }
 
-    public function test_a_cancelled_event_keeps_the_enrollment_pending(): void
+    public function test_an_abandoned_checkout_never_settles(): void
     {
+        // PayMongo has no "cancelled" payment event. A Student who closes the
+        // checkout page simply produces no event, so the payment stays pending
+        // and the enrollment stays pending_payment.
         [$student, $enrollment, $course] = $this->pendingEnrollment(125000);
         $this->actingAs($student)->post($this->checkoutUrl($course));
         $payment = Payment::query()->firstOrFail();
 
-        $this->processEvent('evt_cancel_1', 'checkout.payment.cancelled', [
-            'reference_number' => $payment->idempotency_key,
-        ]);
-
-        $this->assertSame(PaymentStatus::Cancelled, $payment->fresh()->status);
+        $this->assertSame(PaymentStatus::Pending, $payment->fresh()->status);
         $this->assertSame(EnrollmentStatus::PendingPayment, $enrollment->fresh()->status);
+        $this->assertSame(0, PaymentEvent::query()->count());
     }
 
     public function test_a_refund_removes_access(): void
@@ -237,10 +232,10 @@ class PaymentArchitectureTest extends TestCase
         $this->actingAs($student)->post($this->checkoutUrl($course));
         $payment = Payment::query()->firstOrFail();
 
-        $this->processEvent('evt_paid_1', 'checkout.payment.paid', ['reference_number' => $payment->idempotency_key]);
+        $this->processEvent('evt_paid_1', 'checkout_session.payment.paid', $payment);
         $this->assertSame(EnrollmentStatus::Active, $enrollment->fresh()->status);
 
-        $this->processEvent('evt_refund_1', 'refund.paid', ['reference_number' => $payment->idempotency_key]);
+        $this->processEvent('evt_refund_1', 'payment.refunded', $payment);
 
         $this->assertSame(PaymentStatus::Refunded, $payment->fresh()->status);
         $this->assertSame(EnrollmentStatus::Cancelled, $enrollment->fresh()->status);
@@ -252,9 +247,7 @@ class PaymentArchitectureTest extends TestCase
         $this->actingAs($student)->post($this->checkoutUrl($course));
         $payment = Payment::query()->firstOrFail();
 
-        $event = $this->processEvent('evt_other_1', 'checkout.payment.something_new', [
-            'reference_number' => $payment->idempotency_key,
-        ]);
+        $event = $this->processEvent('evt_other_1', 'payout.deposited', $payment);
 
         $this->assertSame(PaymentEventStatus::Ignored, $event->processing_status);
         $this->assertSame(PaymentStatus::Pending, $payment->fresh()->status);
@@ -262,9 +255,7 @@ class PaymentArchitectureTest extends TestCase
 
     public function test_an_event_for_an_unknown_payment_is_ignored(): void
     {
-        $event = $this->processEvent('evt_orphan_1', 'checkout.payment.paid', [
-            'reference_number' => 'enrollment-does-not-exist',
-        ]);
+        $event = $this->processEvent('evt_orphan_1', 'checkout_session.payment.paid', null);
 
         $this->assertSame(PaymentEventStatus::Ignored, $event->processing_status);
         $this->assertSame(0, Payment::query()->count());
@@ -276,15 +267,13 @@ class PaymentArchitectureTest extends TestCase
         $this->actingAs($student)->post($this->checkoutUrl($course));
         $payment = Payment::query()->firstOrFail();
 
-        $this->client->signatureValid = false;
+        $this->client->forceSignatureResult = false;
 
         // The endpoint is public, so it acknowledges the delivery. What matters
         // is that no state changes.
-        $this->postJson($this->webhookUrl(), [
-            'id' => 'evt_webhook_bad',
-            'type' => 'checkout.payment.paid',
-            'data' => ['attributes' => ['reference_number' => $payment->idempotency_key]],
-        ])
+        $payload = PayMongoEventFactory::checkoutSessionPaid($payment, 'evt_webhook_bad');
+
+        $this->postJson($this->webhookUrl(), $payload, PayMongoEventFactory::signatureHeaders($payload, $this->webhookSecret))
             ->assertOk()
             ->assertJsonPath('status', 'ignored');
 
@@ -298,14 +287,11 @@ class PaymentArchitectureTest extends TestCase
         $this->actingAs($student)->post($this->checkoutUrl($course));
         $payment = Payment::query()->firstOrFail();
 
-        $this->postJson($this->webhookUrl(), [
-            'id' => 'evt_webhook_ok',
-            'type' => 'checkout.payment.paid',
-            'data' => [
-                'id' => 'pay_webhook',
-                'attributes' => ['reference_number' => $payment->idempotency_key],
-            ],
-        ])->assertOk();
+        $payload = PayMongoEventFactory::checkoutSessionPaid($payment, 'evt_webhook_ok');
+
+        $this->postJson($this->webhookUrl(), $payload, PayMongoEventFactory::signatureHeaders($payload, $this->webhookSecret))
+            ->assertOk()
+            ->assertJsonPath('status', 'processed');
 
         $this->assertSame(PaymentStatus::Paid, $payment->fresh()->status);
         $this->assertSame(EnrollmentStatus::Active, $enrollment->fresh()->status);
@@ -328,7 +314,7 @@ class PaymentArchitectureTest extends TestCase
         [$student, $enrollment, $course] = $this->pendingEnrollment(125000);
         $this->actingAs($student)->post($this->checkoutUrl($course));
         $payment = Payment::query()->firstOrFail();
-        $this->processEvent('evt_paid_1', 'checkout.payment.paid', ['reference_number' => $payment->idempotency_key]);
+        $this->processEvent('evt_paid_1', 'checkout_session.payment.paid', $payment);
 
         $this->actingAs($student)
             ->get($this->returnUrl($course))
@@ -400,11 +386,33 @@ class PaymentArchitectureTest extends TestCase
     }
 
     /**
-     * @param  array<string, mixed>  $payload
+     * Send a real event envelope for a Payment, signed with the test secret.
      */
-    private function processEvent(string $id, string $type, array $payload): PaymentEvent
+    private function processEvent(string $id, string $type, ?Payment $payment): PaymentEvent
     {
-        return app(ProcessPayMongoEvent::class)->handle($id, $type, $payload, []);
+        $payload = $payment === null
+            ? PayMongoEventFactory::envelope($id, $type, new Payment, [
+                'id' => 'cs_unknown',
+                'type' => 'checkout_session',
+                'attributes' => ['reference_number' => 'enrollment-does-not-exist'],
+            ])
+            : PayMongoEventFactory::envelope($id, $type, $payment, [
+                'id' => $payment->provider_checkout_id ?: 'cs_test',
+                'type' => 'checkout_session',
+                'attributes' => [
+                    'reference_number' => $payment->idempotency_key,
+                    'status' => $type === 'payment.failed' ? 'failed' : 'paid',
+                    'last_error' => ['code' => 'card_declined', 'message' => 'Declined'],
+                ],
+            ]);
+
+        return app(ProcessPayMongoEvent::class)->handle(
+            $id,
+            $type,
+            $payload,
+            PayMongoEventFactory::signatureHeaders($payload, $this->webhookSecret),
+            (string) json_encode($payload),
+        );
     }
 
     /**
