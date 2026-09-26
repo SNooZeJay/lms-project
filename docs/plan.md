@@ -249,6 +249,35 @@ Phase 4A rules:
 - Instructor, slug, price, currency, status, publication time, and thumbnail path are server-owned fields.
 - Phase 4A does not create public catalog pages, enrollment, payment, curriculum, or upload behavior.
 
+### Phase 4B curriculum and material foundation
+
+Phase 4B creates the ordered Course outline and Learning Material metadata before any curriculum UI or file behavior.
+
+Phase 4B includes:
+
+- `modules` table
+- `lessons` table
+- `learning_materials` table
+- `ContentStatus` and `LearningMaterialType` enums
+- Module, Lesson, and LearningMaterial models
+- Curriculum relationships and factories
+- Ordering, uniqueness, foreign-key, and enum constraints
+- Migration and relationship tests
+
+Phase 4B rules:
+
+- A Module belongs to one Course.
+- A Lesson belongs to one Module.
+- A Learning Material belongs to one Lesson and records one uploading User.
+- Module and Lesson positions are positive and unique within their parent.
+- Lesson slugs are unique within their Module.
+- Material positions are positive and unique within their Lesson.
+- Module and Lesson status starts as `draft`.
+- Lessons are required by default.
+- Estimated minutes are nullable but positive.
+- Material type-specific content, URL allowlisting, uploads, and private downloads are later phases.
+- Phase 4B does not create curriculum routes, upload handlers, enrollment, payment, or sample seeders.
+
 ## 6. Enrollment
 
 Enrollment is the canonical record for Student access to a Course.

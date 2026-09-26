@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, and Phase 3 roles and authorization are human-approved. Phase 4A Course foundation is implemented and awaiting human review.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, and Phase 4A Course foundation are human-approved. Phase 4B increment 1 adds Module and Lesson curriculum data; Learning Materials are next.
 
 The repository currently contains:
 
@@ -184,19 +184,19 @@ npm audit
 npm run build
 ```
 
-## Phase 4A checkpoint
+## Phase 4B checkpoint
 
-Phase 2 authentication, profiles, and Phase 3 roles and authorization are human-approved. Phase 4A Course foundation is implemented and awaiting human review. The slice includes:
+Phase 2 authentication, profiles, Phase 3 roles and authorization, and Phase 4A Course foundation are human-approved. Phase 4B curriculum and material foundation is being specified. The planned slice includes:
 
-- `courses` migration with Instructor ownership
-- Unique slugs and catalog indexes
-- Free/paid price checks and PHP currency checks
-- `CourseLevel`, `CourseType`, and `CourseStatus` enums
-- `Course` model and Instructor relationship
-- Course factory and constraint tests
-- No catalog UI, enrollment, payment, curriculum, upload, or sample seeders
+- `modules` migration with Course ownership and ordered positions
+- `lessons` migration with Module ownership and ordered positions
+- Module and Lesson relationship models
+- Content status enum
+- Constraint, relationship, and factory tests
+- `learning_materials` metadata is the next increment
+- No upload handler, private download route, enrollment, payment, or sample seeders
 
-The Phase 4A human approval checkpoint remains open.
+The Phase 4B human approval checkpoint is not yet open; Learning Material metadata remains to be implemented.
 
 The local Administrator is provisioned with:
 

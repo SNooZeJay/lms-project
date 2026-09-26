@@ -2,7 +2,7 @@
 
 ## 1. Document status
 
-This document defines the approved target architecture for the BSIT Academic LMS. The Phase 1 Laravel foundation, human-approved Phase 2 authentication/profile slice, and human-approved Phase 3 roles and authorization slice are implemented. Phase 4A Course foundation is implemented and awaiting human review. This document does not create hosted services or payment resources.
+This document defines the approved target architecture for the BSIT Academic LMS. The Phase 1 Laravel foundation, human-approved Phase 2 authentication/profile slice, human-approved Phase 3 roles and authorization slice, and human-approved Phase 4A Course foundation are implemented. Phase 4B curriculum and material foundation is being specified. This document does not create hosted services or payment resources.
 
 The approved stack is:
 
@@ -513,6 +513,52 @@ Phase 4A does not publish a Course to the public catalog. A later Course action 
 - No public catalog access
 - No enrollment, payment, curriculum, or upload record
 
+### Phase 4B curriculum foundation flow
+
+```mermaid
+flowchart TD
+    C[Course record] --> M[Create Module with next position]
+    M --> L[Create Lesson with next position]
+    L --> R[Create Learning Material metadata]
+    R --> V[Validate parent relationships and enums]
+    V -->|Invalid| X[Reject without saving]
+    V -->|Valid| D[Begin database transaction]
+    D --> S[Save ordered curriculum record]
+    S --> C2[Commit curriculum data]
+```
+
+Phase 4B validates database relationships and metadata only. Role authorization, content actions, uploads, URL allowlisting, and private file delivery come later.
+
+### Phase 4B Input, Process, and Output
+
+**Input**
+
+- Parent Course, Module, or Lesson ID
+- Title and safe description or summary fields
+- Ordered position
+- Content status
+- Lesson required flag
+- Estimated minutes
+- Material type and safe metadata
+
+**Process**
+
+- Validate the parent relationship
+- Validate approved status and material type values
+- Validate positive ordering and duration values
+- Enforce parent-scoped uniqueness
+- Apply safe defaults
+- Save metadata in a database transaction
+- Do not accept or serve files in this phase
+
+**Output**
+
+- Ordered Module, Lesson, and Learning Material records
+- Course → Module → Lesson → Material relationships
+- No public curriculum route
+- No upload or private download behavior
+- No enrollment or payment record
+
 ## 8. Authorization
 
 Authorization answers what the user may do.
@@ -734,49 +780,74 @@ Constraints:
 
 ### `modules`
 
+Phase 4B creates the ordered Module relationship. Curriculum routes and actions come later.
+
 | Column | Type | Rules |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | Primary key |
-| `course_id` | BIGINT UNSIGNED | Foreign key to courses |
+| `course_id` | BIGINT UNSIGNED | Foreign key to courses, delete restricted |
 | `title` | VARCHAR | Required |
 | `description` | TEXT | Nullable |
 | `position` | UNSIGNED INTEGER | Positive, unique within Course |
-| `status` | ENUM | `draft`, `published`, `archived` |
+| `status` | ENUM | `draft`, `published`, `archived`; default `draft` |
 | timestamps | TIMESTAMP | Required |
+
+Constraints:
+
+- `course_id`, `position`, and `status` are server-owned.
+- Position is positive and unique within the Course.
+- Index Course and status for later outline queries.
 
 ### `lessons`
 
 | Column | Type | Rules |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | Primary key |
-| `module_id` | BIGINT UNSIGNED | Foreign key to modules |
+| `module_id` | BIGINT UNSIGNED | Foreign key to modules, delete restricted |
 | `title` | VARCHAR | Required |
-| `slug` | VARCHAR | Unique within Module |
+| `slug` | VARCHAR | Unique within Module, server-generated |
 | `summary` | TEXT | Nullable |
 | `content_text` | LONGTEXT | Nullable when content comes from materials |
 | `position` | UNSIGNED INTEGER | Positive, unique within Module |
-| `status` | ENUM | `draft`, `published`, `archived` |
+| `status` | ENUM | `draft`, `published`, `archived`; default `draft` |
 | `is_required` | BOOLEAN | Default true |
 | `estimated_minutes` | UNSIGNED INTEGER | Nullable, positive |
 | timestamps | TIMESTAMP | Required |
 
+Constraints:
+
+- `module_id`, `slug`, `position`, and `status` are server-owned.
+- Position is positive and unique within the Module.
+- Slug is unique within the Module.
+- Estimated minutes must be positive when present.
+- Index Module and status for later outline queries.
+
 ### `learning_materials`
+
+Phase 4B stores Learning Material metadata only. It does not upload, validate, or serve files.
 
 | Column | Type | Rules |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | Primary key |
-| `lesson_id` | BIGINT UNSIGNED | Foreign key to lessons |
-| `uploaded_by` | BIGINT UNSIGNED | Foreign key to users |
+| `lesson_id` | BIGINT UNSIGNED | Foreign key to lessons, delete restricted |
+| `uploaded_by` | BIGINT UNSIGNED | Foreign key to users, delete restricted |
 | `title` | VARCHAR | Required |
 | `material_type` | ENUM | `text`, `image`, `pdf`, `document`, `code`, `video_link`, `external_link` |
 | `position` | UNSIGNED INTEGER | Positive, unique within Lesson |
 | `content_text` | LONGTEXT | Nullable |
 | `external_url` | TEXT | Nullable |
-| `storage_disk` | VARCHAR | Nullable for links |
-| `storage_path` | VARCHAR | Nullable for links, unique within disk |
-| `mime_type` | VARCHAR | Nullable |
-| `byte_size` | BIGINT UNSIGNED | Nullable |
+| `storage_disk` | VARCHAR | Nullable for links, server-owned |
+| `storage_path` | VARCHAR | Nullable for links, unique within disk, server-owned |
+| `mime_type` | VARCHAR | Nullable, server-owned |
+| `byte_size` | BIGINT UNSIGNED | Nullable, server-owned |
 | timestamps | TIMESTAMP | Required |
+
+Constraints:
+
+- `lesson_id`, `uploaded_by`, `position`, `storage_disk`, `storage_path`, `mime_type`, and `byte_size` are server-owned.
+- Position is positive and unique within the Lesson.
+- Storage path is unique within its disk when present.
+- Type-specific content rules, URL allowlisting, file validation, and private downloads belong to later phases.
 
 ### `enrollments`
 

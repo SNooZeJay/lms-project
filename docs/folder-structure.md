@@ -89,6 +89,8 @@ lms-project/
 │   │   ├── CourseStatus.php
 │   │   ├── CourseLevel.php
 │   │   ├── CourseType.php
+│   │   ├── ContentStatus.php
+│   │   ├── LearningMaterialType.php
 │   │   ├── EnrollmentStatus.php
 │   │   ├── PaymentStatus.php
 │   │   ├── LessonProgressStatus.php
@@ -217,6 +219,9 @@ lms-project/
 ├── database/
 │   ├── factories/
 │   │   ├── CourseFactory.php
+│   │   ├── LearningMaterialFactory.php
+│   │   ├── LessonFactory.php
+│   │   ├── ModuleFactory.php
 │   │   └── UserFactory.php
 │   ├── migrations/
 │   └── seeders/
@@ -270,6 +275,7 @@ lms-project/
 │   │   ├── Auth/
 │   │   ├── Instructor/
 │   │   ├── Phase4A/
+│   │   ├── Phase4B/
 │   │   ├── Role/
 │   │   ├── Student/
 │   │   └── Webhooks/

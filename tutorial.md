@@ -366,7 +366,7 @@ Role-based pages are also available:
 
 Each page shows the current signed-in role and account status. Pages for other roles return a safe `403` response.
 
-Phase 4A currently adds the Course database foundation only. There is no `/courses` page yet, so do not expect a catalog or sample courses in the browser.
+Phase 4A currently adds the Course database foundation only. Phase 4B increment 1 adds Module and Lesson database records. There is still no `/courses` or curriculum page, so do not expect a catalog, outline, or sample courses in the browser.
 
 ## 8. Create a Student account
 

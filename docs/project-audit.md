@@ -6,7 +6,7 @@ Audit date: September 25, 2026
 
 This document describes the repository as it exists now.
 
-The Laravel foundation, Phase 2 authentication/profile slice, and Phase 3 roles and authorization slice are human-approved. Phase 4A Course foundation is implemented and awaiting human review. Later LMS business modules remain unbuilt.
+The Laravel foundation, Phase 2 authentication/profile slice, Phase 3 roles and authorization slice, and Phase 4A Course foundation are human-approved. Phase 4B increment 1 adds Module and Lesson curriculum data; Learning Materials are next. Later LMS business modules remain unbuilt.
 
 ## 2. Current repository state
 
@@ -97,6 +97,10 @@ The following Phase 1, Phase 2, Phase 3, and Phase 4A capabilities exist:
 - `courses` table with Instructor ownership, unique slug, catalog indexes, and free/paid price checks
 - `CourseLevel`, `CourseType`, and `CourseStatus` enums
 - `Course` model, Instructor relationship, and `CourseFactory`
+- `modules` and `lessons` curriculum tables with ordered parent-scoped constraints
+- `ContentStatus` enum
+- `Module` and `Lesson` models with Course → Module → Lesson relationships
+- `ModuleFactory` and `LessonFactory`
 
 The following capabilities are not implemented yet:
 
@@ -139,7 +143,7 @@ The following capabilities are not implemented yet:
 - Block suspended sessions on the next request
 - No deletion, archive, bulk actions, multi-role accounts, or business modules
 
-Phase 3 code is human-approved. Phase 4A Course foundation is implemented and awaiting human review.
+Phase 3 and Phase 4A code are human-approved. Phase 4B increment 1 adds Module and Lesson curriculum data; Learning Materials are next.
 
 ### Approved Phase 4A specification
 
@@ -152,7 +156,18 @@ Phase 3 code is human-approved. Phase 4A Course foundation is implemented and aw
 - Add Course model, User ownership relationship, factory, and constraint tests
 - No catalog UI, curriculum, enrollment, payments, uploads, or sample seeders
 
-Phase 4A code is implemented and awaiting human review.
+### Approved Phase 4B specification
+
+- Add `modules`, `lessons`, and `learning_materials` tables
+- Add `ContentStatus` and `LearningMaterialType` enums
+- Reuse the existing Course and User identities
+- Enforce positive, parent-scoped ordering and Lesson slug uniqueness
+- Default Module and Lesson status to `draft`
+- Default Lessons to required
+- Keep storage metadata server-owned
+- Do not add curriculum routes, uploads, private downloads, URL fetching, enrollment, payment, or sample seeders
+
+Phase 4B increment 1 is implemented. Learning Materials remain the next increment.
 
 ### Local environment check
 
@@ -173,7 +188,7 @@ Checked on September 25, 2026:
 | Credential storage | DPAPI-encrypted file under `C:\Users\Administrator\.secrets\lms-mysql.json` | Ready |
 | XAMPP database | MariaDB 10.4.32 remains on port 3306 | Preserved and not used by the LMS |
 
-Phase 1 environment prerequisites, the Laravel foundation, and the human-approved Phase 2 and Phase 3 slices are ready. Phase 4A Course foundation is implemented and awaiting human review.
+Phase 1 environment prerequisites, the Laravel foundation, and the human-approved Phase 2, Phase 3, and Phase 4A slices are ready. Phase 4B curriculum and material foundation is being specified.
 
 ## 5. Documentation state
 
@@ -420,14 +435,14 @@ Each deferred item has a safe planning default in `plan.md` and `architecture.md
 
 ## 14. Next approved milestone
 
-The next milestone is human review of the completed Phase 4A Course foundation slice.
+The next milestone is Phase 4B increment 2: Learning Material metadata.
 
-Phase 2 and Phase 3 evidence is recorded, including the Phase 3 mobile Administrator review. The desktop browser connector was unavailable in this session, so Edge fallback checks are used.
+Phase 4B increment 1 evidence is recorded for Modules and Lessons. The desktop browser connector was unavailable in this session, so Edge fallback checks are used.
 
-Phase 4A now covers Course data, constraints, relationships, factories, and migration tests. Curriculum, enrollment, quizzes, certificates, uploads, and payments remain separate approved boundaries.
+Learning Materials will add only metadata, relationships, and constraints. Uploads, private downloads, enrollment, quizzes, certificates, and payments remain separate approved boundaries.
 
 ## 15. Audit conclusion
 
-The repository now has a runnable Laravel 13 foundation, human-approved Phase 2 and Phase 3 slices, and an implemented Phase 4A Course foundation slice for IT Learning Hub.
+The repository now has a runnable Laravel 13 foundation, human-approved Phase 2, Phase 3, and Phase 4A slices, and an implemented Phase 4B Module and Lesson foundation for IT Learning Hub.
 
-The safe next step is human review of Phase 4A. Payment and curriculum work remain later phases.
+The safe next step is the TDD Learning Material metadata increment. Payment and curriculum UI work remain later phases.

@@ -4,7 +4,7 @@
 
 This roadmap turns the approved LMS plan into small, testable steps.
 
-Phase 0 is approved. Phase 1 is complete. Phase 2 and Phase 3 are human-approved. Phase 4A Course foundation is implemented and awaiting human review. No later business phase has started.
+Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, and Phase 4A are human-approved. Phase 4B curriculum and material foundation is now being specified. No later business phase has started.
 
 Do not skip directly to payment processing or dashboard polish.
 
@@ -801,7 +801,7 @@ Create the approved Course data foundation before building catalog, curriculum, 
 
 ### Status
 
-Approved on September 25, 2026. The Course ERD, constraints, migration, model, factory, and automated tests are implemented. Human review remains before Phase 4B.
+Approved on September 25, 2026. Human review approved the Course ERD, constraints, migration, model, factory, and automated tests. Phase 4B is now the active slice.
 
 ### Confirmed decisions
 
@@ -968,9 +968,215 @@ flowchart TD
 
 A clean test database can migrate from zero and create valid Course records through the model and factory. No catalog, curriculum, enrollment, payment, or upload behavior has started.
 
+### Phase 4A checkpoint
+
+- [x] Human review confirms the Course foundation slice
+- [x] Phase 4B may begin
+
 ## 9. Phase 4B: curriculum and material foundation
 
-Create Module, Lesson, and LearningMaterial tables after the Course foundation passes.
+### Goal
+
+Create the ordered Course outline and Learning Material metadata before curriculum routes, uploads, enrollment, or payment behavior.
+
+### Status
+
+Approved on September 26, 2026. Implementation starts with the Module and Lesson ERD, constraints, and failing tests.
+
+### Confirmed decisions
+
+- Reuse the existing Course and User identities
+- Add `ContentStatus` for Module and Lesson status
+- Add `LearningMaterialType` for material metadata
+- Add only `modules`, `lessons`, and `learning_materials` tables
+- Module and Lesson positions are positive and unique within their parent
+- Lesson slugs are unique within their Module
+- Material positions are positive and unique within their Lesson
+- Module and Lesson status defaults to `draft`
+- Lessons are required by default
+- Estimated minutes are nullable but positive
+- Storage metadata is server-owned
+- No curriculum route, upload handler, private download, URL allowlist, enrollment, payment, or sample seeder
+
+### Phase 4B ERD update
+
+```mermaid
+erDiagram
+    COURSES ||--o{ MODULES : contains
+    MODULES ||--o{ LESSONS : contains
+    LESSONS ||--o{ LEARNING_MATERIALS : contains
+    USERS ||--o{ LEARNING_MATERIALS : uploads
+
+    COURSES {
+        bigint id PK
+        bigint instructor_id FK
+        varchar title
+        varchar slug UK
+    }
+
+    MODULES {
+        bigint id PK
+        bigint course_id FK
+        varchar title
+        text description
+        int position
+        enum status
+    }
+
+    LESSONS {
+        bigint id PK
+        bigint module_id FK
+        varchar title
+        varchar slug
+        text summary
+        longtext content_text
+        int position
+        enum status
+        boolean is_required
+        int estimated_minutes
+    }
+
+    LEARNING_MATERIALS {
+        bigint id PK
+        bigint lesson_id FK
+        bigint uploaded_by FK
+        varchar title
+        enum material_type
+        int position
+        longtext content_text
+        text external_url
+        varchar storage_disk
+        varchar storage_path
+        varchar mime_type
+        bigint byte_size
+    }
+```
+
+### Phase 4B process flow
+
+```mermaid
+flowchart TD
+    C[Course record] --> M[Create Module with next position]
+    M --> L[Create Lesson with next position]
+    L --> R[Create Learning Material metadata]
+    R --> V[Validate parent relationships and enums]
+    V -->|Invalid| X[Reject without saving]
+    V -->|Valid| D[Begin database transaction]
+    D --> S[Save ordered curriculum record]
+    S --> C2[Commit curriculum data]
+```
+
+### Phase 4B Input, Process, and Output
+
+**Input**
+
+- Parent Course, Module, or Lesson ID
+- Title and safe description or summary fields
+- Ordered position
+- Content status
+- Lesson required flag
+- Estimated minutes
+- Material type and safe metadata
+
+**Process**
+
+- Validate the parent relationship
+- Validate approved status and material type values
+- Validate positive ordering and duration values
+- Enforce parent-scoped uniqueness
+- Apply safe defaults
+- Save metadata in a database transaction
+- Do not accept or serve files in this phase
+
+**Output**
+
+- Ordered Module, Lesson, and Learning Material records
+- Course → Module → Lesson → Material relationships
+- No public curriculum route
+- No upload or private download behavior
+- No enrollment or payment record
+
+### Work
+
+- Add ContentStatus and LearningMaterialType enums
+- Add the modules migration with ordering constraints and indexes
+- Add the lessons migration with parent-scoped slug and ordering constraints
+- Add the learning_materials migration with metadata and storage constraints
+- Add Module, Lesson, and LearningMaterial models
+- Add Course, User, and curriculum relationships
+- Add Module, Lesson, and LearningMaterial factories
+- Add curriculum foundation tests
+
+### Task list and acceptance criteria
+
+- [x] Task 1: Update Phase 4B data and flow contracts
+  - Acceptance: plan, architecture, roadmap, design, folder structure, and audit describe the approved curriculum slice.
+  - Verify: documentation review and `git diff --check`.
+
+- [x] Task 2: Add failing Module and Lesson schema tests
+  - Acceptance: tests describe columns, indexes, foreign keys, defaults, ordering, slug, and status rules.
+  - Verify: tests fail before the migrations exist.
+
+- [x] Task 3: Add Module and Lesson enums, migrations, and models
+  - Acceptance: a clean database migrates and creates valid ordered Module and Lesson records; invalid records are rejected.
+  - Verify: focused migration and model tests.
+
+- [x] Task 4: Add Module and Lesson factories and relationships
+  - Acceptance: factories create valid parent-scoped records; Course → Module → Lesson relationships resolve correctly.
+  - Verify: focused factory and relationship tests.
+
+- [ ] Task 5: Add failing Learning Material tests
+  - Acceptance: tests describe metadata columns, foreign keys, material types, positions, storage paths, and server-owned fields.
+  - Verify: tests fail before the migration exists.
+
+- [ ] Task 6: Add Learning Material migration, model, and factory
+  - Acceptance: valid metadata records save; invalid types, positions, and relationships fail safely.
+  - Verify: focused migration and model tests.
+
+- [ ] Task 7: Run the Phase 4B quality gate
+  - Acceptance: full tests, Pint, PHP syntax, build, audits, route checks, and clean local migration pass.
+  - Verify: recorded evidence in `docs/project-audit.md`.
+
+### Phase 4B increment 1 evidence
+
+- Added `ContentStatus` and the Module and Lesson migrations.
+- Enforced positive, parent-scoped positions and Lesson slug uniqueness.
+- Added Module and Lesson models with Course → Module → Lesson relationships.
+- Added Module and Lesson factories with safe draft defaults.
+- Added server-owned field mass-assignment tests.
+- The full suite passes 70 tests and 279 assertions.
+- Pint, PHP syntax checks, and local migrations pass.
+- No curriculum routes, uploads, Learning Materials, enrollment, or payment behavior has started.
+
+### Phase 4B security tests
+
+- A Module cannot reference a missing Course.
+- A Lesson cannot reference a missing Module.
+- A Learning Material cannot reference a missing Lesson or User.
+- Module and Lesson positions are positive and parent-scoped unique.
+- Lesson slugs are unique within a Module.
+- Material positions are positive and unique within a Lesson.
+- Invalid status and material type values are rejected.
+- Estimated minutes cannot be zero or negative.
+- Server-owned fields are not mass-assignable from a normal request.
+- No curriculum route or upload handler exists in Phase 4B.
+- No file path is treated as public access.
+- No enrollment or payment record is created.
+
+### Do not add
+
+- Curriculum routes or Blade pages
+- Module, Lesson, or Material create/edit actions
+- Reordering actions
+- File uploads or Storage disks
+- Private material download routes
+- External URL validation or fetching
+- Enrollment, progress, quizzes, certificates, or payments
+- Sample curriculum seeders
+
+### Exit condition
+
+A clean test database can migrate from zero and create valid Module, Lesson, and Learning Material metadata through models and factories. No curriculum UI, upload, enrollment, or payment behavior has started.
 
 ## 10. Phase 4C: enrollment and progress foundation
 
@@ -1362,6 +1568,6 @@ A task is done when:
 
 ## 25. Current next action
 
-The current next action is human review of the completed Phase 4A Course foundation checkpoint.
+The current next action is Phase 4B increment 2 for Learning Material metadata.
 
-Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course data, local migrations, and automated quality checks are complete. Do not begin Phase 4B until the Phase 4A checkpoint is approved.
+Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, the human-approved Phase 4A Course foundation, and Phase 4B Module and Lesson data are complete. Do not add uploads or curriculum routes.

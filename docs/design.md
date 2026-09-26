@@ -393,6 +393,20 @@ Phase 4A has no public course page yet. The data rules still guide later Instruc
 
 Do not add course cards, catalog filters, fake courses, or enrollment buttons before the Course data and authorization slices are approved.
 
+### Phase 4B curriculum foundation
+
+Phase 4B has no curriculum page yet. The data rules guide later Instructor and Student interfaces:
+
+- Module and Lesson status is shown as `Draft`, `Published`, or `Archived`
+- Ordered positions are positive and unique inside their parent
+- Lesson required state is explicit
+- Estimated minutes are optional but positive
+- Material type is an explicit server-validated enum
+- Storage paths are private metadata and never public URLs
+- External links require a later allowlist and validation step
+
+Do not add course outline cards, drag-and-drop ordering, file upload controls, or download buttons before the curriculum actions and authorization are approved.
+
 ### Course catalog
 
 - Search by course title
