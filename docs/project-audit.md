@@ -16,9 +16,15 @@ the enrollment activated, the lesson was completed, and a certificate was
 issued. One real payment with live credentials is therefore no longer
 outstanding.
 
-What remains outside the repository is hosting, which is not blocking, and a
-provider account display name, which a support request is handling. There is no
-open implementation task.
+Hosting is a closed question: the project runs on an ngrok tunnel from the
+development machine and is not deployed to a host. The application is reachable
+only while that machine is awake, and that trade-off is recorded in
+`docs/deployment.md` rather than left for a panel to find out during a demo.
+`php artisan lms:check-production` is written for a deployed server and is not
+expected to pass on a development machine.
+
+What remains outside the repository is a provider account display name, which a
+support request is handling. There is no open implementation task.
 
 
 ## 2. Current repository state
@@ -659,8 +665,8 @@ Each deferred item has a safe planning default in `plan.md` and `architecture.md
 
 V1 is complete. Every phase through Phase 15 is built, tested, and committed.
 
-The remaining work is not a coding phase. It is hosting, which is not blocking
-and is not scheduled.
+The remaining work is not a coding phase. Hosting is settled: the project runs
+on an ngrok tunnel and is not being deployed to a host.
 
 The payment step that used to sit here is done. A ₱100 GCash test payment was
 placed through the hosted checkout, the webhook settled it, the enrollment

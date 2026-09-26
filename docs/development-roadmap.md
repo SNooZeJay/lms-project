@@ -2794,9 +2794,13 @@ account is a human step and is not part of the repository.
 
 ### Still a human step
 
-Place the release on a hosting account and run one real test-mode payment. The
-payment state machine is proven with a fake provider, so only a real payment
-proves the credentials and the provider contract.
+None. The real test-mode payment has been made, and hosting has been decided
+against in favour of running on an ngrok tunnel. The payment state machine was
+first proven with a fake provider, and the fake agreed with the implementation
+rather than with the provider, so it hid a signature bug that rejected every
+real delivery. Only the live call found it, which is why the runbook keeps the
+manual payment as a release gate rather than treating the green suite as
+sufficient.
 
 ### Goal
 
@@ -2888,8 +2892,13 @@ There is no open implementation task. What remains is project work, not code:
 
 - **Defense preparation.** Section 30 lists the deliverables. Diagrams, the
   authorization matrix, and the security checklist are the gaps.
-- **Hosting.** Not started and not blocking. The application is proven on a
-  tunnel. `docs/deployment.md` is the runbook for a real host when one is needed.
+- **Hosting: decided, and the answer is no.** The project runs on an ngrok
+  tunnel from the development machine and is not being deployed to a host. A
+  free cloud instance was considered and set aside, along with a paid virtual
+  private server. This is a closed question, not an open one, and it is recorded
+  here so it does not get reopened. The cost of the choice, which is that the
+  application is unreachable whenever the machine is asleep, is written down in
+  `docs/deployment.md` rather than left to be discovered.
 - **Provider account display name.** The hosted checkout page shows the account
   holder's name. It cannot be changed through the API and a support request is
   open. The one merchant-controlled field, the description, now carries the

@@ -408,26 +408,45 @@ every field.
 ### Getting a public URL on a local machine
 
 The endpoint must be reachable over public HTTPS, so `localhost` does not work.
-For a test run, a tunnel is enough:
+This project runs on an ngrok tunnel and is not being deployed to a host.
 
 ```bash
 php artisan serve
-ssh -R 80:localhost:8000 nokey@localhost.run
+ngrok http 8000 --domain <reserved-domain>
 ```
 
-Then set `APP_URL` to the tunnel URL, because the `success_url` and `cancel_url`
-sent to the provider are generated from it. Without this the Student is
-redirected to `127.0.0.1` after paying.
+A reserved ngrok domain is used rather than the random URL that a free account
+gets on every start, because the provider has the endpoint URL saved. A changing
+URL would mean the saved endpoint stopped receiving deliveries.
 
-A tunnel is not a deployment. It only works while the machine is running, so
-use it to verify, not to hand in.
+Then set `APP_URL` to the tunnel URL, because the `success_url` and `cancel_url`
+sent to the provider are generated from it, and so is every link the application
+emails. Without this the Student is redirected to `127.0.0.1` after paying.
+
+`APP_URL` must include the scheme. When it is `https`, links are generated over
+https, because the tunnel does not send a forwarding header and the application
+would otherwise believe it is on http and downgrade every redirect.
+
+#### What this choice costs
+
+The tunnel only exists while the machine is running. It stops when the laptop
+sleeps, shuts down, or loses network. `php artisan lms:check-production` will
+not pass here either, and is not expected to: it checks server settings that are
+correctly off on a development machine.
+
+Both facts are stated here rather than left for a panel to discover. If this
+application is presented from a machine that is awake and online, the whole
+flow works, including a test-mode payment. If it is presented from a machine
+that is not, nothing will load, and that is a property of running from a
+laptop rather than a defect in the application.
 
 The checkout half of this was verified against the real test API on
 September 26, 2026, and that call found a request type bug the fake could not
 see. Reading the Hosted Checkout documentation then found that the webhook
 handler only accepted one of the two documented payload layouts, which would
-have rejected every real payment. The webhook half still needs step 5 completed
-first, because without the signing secret no event can be verified.
+have rejected every real payment. The webhook half was completed and verified
+afterwards: a ₱100 GCash test payment settled an enrollment through a signed
+delivery, and the paid course was carried through to an issued certificate.
 
 ## 12. Verification before going live
 
