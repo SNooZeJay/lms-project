@@ -252,10 +252,143 @@
             </section>
         @endforelse
 
+        <section class="mt-8 border-t border-line pt-8" aria-labelledby="course-quizzes-heading">
+            <h2 id="course-quizzes-heading" class="text-lg font-semibold text-ink">Quizzes</h2>
+            <p class="mt-1 text-sm leading-6 text-ink-muted">A quiz needs at least one question, and every question needs exactly one correct answer before it can be published.</p>
+
+            <ul class="mt-5 space-y-4" role="list">
+                @forelse ($course->quizzes as $quiz)
+                    <li class="border border-line bg-surface p-5" aria-labelledby="quiz-{{ $quiz->id }}-heading">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <p class="font-mono text-xs text-ink-muted">Quiz {{ $quiz->position }}</p>
+                                <h3 id="quiz-{{ $quiz->id }}-heading" class="mt-1 font-semibold text-ink">{{ $quiz->title }}</h3>
+                                @if ($quiz->description)
+                                    <p class="mt-1 max-w-2xl text-sm leading-6 text-ink-muted">{{ $quiz->description }}</p>
+                                @endif
+                                <p class="mt-2 text-sm text-ink-muted">
+                                    {{ $quiz->questions->count() }} {{ \Illuminate\Support\Str::plural('question', $quiz->questions->count()) }} ·
+                                    pass at {{ rtrim(rtrim((string) $quiz->passing_score_percent, '0'), '.') }}% ·
+                                    {{ $quiz->max_attempts }} {{ \Illuminate\Support\Str::plural('attempt', $quiz->max_attempts) }}
+                                    @if ($quiz->is_required) · required @endif
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-ink-muted">{{ ucfirst($quiz->status->value) }}</span>
+                                @if ($quiz->status === \App\Enums\QuizStatus::Archived)
+                                    <span class="text-sm font-semibold text-ink-muted">Archived</span>
+                                @else
+                                    <form method="POST" action="{{ route('instructor.courses.quizzes.publish', [$course, $quiz]) }}" class="inline-flex">
+                                        @csrf
+                                        <button type="submit" class="inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">{{ $quiz->status === \App\Enums\QuizStatus::Published ? 'Republish' : 'Publish quiz' }}</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('instructor.courses.quizzes.archive', [$course, $quiz]) }}" class="inline-flex">
+                                        @csrf
+                                        <button type="submit" class="inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Archive quiz</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+
+                        <details class="mt-4 border-t border-line pt-3">
+                            <summary class="inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-primary-text focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Questions and options</summary>
+
+                            <ul class="mt-3 space-y-3" role="list">
+                                @forelse ($quiz->questions as $question)
+                                    <li class="rounded-md border border-line bg-surface-muted p-4">
+                                        <p class="font-medium text-ink">{{ $question->prompt }}</p>
+                                        <ul class="mt-2 space-y-1" role="list">
+                                            @foreach ($question->options as $option)
+                                                <li class="flex items-center gap-2 text-sm {{ $option->is_correct ? 'font-semibold text-success-text' : 'text-ink-muted' }}">
+                                                    <span aria-hidden="true">{{ $option->is_correct ? '✓' : '○' }}</span>
+                                                    <span>{{ $option->option_text }}</span>
+                                                    @if ($option->is_correct)<span class="sr-only">correct answer</span>@endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </li>
+                                @empty
+                                    <li class="text-sm text-ink-muted">No questions yet.</li>
+                                @endforelse
+                            </ul>
+
+                            <form method="POST" action="{{ route('instructor.courses.quizzes.questions.store', [$course, $quiz]) }}" class="mt-4 space-y-3">
+                                @csrf
+                                <div>
+                                    <label for="quiz-{{ $quiz->id }}-prompt" class="block text-sm font-semibold text-ink">Question prompt</label>
+                                    <textarea id="quiz-{{ $quiz->id }}-prompt" name="prompt" rows="2" maxlength="5000" required class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus"></textarea>
+                                </div>
+                                <div>
+                                    <label for="quiz-{{ $quiz->id }}-points" class="block text-sm font-semibold text-ink">Points</label>
+                                    <input id="quiz-{{ $quiz->id }}-points" name="points" type="number" min="0.5" max="100" step="0.5" value="1" class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink sm:w-32 focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                                </div>
+                                <fieldset class="space-y-2">
+                                    <legend class="text-sm font-semibold text-ink">Options (mark exactly one correct)</legend>
+                                    @for ($slot = 1; $slot <= 4; $slot++)
+                                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                            <label for="quiz-{{ $quiz->id }}-option-{{ $slot }}-text" class="sr-only">Option {{ $slot }} text</label>
+                                            <input id="quiz-{{ $quiz->id }}-option-{{ $slot }}-text" name="options[{{ $slot - 1 }}][option_text]" type="text" maxlength="500" class="min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                                            <label for="quiz-{{ $quiz->id }}-option-{{ $slot }}-correct" class="inline-flex min-h-11 items-center gap-2 text-sm text-ink">
+                                                <input id="quiz-{{ $quiz->id }}-option-{{ $slot }}-correct" name="options[{{ $slot - 1 }}][is_correct]" type="checkbox" value="1" @checked($slot === 1) class="h-4 w-4 rounded border-line text-primary focus:ring-focus">
+                                                Correct
+                                            </label>
+                                        </div>
+                                    @endfor
+                                </fieldset>
+                                <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Add question</button>
+                            </form>
+                        </details>
+                    </li>
+                @empty
+                    <li class="text-sm text-ink-muted">No quizzes in this course yet.</li>
+                @endforelse
+            </ul>
+
+            @php $quizFailed = old('form_context') === 'quiz'; @endphp
+            <details class="mt-5 border border-line bg-surface-muted p-4"{!! $quizFailed ? ' open' : '' !!}>
+                <summary class="cursor-pointer text-sm font-semibold text-primary-text">Add quiz</summary>
+                <form method="POST" action="{{ route('instructor.courses.quizzes.store', $course) }}" class="mt-4 space-y-4">
+                    @csrf
+                    <input type="hidden" name="form_context" value="quiz">
+                    <div>
+                        <label for="quiz-title" class="block text-sm font-semibold text-ink">Quiz title</label>
+                        <input id="quiz-title" name="title" type="text" required maxlength="255" value="{{ $quizFailed ? old('title') : '' }}" class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                    </div>
+                    <div>
+                        <label for="quiz-description" class="block text-sm font-semibold text-ink">Description</label>
+                        <textarea id="quiz-description" name="description" rows="2" maxlength="5000" class="mt-2 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">{{ $quizFailed ? old('description') : '' }}</textarea>
+                    </div>
+                    <div>
+                        <label for="quiz-module" class="block text-sm font-semibold text-ink">Module</label>
+                        <select id="quiz-module" name="module_id" class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                            <option value="">Whole course</option>
+                            @foreach ($course->modules as $courseModule)
+                                <option value="{{ $courseModule->id }}" @selected($quizFailed && (int) old('module_id') === $courseModule->id)>Module {{ $courseModule->position }}: {{ $courseModule->title }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label for="quiz-passing" class="block text-sm font-semibold text-ink">Passing score (%)</label>
+                            <input id="quiz-passing" name="passing_score_percent" type="number" min="0" max="100" step="1" value="80" class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                        </div>
+                        <div>
+                            <label for="quiz-attempts" class="block text-sm font-semibold text-ink">Maximum attempts</label>
+                            <input id="quiz-attempts" name="max_attempts" type="number" min="1" max="3" step="1" value="3" class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                        </div>
+                    </div>
+                    <label for="quiz-required" class="inline-flex min-h-11 items-center gap-2 text-sm text-ink">
+                        <input id="quiz-required" name="is_required" value="1" type="checkbox" class="h-4 w-4 rounded border-line text-primary focus:ring-focus">
+                        Required for course completion
+                    </label>
+                    <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Add private quiz</button>
+                </form>
+            </details>
+        </section>
+
         @php
             $reorderableModules = $course->modules->where('status.value', '!=', \App\Enums\ContentStatus::Archived->value)->values();
         @endphp
-
         @if ($reorderableModules->count() > 1)
             <section class="mt-8 border border-line bg-surface-muted p-5" aria-labelledby="reorder-modules-heading">
                 <h2 id="reorder-modules-heading" class="text-lg font-semibold text-ink">Reorder modules</h2>

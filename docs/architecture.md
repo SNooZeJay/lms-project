@@ -1117,6 +1117,82 @@ flowchart TD
 - A Lesson page with content and Learning Materials
 - No progress, no quiz, no payment, and no download
 
+### Phase 9 quiz routes
+
+Instructor:
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| POST | `/instructor/courses/{course}/quizzes` | Add a Quiz | Instructor group and QuizPolicy `create` |
+| PATCH | `/instructor/courses/{course}/quizzes/{quiz}` | Edit a Quiz | Instructor group and QuizPolicy `update` |
+| POST | `/instructor/courses/{course}/quizzes/{quiz}/publish` | Publish a Quiz | Instructor group and QuizPolicy `update` |
+| POST | `/instructor/courses/{course}/quizzes/{quiz}/archive` | Archive a Quiz | Instructor group and QuizPolicy `archive` |
+| POST | `/instructor/courses/{course}/quizzes/{quiz}/questions` | Add a Question with Options | Instructor group and QuizPolicy `update` |
+
+Student:
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| GET | `/student/courses/{course}/quizzes/{quiz}` | Read a Quiz | Student group and QuizPolicy `viewForStudent` |
+| POST | `/student/courses/{course}/quizzes/{quiz}/start` | Open an Attempt | Student group and QuizPolicy `startForStudent` |
+| GET | `/student/courses/{course}/quizzes/{quiz}/attempts/{attempt}` | Answer an open Attempt | Student group and QuizAttemptPolicy `viewAttemptForStudent` |
+| POST | `/student/courses/{course}/quizzes/{quiz}/attempts/{attempt}/submit` | Submit and grade | Student group and QuizAttemptPolicy `viewAttemptForStudent` |
+| GET | `/student/courses/{course}/quizzes/{quiz}/attempts/{attempt}/result` | See the graded result | Student group and QuizAttemptPolicy `viewAttemptForStudent` |
+
+### Quiz security rules
+
+- The answer key is stored only in `quiz_options.is_correct` and never reaches a Student before submission. `QuizGrader::studentProjection` hides `is_correct` and both explanation fields.
+- The score, percentage, and pass state are calculated by `App\Services\Quizzes\QuizGrader` from the stored Options. `score_points`, `score_percent`, `passed`, `status`, `student_id`, `attempt_number`, and `submitted_at` are `prohibited` in the request, so a spoofed submission is rejected outright.
+- A Student reaches only their own Attempt, and only while the Quiz is still readable. A mismatched Quiz and Attempt pair is `404`.
+- At most three Attempts per Student per Quiz, and never a new Attempt after passing. `StartQuizAttempt` runs in a transaction with a row lock, and the unique `(quiz_id, student_id, attempt_number)` rule makes a duplicate first Attempt impossible.
+- Submitting twice keeps the first result. The Action re-reads the Attempt under a lock and returns it unchanged when it is no longer `in_progress`.
+- An Option from another Question, or a Question from another Quiz, fails validation before any Answer row is written.
+- A Quiz can only be published when it has at least one Question and every Question has exactly one correct Option.
+- V1 has no quiz timer, so an Attempt may stay open indefinitely.
+
+### Phase 9 flow
+
+```mermaid
+flowchart TD
+    A[Student opens a published Quiz] --> P[QuizPolicy viewForStudent]
+    P -->|Denied| F[Return 403]
+    P -->|Allowed| S[Show questions and options with the key hidden]
+    S --> C[Student selects Start attempt]
+    C --> L[StartQuizAttempt locks and reuses or creates one Attempt]
+    L -->|Passed or attempts used| E[Validation error]
+    L -->|Allowed| Q[Redirect to the Attempt]
+    Q --> W[Student answers every Question]
+    W --> T[SubmitQuizAttempt validates the selections]
+    T --> G[QuizGrader scores from the stored key]
+    G --> R[Redirect to the result]
+    R --> V[Result shows the key, the score, and the pass state]
+```
+
+### Phase 9 Input, Process, and Output
+
+**Input**
+
+- Student session with the student role
+- Enrolled Course ID and published Quiz ID
+- One selected Option ID per Question
+- No trusted score, status, or identity field
+
+**Process**
+
+- Apply `auth`, `account.active`, `verified`, `password.change`, and `role:student` middleware
+- Return `404` when the Attempt belongs to another Quiz
+- Run `QuizPolicy` and `QuizAttemptPolicy`
+- Reuse the open Attempt, or create the next Attempt number inside a transaction
+- Reject a selection whose Option does not belong to the Question
+- Score from the stored key, never from the request
+- Keep the first result when an Attempt is submitted twice
+
+**Output**
+
+- One `quiz_answers` row per answered Question
+- A server-calculated score, percentage, and pass state
+- No timer, no partial credit beyond the Question points, and no certificate
+
 ## 8. Authorization
 
 Authorization answers what the user may do.

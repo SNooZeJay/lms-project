@@ -220,10 +220,9 @@ class LessonProgressFoundationTest extends TestCase
 
     public function test_phase_six_d_adds_no_progress_ui_or_payment_routes(): void
     {
-        // student.lessons.complete arrives in Phase 6E and is covered there.
+        // student.lessons.complete arrives in Phase 6E, quizzes in Phase 9.
         $this->assertFalse(Route::has('student.progress.index'));
         $this->assertFalse(Route::has('student.payments.checkout'));
-        $this->assertFalse(Schema::hasTable('quizzes'));
         $this->assertFalse(Schema::hasTable('certificates'));
     }
 

@@ -8,10 +8,13 @@ use App\Actions\Learning\RecordLessonActivity;
 use App\Enums\ContentStatus;
 use App\Enums\CourseStatus;
 use App\Enums\EnrollmentStatus;
+use App\Enums\QuizAttemptStatus;
+use App\Enums\QuizStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
+use App\Models\QuizAttempt;
 use App\Services\ProgressCalculator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -63,11 +66,37 @@ class EnrollmentController extends Controller
 
         $enrollment = $this->grantingEnrollment($request, $course);
 
+        $quizzes = $course->quizzes()
+            ->where('quizzes.status', QuizStatus::Published)
+            ->orderBy('quizzes.position')
+            ->get();
+
+        $attemptsByQuiz = QuizAttempt::query()
+            ->where('enrollment_id', $enrollment->id)
+            ->where('status', '!=', QuizAttemptStatus::InProgress)
+            ->orderByDesc('attempt_number')
+            ->get()
+            ->groupBy('quiz_id');
+
+        $quizState = [];
+
+        foreach ($quizzes as $quiz) {
+            $latest = $attemptsByQuiz->get($quiz->id)?->first();
+
+            $quizState[$quiz->id] = match (true) {
+                $latest === null => 'Not attempted',
+                $latest->passed === true => 'Passed',
+                default => 'Not passed',
+            };
+        }
+
         return view('student.courses.show', [
             'course' => $course,
             'progress' => $this->progress->forEnrollment($enrollment),
             'showProgress' => $this->progress->isVisibleFor($course),
             'completedLessonIds' => $this->progress->completedLessonIds($enrollment),
+            'quizzes' => $quizzes,
+            'quizState' => $quizState,
         ]);
     }
 

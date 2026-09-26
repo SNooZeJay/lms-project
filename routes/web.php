@@ -8,11 +8,13 @@ use App\Http\Controllers\Catalog\CourseCatalogController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Instructor\CourseController;
 use App\Http\Controllers\Instructor\CurriculumController;
+use App\Http\Controllers\Instructor\QuizController as InstructorQuizController;
 use App\Http\Controllers\MaterialDownloadController;
 use App\Http\Controllers\Role\AdministratorController;
 use App\Http\Controllers\Role\InstructorController;
 use App\Http\Controllers\Role\StudentController;
 use App\Http\Controllers\Student\EnrollmentController;
+use App\Http\Controllers\Student\QuizController as StudentQuizController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -36,6 +38,11 @@ Route::middleware([...$authenticated, 'role:student'])->group(function (): void 
     Route::get('/student/courses/{course}/lessons/{lesson}', [EnrollmentController::class, 'showLesson'])->name('student.lessons.show');
     Route::post('/student/courses/{course}/lessons/{lesson}/complete', [EnrollmentController::class, 'completeLesson'])->name('student.lessons.complete');
     Route::get('/student/courses/{course}/lessons/{lesson}/materials/{material}/download', [MaterialDownloadController::class, 'show'])->name('student.materials.download');
+    Route::get('/student/courses/{course}/quizzes/{quiz}', [StudentQuizController::class, 'show'])->name('student.quizzes.show');
+    Route::post('/student/courses/{course}/quizzes/{quiz}/start', [StudentQuizController::class, 'start'])->name('student.quizzes.start');
+    Route::get('/student/courses/{course}/quizzes/{quiz}/attempts/{attempt}', [StudentQuizController::class, 'attempt'])->name('student.quizzes.attempts.show');
+    Route::post('/student/courses/{course}/quizzes/{quiz}/attempts/{attempt}/submit', [StudentQuizController::class, 'submit'])->name('student.quizzes.attempts.submit');
+    Route::get('/student/courses/{course}/quizzes/{quiz}/attempts/{attempt}/result', [StudentQuizController::class, 'result'])->name('student.quizzes.attempts.result');
     Route::post('/student/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('student.enrollments.store');
 });
 
@@ -52,6 +59,11 @@ Route::middleware([...$authenticated, 'role:instructor'])->group(function (): vo
     Route::post('/instructor/courses/{course}/archive', [CourseController::class, 'archive'])->name('instructor.courses.archive');
     Route::post('/instructor/courses/{course}/restore', [CourseController::class, 'restore'])->name('instructor.courses.restore');
     Route::post('/instructor/courses/{course}/modules', [CurriculumController::class, 'storeModule'])->name('instructor.courses.modules.store');
+    Route::post('/instructor/courses/{course}/quizzes', [InstructorQuizController::class, 'store'])->name('instructor.courses.quizzes.store');
+    Route::patch('/instructor/courses/{course}/quizzes/{quiz}', [InstructorQuizController::class, 'update'])->name('instructor.courses.quizzes.update');
+    Route::post('/instructor/courses/{course}/quizzes/{quiz}/publish', [InstructorQuizController::class, 'publish'])->name('instructor.courses.quizzes.publish');
+    Route::post('/instructor/courses/{course}/quizzes/{quiz}/archive', [InstructorQuizController::class, 'archive'])->name('instructor.courses.quizzes.archive');
+    Route::post('/instructor/courses/{course}/quizzes/{quiz}/questions', [InstructorQuizController::class, 'storeQuestion'])->name('instructor.courses.quizzes.questions.store');
     Route::patch('/instructor/courses/{course}/modules/reorder', [CurriculumController::class, 'reorderModules'])->name('instructor.courses.modules.reorder');
     Route::patch('/instructor/courses/{course}/modules/{module}/lessons/reorder', [CurriculumController::class, 'reorderLessons'])->name('instructor.courses.modules.lessons.reorder');
     Route::patch('/instructor/courses/{course}/modules/{module}', [CurriculumController::class, 'updateModule'])->name('instructor.courses.modules.update');

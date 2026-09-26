@@ -508,6 +508,15 @@ Phase 6E adds progress that is always visible and always honest:
 - While a Course is unpublished, the percentage is hidden and a note explains why
 - No percentage is ever accepted from the browser
 
+### Phase 9 quizzes
+
+- The Student course page lists each Quiz with `Not attempted`, `Not passed`, or `Passed`
+- A Quiz page shows the passing score, attempts used, and every question with its options
+- A Student never sees the correct answer or any explanation before submitting
+- The result page labels the correct answer and the Student's own choice in text, not by color alone
+- The score is stated as a percentage plus points earned out of points available
+- Attempts used are always visible, so a blocked Student knows why
+
 ### Course catalog
 
 - Search by course title

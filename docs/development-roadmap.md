@@ -2473,6 +2473,18 @@ A returning Student lands on the Lesson they last opened.
 
 ## 24. Phase 9: quizzes
 
+### Status
+
+Built and tested. Schema, Instructor authoring, and Student attempts are all in place.
+
+### Evidence
+
+- `php artisan test` gives 365 passed and 1376 assertions.
+- `./vendor/bin/pint --test` gives PASS on 192 files.
+- `php artisan route:list` shows 76 routes.
+- `php artisan migrate`, `php artisan migrate:rollback --step=1`, and `php artisan migrate` all succeed.
+- Quiz routes, security rules, and the flow diagram are recorded in `architecture.md`.
+
 ### Goal
 
 Deliver safe Questions and enforce server-side grading.

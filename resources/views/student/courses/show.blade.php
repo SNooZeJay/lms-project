@@ -93,6 +93,34 @@
             @endforelse
         </section>
 
-        <p class="mt-10 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">Mark a lesson complete to update your progress. Quizzes and certificates are not built yet.</p>
+        @if ($quizzes->isNotEmpty())
+            <section class="mt-12" aria-labelledby="course-quizzes-heading">
+                <h2 id="course-quizzes-heading" class="text-xl font-semibold text-ink">Quizzes</h2>
+                <p class="mt-1 text-sm text-ink-muted">Answer every question, then submit once. Attempts are limited.</p>
+
+                <ul class="mt-5 divide-y divide-line border-y border-line" role="list">
+                    @foreach ($quizzes as $quiz)
+                        <li class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="font-semibold text-ink">
+                                    <a href="{{ route('student.quizzes.show', [$course, $quiz]) }}" class="rounded-md hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">{{ $quiz->title }}</a>
+                                </p>
+                                @if ($quiz->description)
+                                    <p class="mt-1 max-w-2xl text-sm leading-6 text-ink-muted">{{ $quiz->description }}</p>
+                                @endif
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-muted">
+                                @if ($quiz->is_required)
+                                    <span class="rounded-full bg-surface-muted px-2.5 py-1">Required</span>
+                                @endif
+                                <span class="rounded-full bg-surface-muted px-2.5 py-1">{{ $quizState[$quiz->id] ?? 'Not attempted' }}</span>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
+        @endif
+
+        <p class="mt-10 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">Mark a lesson complete to update your progress. Certificates are not built yet.</p>
     </div>
 @endsection
