@@ -41,6 +41,18 @@ return Application::configure(basePath: dirname(__DIR__))
             // The PayMongo checkout returns through a provider redirect, so no
             // application cookie is needed on that request.
         ]);
+
+        // The payment provider posts to the webhook from its own servers. It
+        // holds no session and cannot read a token, so CSRF protection would
+        // reject every delivery with a 419. The request is authenticated by
+        // the provider signature instead, which is checked on every call.
+        //
+        // The file is read directly because this callback runs before the
+        // config repository is bound, so the config helper is not available.
+        /** @var array{csrf_exempt_paths?: list<string>} $lms */
+        $lms = require __DIR__.'/../config/lms.php';
+
+        $middleware->validateCsrfTokens(except: $lms['csrf_exempt_paths'] ?? []);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
