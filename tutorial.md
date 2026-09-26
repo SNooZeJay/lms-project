@@ -920,3 +920,114 @@ Use the Student account that is already enrolled in a published free course. You
 23. Check the course page and the Lesson page at 390px width. Confirm nothing is cut off.
 
 The percentage is only a count. It comes from the `lesson_progress` table, so it never comes from the browser.
+
+## 28. Review curriculum reorder, archive, and private files
+
+Use the Instructor account that owns a course with at least two Modules and at least two Lessons in one Module.
+
+1. Sign in as the Instructor and open the course outline.
+2. Confirm a **Reorder modules** section exists with one position field per Module.
+3. Change the first Module to the highest number and the last Module to the lowest. Select **Save module order**.
+4. Confirm the outline order changed and each Module now shows `Module 1`, `Module 2`, and so on with no gaps.
+5. Open **Reorder lessons** inside a Module. Swap two Lessons and save.
+6. Confirm the Student course page shows the new Lesson order.
+7. Enter the same position twice and save. Confirm a plain error appears and the old order is unchanged.
+8. Archive one Module. Confirm it says **Archived**, its Lessons disappear from the Student course page, and a **Restore module** button appears.
+9. Confirm the Student cannot open a Lesson inside the archived Module.
+10. Restore the Module. Confirm it comes back as `Draft` and the Instructor must publish again before a Student sees it.
+11. Attach a PDF to a Lesson using the **Add material** form. Confirm a material row appears with a type and a size.
+12. Open the file link in the address bar directly. Confirm the bytes never come back.
+13. Try to upload `payload.exe`. Confirm a plain error and nothing saved.
+14. Sign in as an enrolled Student and open the Lesson. Confirm a **Download** button appears and the file downloads.
+15. Copy a download address and open it while signed out. Confirm you are asked to sign in.
+
+The stored path never contains the filename you uploaded, and no public route serves it.
+
+## 29. Review Continue Learning
+
+Use a Student who has opened at least one Lesson.
+
+1. Sign in as the Student and open the dashboard.
+2. Confirm a **Continue learning** panel names the most recently opened Lesson, its Module, its Course, and how long ago it was opened.
+3. Select **Resume**. Confirm the same Lesson opens.
+4. Open a different Lesson in another course. Return to the dashboard. Confirm the panel now points at that Lesson.
+5. Ask the Instructor to unpublish that course. Return to the dashboard. Confirm the panel disappears and shows **No lessons opened yet**.
+6. Confirm you can still open the Lesson itself while the enrollment is active.
+7. Sign in as a brand new Student. Confirm the dashboard shows **No lessons opened yet** and offers **Open My courses**.
+8. Sign in as an Instructor and an Administrator. Confirm neither dashboard shows the Student panel.
+
+The panel never points at a Lesson you cannot open. The rule is re-checked every time the page loads.
+
+## 30. Review quizzes
+
+Use an Instructor who owns a published course, and a Student enrolled in it.
+
+1. Sign in as the Instructor. On the outline, open **Add quiz** and create a quiz with a passing score and a maximum attempt count.
+2. Open **Questions and options** and add a question with two options, marking exactly one correct.
+3. Try to mark two options correct. Confirm a plain error and nothing saved.
+4. Select **Publish quiz**. Confirm the quiz says `Published`.
+5. Sign in as the Student. Open the course page. Confirm the quiz says `Not attempted`.
+6. Open the quiz. Confirm the question and both options are visible, and confirm the page does **not** show which answer is correct.
+7. Select **Start attempt 1**. Confirm you land on the answer form.
+8. Answer the question correctly and submit. Confirm the result says `Passed` with a percentage and shows the correct answer.
+9. Open the quiz again. Confirm it says you already passed and offers no new attempt.
+10. Ask the Instructor to archive the quiz. Confirm the Student can no longer open it, and that earlier attempts are kept.
+11. Sign in as a different Student with no enrollment and open the quiz address. Confirm you are refused.
+12. In the browser console, try to post a submission with `passed: true` by hand. Confirm the request is rejected and the attempt state does not change.
+
+Grading happens on the server only. The browser never sends a score.
+
+## 31. Review completion and certificates
+
+Use a Student who has finished every required Lesson in an enrolled course.
+
+1. Open the course page. Confirm the **Certificate** panel either offers **Claim certificate** or lists exactly what is still missing.
+2. While a required Lesson is incomplete, confirm the panel names that requirement in words.
+3. Complete everything. Confirm the panel offers **Claim certificate**.
+4. Select it. Confirm the certificate page shows your name, the course name, the issue date, a code such as `ITH-XXXX-XXXX-XXXX-XXXX`, and the status `Valid`.
+5. Confirm the page states that it is only visible to you while you are enrolled.
+6. Sign out. Open the certificate address. Confirm you are asked to sign in.
+7. Sign in as another Student and open the same address. Confirm you are refused.
+8. Sign in as the Administrator, open **Manage certificates**, revoke the certificate with a reason, then reissue it.
+9. Confirm the replacement is linked to the revoked one and has a different code.
+10. Add a new required Lesson, then try to reissue. Confirm it is refused until the requirement is met again.
+
+Revoking keeps the record. Nothing is deleted.
+
+## 32. Review payments
+
+Payments need real PayMongo test-mode credentials. Until then, review the flow without paying.
+
+1. Set `PAYMONGO_ENABLED=true`, `PAYMONGO_SECRET_KEY`, and `PAYMONGO_WEBHOOK_SECRET` in your local `.env`, then restart the server.
+2. Enroll in a published paid course. Confirm the enrollment state is `pending_payment` and the course is not open.
+3. Confirm **My courses** shows a **Pay** button with the exact amount and currency.
+4. Select it. Confirm the return page says **Waiting for payment confirmation** and states plainly that the page does not confirm payment by itself.
+5. Complete a test-mode payment on the provider page.
+6. Confirm the provider sends a webhook, the payment becomes `paid`, and the enrollment becomes `active`.
+7. Replay that webhook by resending it. Confirm the record count does not change and the enrollment stays `active`.
+8. Change one character in the webhook body but keep the old signature. Confirm the event is recorded as ignored and nothing changes.
+9. Check the `payments` table. Confirm no secret value is stored in any column.
+10. Run `php artisan lms:check-production`. Confirm it refuses to pass while payments are disabled with keys present, or enabled with keys missing.
+
+## 33. Review dashboards and reports
+
+1. Sign in as a Student. Confirm the four counts match the database: courses enrolled, lessons completed, quizzes passed, and certificates earned.
+2. Sign in as an Instructor. Confirm the counts cover only your own courses, and that another Instructor's course never appears.
+3. Confirm the Instructor dashboard lists your courses with an enrollment count and an **Open outline** link.
+4. Sign in as the Administrator. Confirm the counts cover the whole system.
+5. Open **View reports**. Confirm one row per enrollment with a student, course, state, quizzes passed, and amount paid.
+6. Confirm a row with no paid payment says **Not paid** rather than a zero amount.
+7. Sign in as a Student and a non-Administrator Instructor and open the report address. Confirm you are refused.
+8. Widen the browser to 390px and open the report. Confirm the table scrolls inside its own area and the page does not widen.
+
+## 34. Review the production pre-flight check
+
+1. Run `php artisan lms:check-production` on your local machine.
+2. Confirm it lists each check with `PASS` or `FAIL` and exits with a failure code on a development server.
+3. Confirm the failing checks are named in plain words and the command points at `docs/deployment.md`.
+4. Confirm no secret value is printed anywhere in the output.
+5. Run `php artisan config:cache`, `php artisan route:cache`, and `php artisan view:cache`. Confirm each succeeds.
+6. Open the site again. Confirm it still loads with the caches in place.
+7. Run `php artisan optimize:clear` so local `.env` changes take effect again.
+
+On a real server, every line must read `PASS` before you announce the release.

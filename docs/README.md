@@ -12,6 +12,8 @@ This folder contains the project truth for the BSIT Academic LMS.
 | `folder-structure.md` | Target Laravel folder tree and file-placement rules |
 | `development-roadmap.md` | Beginner learning path and incremental implementation order |
 | `project-audit.md` | Current repository state and known gaps |
+| `deployment.md` | Production setup, verification, backups, and rollback runbook |
+| `defense.md` | SIA1 evidence pack: diagrams, matrix, checklist, tradeoffs, limitations |
 | `technology-choice.md` | Laravel decision, alternatives, SIA1 fit, and external reference assessment |
 | `glossary.md` | Beginner-friendly definitions |
 
@@ -39,13 +41,17 @@ Before implementing a feature, read:
 
 ## Reading order for an SIA1 defense
 
-Use these documents as evidence:
+Start with `defense.md`. It is written in presentation order and gathers the
+evidence from the other documents.
 
+- `defense.md` for the diagrams, the authorization matrix, the security
+  checklist, the tradeoffs, and the honest limitations
 - `technology-choice.md` for the technology decision
-- `architecture.md` for system context, data flow, and deployment diagrams
+- `architecture.md` for the full technical detail behind each diagram
 - `plan.md` for requirements and use cases
 - `development-roadmap.md` for implementation and testing evidence
 - `project-audit.md` for current limitations and risk awareness
+- `deployment.md` for the production release and rollback steps
 
 ## Change rules
 
@@ -60,8 +66,13 @@ Use these documents as evidence:
 
 ## Project status
 
-Phase 1 Laravel foundation, Phase 2 authentication/profile, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A through Phase 5F, Phase 6A enrollment foundation, Phase 6B free enrollment, and Phase 6C lesson access are human-approved. Phase 6D lesson progress foundation is implemented and awaiting schema confirmation for IT Learning Hub.
+V1 is built. Every phase from the Laravel foundation through Phase 15 is
+implemented, tested, and committed for IT Learning Hub.
 
 The approved target stack is Laravel 13, PHP 8.3 to 8.5, Blade, Tailwind CSS, MySQL, Laravel authentication and authorization, Laravel Storage, PayMongo, Composer, and Git.
+
+Two steps stay outside the repository: placing the release on a hosting
+account, and confirming one real test-mode payment with live credentials. Both
+are written up in `deployment.md`.
 
 `FOR_UI/adminator (FOR USER DASHBOARD)` remains a read-only visual reference. It is not application source code.
