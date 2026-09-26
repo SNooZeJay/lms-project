@@ -266,6 +266,49 @@ class FreeEnrollmentTest extends TestCase
         $this->actingAs($this->makeInstructor())->get(route('student.courses.index'))->assertForbidden();
     }
 
+    public function test_unpublishing_keeps_the_student_enrollment_and_history(): void
+    {
+        $student = $this->makeStudent();
+        $course = $this->makeFreeCourse(['status' => CourseStatus::Published]);
+
+        $this->actingAs($student)->post("/student/courses/{$course->id}/enroll");
+        $enrollmentId = Enrollment::query()->firstOrFail()->id;
+
+        // The instructor unpublish action returns a published course to draft.
+        $course->forceFill(['status' => CourseStatus::Draft])->save();
+
+        $this->assertDatabaseHas('enrollments', [
+            'id' => $enrollmentId,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($student)->get(route('courses.index'))->assertOk()->assertDontSee($course->title);
+        $this->actingAs($student)->get("/courses/{$course->slug}")->assertNotFound();
+        $this->actingAs($student)
+            ->post("/student/courses/{$course->id}/enroll")
+            ->assertNotFound();
+    }
+
+    public function test_my_courses_explains_an_unpublished_course_without_a_dead_link(): void
+    {
+        $student = $this->makeStudent();
+        $course = $this->makeFreeCourse(['title' => 'Retired Course', 'status' => CourseStatus::Published]);
+
+        Enrollment::factory()->active()->create([
+            'student_id' => $student->id,
+            'course_id' => $course->id,
+        ]);
+
+        $course->forceFill(['status' => CourseStatus::Archived])->save();
+
+        $this->actingAs($student)
+            ->get(route('student.courses.index'))
+            ->assertOk()
+            ->assertSee('Retired Course')
+            ->assertSee('This course is no longer published. Your enrollment is kept.')
+            ->assertDontSee(route('courses.show', $course), false);
+    }
+
     public function test_phase_six_b_adds_no_payment_lesson_access_or_progress_routes(): void
     {
         $this->assertFalse(Route::has('student.payments.checkout'));

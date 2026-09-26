@@ -435,6 +435,19 @@ Phase 6A rules:
 - Deleting a Course or User that has enrollments is rejected, so student history stays intact.
 - Phase 6A adds no enrollment route, form, or page, and no payment behavior.
 
+### Unpublishing after a student enrolled
+
+When an Instructor unpublishes a Course that a Student already enrolled in:
+
+- The enrollment record is untouched and keeps its status.
+- The Course leaves the public catalog.
+- The public Course address returns `404` for everyone, so an unpublished Course is never confirmed to exist.
+- New enrollment is blocked with `404`.
+- The Student `My courses` page still lists the enrollment and explains that the Course is no longer published. No dead link is shown.
+- Learning history and any later progress stay intact.
+
+Reading learning content for an already enrolled Student belongs to the student-owned course area, which is authorized by the enrollment instead of by publication. That page is part of the lesson access phase.
+
 ### Phase 6B free enrollment UI
 
 Phase 6B lets a Student enroll once in a published free Course and see only their own enrollments.

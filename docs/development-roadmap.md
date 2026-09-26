@@ -2026,6 +2026,7 @@ Approved on September 26, 2026. Free enrollment is implemented and passes 200 te
 - A cancelled or pending enrollment is refused instead of silently reactivated
 - A paid Course returns a clear message and creates nothing
 - The public page only reveals enrollment state to the signed-in Student
+- Unpublishing never touches an enrollment. The Student keeps the record, and `My courses` explains the state without a dead link.
 
 ### Phase 6B security tests
 
