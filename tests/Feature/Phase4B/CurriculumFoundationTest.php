@@ -220,7 +220,7 @@ class CurriculumFoundationTest extends TestCase
     {
         $this->assertFalse(Route::has('instructor.courses.modules.index'));
         $this->assertFalse(Route::has('student.learn.index'));
-        $this->assertFalse(Schema::hasTable('enrollments'));
+        $this->assertFalse(Schema::hasTable('lesson_progress'));
         $this->assertFalse(Schema::hasTable('payments'));
     }
 

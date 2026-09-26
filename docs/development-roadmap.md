@@ -4,7 +4,7 @@
 
 This roadmap turns the approved LMS plan into small, testable steps.
 
-Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, Phase 5B, Phase 5C, Phase 5D, and Phase 5E are human-approved. Phase 5F public Course catalog is implemented and awaiting human browser review. No later business phase has started.
+Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, Phase 5B, Phase 5C, Phase 5D, Phase 5E, and Phase 5F are human-approved. Phase 6A enrollment foundation is implemented and awaiting human schema review. Phase 6B free enrollment UI has not started.
 
 Do not skip directly to payment processing or dashboard polish.
 
@@ -1196,7 +1196,7 @@ A clean test database can migrate from zero and create valid Module, Lesson, and
 
 ## 10. Phase 4C: enrollment and progress foundation
 
-Create Enrollment and LessonProgress tables after the curriculum foundation passes.
+Superseded. The enrollment table is now Phase 6A, and progress records belong to the lesson access phase.
 
 ## 11. Phase 5A: Instructor Course Outline UI
 
@@ -1814,65 +1814,204 @@ Everything else stays behind enrollment in a later phase.
 
 An Instructor can publish a Course, and a guest can browse it and open safe public details.
 
-## 17. Phase 6: curriculum and materials
+## 17. Phase 6A: enrollment foundation
 
 ### Goal
 
-Manage ordered Modules, Lessons, and protected Learning Materials.
+Create the canonical enrollment record before any enrollment UI or payment work.
+
+### Status
+
+Approved on September 26, 2026. The foundation is implemented and passes 183 tests. Human review of the schema and migration evidence is the open checkpoint.
+
+### Confirmed scope
+
+- `enrollments` table exactly as documented in `architecture.md`
+- `EnrollmentStatus` enum with `pending_payment`, `active`, `completed`, `cancelled`
+- `Enrollment` model with Student and Course relationships
+- `User::enrollments()` and `Course::enrollments()` relationships
+- Enrollment factory
+- Migration and model tests
+
+### Explicitly not included
+
+- No enrollment route, form, or page
+- No payment record and no PayMongo behavior
+- No lesson access and no progress record
+- No archive, delete, or reorder behavior
+
+### Schema
+
+| Column | Type | Rules |
+|---|---|---|
+| `id` | BIGINT UNSIGNED | Primary key |
+| `student_id` | BIGINT UNSIGNED | Foreign key to users, restrict on delete |
+| `course_id` | BIGINT UNSIGNED | Foreign key to courses, restrict on delete |
+| `status` | ENUM | `pending_payment`, `active`, `completed`, `cancelled`, default `pending_payment` |
+| `activated_at` | TIMESTAMP | Nullable |
+| `completed_at` | TIMESTAMP | Nullable |
+| `cancelled_at` | TIMESTAMP | Nullable |
+| `last_accessed_at` | TIMESTAMP | Nullable |
+| timestamps | TIMESTAMP | Required |
+
+Indexes and constraints:
+
+- Unique `(student_id, course_id)` so a Student has one canonical enrollment per Course
+- Index on `course_id` and on `status` for access checks
+- Both foreign keys restrict deletion, so a Course with enrollments cannot be deleted
+
+### Input, Process, and Output
+
+**Input**
+
+- No user input. This phase only creates the data foundation.
+
+**Process**
+
+- Create the `enrollments` table with the documented columns
+- Add the unique and index rules
+- Add the `EnrollmentStatus` enum
+- Add the `Enrollment` model with casts and relationships
+- Add the Enrollment factory
+- Add User and Course relationships
+
+**Output**
+
+- An `enrollments` table that matches the documented design
+- A tested `Enrollment` model and enum
+- No UI, no payment, and no access behavior
+
+### Task list
+
+- [x] Task 1: Record the approved enrollment schema
+- [x] Task 2: Add failing enrollment foundation tests
+- [x] Task 3: Add the migration, enum, model, and factory
+- [x] Task 4: Add User and Course relationships
+- [x] Task 5: Run test, build, and security gates
+- [ ] Task 6: Human review of the schema and migration evidence
+
+### Phase 6A implementation evidence
+
+- `database/migrations/0001_01_01_000008_create_enrollments_table.php`
+- `app/Enums/EnrollmentStatus.php`
+- `app/Models/Enrollment.php`
+- `app/Models/User.php` gained `enrollments()`
+- `app/Models/Course.php` gained `enrollments()`
+- `database/factories/EnrollmentFactory.php`
+- `tests/Feature/Phase6A/EnrollmentFoundationTest.php`
+
+### Phase 6A automated evidence
+
+- `php artisan test` passes with 183 tests and 743 assertions
+- `./vendor/bin/pint --test` passes on 138 files
+- `php artisan migrate` and `php artisan migrate:rollback` both succeed on the local database
+- `npm run build`, `composer validate`, `composer audit`, and `npm audit` pass
+- Route, config, and view cache checks pass
+- Four earlier guards that blocked the `enrollments` table now check the still-absent `lesson_progress` and `payments` tables
+
+### Phase 6A security notes
+
+- The unique `(student_id, course_id)` rule makes a duplicate enrollment impossible at the database level
+- Both foreign keys restrict deletion, so a Course or User with enrollments cannot be removed
+- The enum cast rejects an unknown status before it reaches the database, and MySQL rejects it too
+- `status` and every timestamp stay server-owned. Nothing in this phase writes them from a request.
+- No enrollment route, form, or page exists yet
+
+### Phase 6A security tests
+
+- A Student can have only one enrollment per Course.
+- Deleting a Course that has enrollments is rejected by the database.
+- Deleting a User that has enrollments is rejected by the database.
+- Status accepts only the four documented values.
+- Timestamps stay nullable until a later action sets them.
+
+## 18. Phase 6B: free enrollment UI
+
+### Goal
+
+Let a Student enroll once in a published free Course and see their own enrollments.
+
+### Status
+
+Waiting for Phase 6A approval. Paid enrollment and payment stay out of this phase.
+
+### Confirmed scope
+
+- Enroll action for a published free Course
+- Student `My courses` page
+- `EnrollmentPolicy` for student-owned records
+- Duplicate prevention that reuses the existing enrollment
+- No payment and no PayMongo behavior
+
+### Explicitly not included
+
+- No paid enrollment, no `pending_payment` activation, and no payment record
+- No lesson content delivery and no progress
+- No cancel, refund, or delete behavior
+
+### Input, Process, and Output
+
+**Input**
+
+- Student session with the student role
+- Published free Course slug
+
+**Process**
+
+- Run `EnrollmentPolicy` and re-check the student role
+- Reject a draft, archived, or paid Course
+- Reuse an existing enrollment instead of creating a duplicate
+- Create one `active` enrollment with `activated_at` set on the server
+- Never accept `student_id`, `status`, or timestamps from the request
+- Redirect to the Student `My courses` page
+
+**Output**
+
+- One active enrollment per Student and Course
+- A student-owned course list that no other Student can read
+- No payment, no lesson access, and no progress
+
+### Tests
+
+- A published free Course creates one active enrollment
+- Repeated requests reuse the same enrollment
+- A draft, archived, or paid Course cannot be enrolled
+- One Student cannot read another Student's enrollment
+- A suspended Student cannot enroll
+
+### Exit condition
+
+A Student can enroll once in a free Course and see only their own enrollments.
+
+## 19. Phase 7: curriculum reorder, archive, and private uploads
+
+### Goal
+
+Finish curriculum management and protected file delivery.
 
 ### Work
 
-- Add Module create, update, archive, and reorder
-- Add Lesson create, update, archive, and reorder
-- Add private file upload
-- Add approved external link
-- Add material download controller
-- Add private Storage disks
+- Add Module and Lesson reorder
+- Add Module, Lesson, and Course archive
+- Add private file upload on a private Storage disk
+- Add approved external link handling
+- Add an authorized material download controller
 - Add safe file validation
 
 ### Tests
 
-- Module and Lesson positions remain unique
-- Parent relationships match
-- Draft content stays private
-- Student without enrollment cannot download material
-- Instructor can manage material for owned Course
-- Administrator can manage approved material
+- Module and Lesson positions remain unique after a reorder
+- Archived content stays out of the public catalog
+- A Student without enrollment cannot download a material
+- An Instructor can manage material for an owned Course
+- An Administrator can manage approved material
 - Executable and unsafe file types fail validation
 
 ### Exit condition
 
 An Instructor can build a complete Course outline with authorized material access.
 
-## 18. Phase 7: free enrollment
-
-### Goal
-
-Prove the first complete learning access workflow before payment work.
-
-### Work
-
-- Add free enrollment Action
-- Add Student My Courses page
-- Add enrollment Policy
-- Add duplicate prevention
-- Add access-granting checks
-- Add unpublish behavior
-
-### Tests
-
-- Published free Course creates one active enrollment
-- Repeated requests reuse one enrollment
-- Draft Course cannot be enrolled
-- Unpublished Course blocks new enrollment
-- Existing active access survives unpublishing
-- One Student cannot read another Student’s enrollment
-
-### Exit condition
-
-A Student can enroll once in a free Course and open authorized published Lessons.
-
-## 19. Phase 8: lesson access and progress
+## 21. Phase 8: lesson access and progress
 
 ### Goal
 
@@ -1900,7 +2039,7 @@ Persist Lesson activity and calculate progress from records.
 
 A Student can complete Lessons and see database-backed progress.
 
-## 20. Phase 9: quizzes
+## 22. Phase 9: quizzes
 
 ### Goal
 
@@ -1931,7 +2070,7 @@ Deliver safe Questions and enforce server-side grading.
 
 A Student can complete a Quiz and receive a correct server-calculated result.
 
-## 21. Phase 10: completion and certificates
+## 23. Phase 10: completion and certificates
 
 ### Goal
 
@@ -1959,7 +2098,7 @@ Verify Course completion and issue one certificate.
 
 An eligible Student receives one printable certificate with safe authenticated access.
 
-## 22. Phase 11: payment architecture
+## 24. Phase 11: payment architecture
 
 ### Goal
 
@@ -1988,7 +2127,7 @@ Finalize payment behavior before calling PayMongo.
 
 Payment state transitions are fully specified and testable without live credentials.
 
-## 23. Phase 12: PayMongo integration
+## 25. Phase 12: PayMongo integration
 
 ### Goal
 
@@ -2014,7 +2153,7 @@ Run the approved webhook scenarios from `plan.md` and `architecture.md`.
 
 A real test-mode payment activates one paid Enrollment once, and repeated delivery causes no duplicate.
 
-## 24. Phase 13: dashboards and reports
+## 26. Phase 13: dashboards and reports
 
 ### Goal
 
@@ -2041,7 +2180,7 @@ Add role-specific pages using real authorized data.
 
 All dashboards work with real authorized data and approved empty states.
 
-## 25. Phase 14: quality and accessibility
+## 27. Phase 14: quality and accessibility
 
 ### Goal
 
@@ -2086,7 +2225,7 @@ php artisan route:list
 
 Every acceptance criterion in `plan.md` passes with recorded evidence.
 
-## 26. Phase 15: deployment and defense
+## 28. Phase 15: deployment and defense
 
 ### Goal
 
@@ -2122,7 +2261,7 @@ Deploy a tested release and prepare the SIA1 presentation.
 
 The deployed application works, the team can explain the architecture, and critical workflows remain testable.
 
-## 27. Commands after scaffolding
+## 29. Commands after scaffolding
 
 Use the commands generated by the selected Laravel starter kit.
 
@@ -2142,7 +2281,7 @@ npm run build
 
 Do not run `migrate:fresh` against a shared or production database.
 
-## 28. Definition of ready
+## 30. Definition of ready
 
 A task is ready when:
 
@@ -2154,7 +2293,7 @@ A task is ready when:
 - Documentation impact is known
 - No unresolved product decision remains
 
-## 29. Definition of done
+## 31. Definition of done
 
 A task is done when:
 
@@ -2168,8 +2307,8 @@ A task is done when:
 - No unrelated file changed
 - The team can explain the change
 
-## 30. Current next action
+## 32. Current next action
 
-The current next action is human browser review of the implemented Phase 5F public Course catalog.
+The current next action is human review of the Phase 6A enrollment foundation, then Phase 6B free enrollment UI.
 
-Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Course outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D material authoring, and Phase 5E publishing are complete and human-approved. Do not add enrollment, payment, progress, upload, download, delete, or archive behavior.
+Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Course outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D material authoring, Phase 5E publishing, and Phase 5F public catalog are complete and human-approved. Do not add payment, progress, upload, download, delete, or archive behavior.

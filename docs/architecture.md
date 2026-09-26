@@ -297,6 +297,10 @@ Phase 5D accepts only `text`, `code`, `video_link`, and `external_link` material
 
 Phase 5E sends a POST with no trusted body fields. It does not add a public catalog route, archive, delete, reorder, upload, download, enrollment, or payment route.
 
+### Phase 6A enrollment foundation
+
+Phase 6A adds no route. It creates the `enrollments` table, the `EnrollmentStatus` enum, the `Enrollment` model, and the `User::enrollments()` and `Course::enrollments()` relationships. The free enrollment UI is Phase 6B.
+
 ### Phase 5F public catalog routes
 
 | Method | URI | Purpose | Protection |
@@ -1167,16 +1171,18 @@ Constraints:
 
 ### `enrollments`
 
+Status: built in Phase 6A. Migration `0001_01_01_000008_create_enrollments_table.php`.
+
 | Column | Type | Rules |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | Primary key |
-| `student_id` | BIGINT UNSIGNED | Foreign key to users |
-| `course_id` | BIGINT UNSIGNED | Foreign key to courses |
-| `status` | ENUM | `pending_payment`, `active`, `completed`, `cancelled` |
-| `activated_at` | TIMESTAMP | Nullable |
-| `completed_at` | TIMESTAMP | Nullable |
-| `cancelled_at` | TIMESTAMP | Nullable |
-| `last_accessed_at` | TIMESTAMP | Nullable |
+| `student_id` | BIGINT UNSIGNED | Foreign key to users, restrict on delete |
+| `course_id` | BIGINT UNSIGNED | Foreign key to courses, restrict on delete |
+| `status` | ENUM | `pending_payment`, `active`, `completed`, `cancelled`; default `pending_payment` |
+| `activated_at` | TIMESTAMP | Nullable, server-owned |
+| `completed_at` | TIMESTAMP | Nullable, server-owned |
+| `cancelled_at` | TIMESTAMP | Nullable, server-owned |
+| `last_accessed_at` | TIMESTAMP | Nullable, server-owned |
 | timestamps | TIMESTAMP | Required |
 
 Unique constraint:
@@ -1184,6 +1190,17 @@ Unique constraint:
 ```text
 (student_id, course_id)
 ```
+
+Indexes:
+
+- `course_id` for access checks
+- `status` for state checks
+
+Server rules:
+
+- `status` and every timestamp are written by Actions, never by a request.
+- The unique rule makes a duplicate enrollment impossible even under a double click.
+- Restrict on delete keeps student history intact.
 
 ### `payments`
 

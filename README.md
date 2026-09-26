@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, and Phase 5E Course publishing are human-approved. Phase 5F public Course catalog is implemented and awaiting browser review.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, and Phase 5F public Course catalog are human-approved. Phase 6A enrollment foundation is implemented and awaiting schema review.
 
 The repository currently contains:
 
@@ -184,21 +184,20 @@ npm audit
 npm run build
 ```
 
-## Phase 5F checkpoint
+## Phase 6A checkpoint
 
-Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, and Phase 5E Course publishing are human-approved. The Phase 5F slice adds:
+Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, Phase 5D Learning Material metadata authoring, Phase 5E Course publishing, and Phase 5F public Course catalog are human-approved. The Phase 6A slice adds:
 
-- A public catalog at `/courses` and public details at `/courses/{slug}`
-- Published Courses only, with a `404` for a draft or archived slug
-- Search by title and filters for category, level, and free or paid type
-- Public outline structure with no Lesson content and no material data
-- Instructor display name only, never an email address
-- A Courses link in the shared header and on the home page
-- No enrollment, payment, progress, upload, download, delete, or archive behavior
+- An `enrollments` table that matches the documented design
+- A unique `(student_id, course_id)` rule so a Student has one canonical enrollment per Course
+- Restrict on delete for both foreign keys, so student history cannot be lost
+- An `EnrollmentStatus` enum with `pending_payment`, `active`, `completed`, and `cancelled`
+- An `Enrollment` model, an Enrollment factory, and User and Course relationships
+- No enrollment page, no payment, no progress, and no lesson access
 
-Delete and archiving stay deferred on purpose. A later phase will use status-based archiving so student progress and payment history stay intact.
+This phase changes the database schema, so the schema needs human review before the enrollment page is built.
 
-The Phase 5F browser review checkpoint is open.
+The Phase 6A schema review checkpoint is open.
 
 The local Administrator is provisioned with:
 

@@ -28,10 +28,11 @@ The current project includes:
 - Instructor Learning Material metadata for text, code, and link materials
 - Instructor publish and unpublish for owned courses
 - A public course catalog and public course details pages
+- An enrollment database record with four documented states
 
 The following features are not built yet:
 
-- Enrollment
+- The student enrollment page
 - Reading lesson content and materials after enrolling
 - Reordering, deleting, or archiving curriculum content
 - File uploads and material downloads
@@ -507,7 +508,20 @@ You do not need to sign in for this part. Open a private window so you are not s
 14. Sign in again, publish the course, and confirm it returns to the catalog.
 15. Check the catalog and details page at 390px width.
 
-## 14. Create a Student account
+## 14. Review the enrollment database record
+
+This slice adds no page. It adds a database table, so review it with commands.
+
+1. Open PowerShell in the project folder.
+2. Run `php artisan migrate:status` and confirm the enrollment migration shows `Ran`.
+3. Run `php artisan db:table enrollments --database=mysql` if the command is available, or use your database tool.
+4. Confirm the table has `student_id`, `course_id`, `status`, `activated_at`, `completed_at`, `cancelled_at`, and `last_accessed_at`.
+5. Confirm `status` allows only `pending_payment`, `active`, `completed`, and `cancelled`.
+6. Run `php artisan test --filter=Phase6A` and confirm the enrollment foundation tests pass.
+7. Run `php artisan migrate:rollback --step=1` and confirm the table is removed.
+8. Run `php artisan migrate` and confirm the table is created again.
+
+## 15. Create a Student account
 
 Use a separate browser or private window if you want to keep the Administrator session.
 
@@ -520,7 +534,7 @@ Use a separate browser or private window if you want to keep the Administrator s
 
 The registration form has no role selector. Public registration cannot create an Administrator.
 
-## 15. Find email verification and reset links
+## 16. Find email verification and reset links
 
 The local development environment uses Laravel's log mailer.
 
@@ -542,7 +556,7 @@ Copy the local link into the browser.
 
 The log is local. Do not upload or share `storage/logs/laravel.log` because it can contain private links and account details.
 
-## 16. Run the frontend development server
+## 17. Run the frontend development server
 
 Use this when you are changing CSS or JavaScript.
 
@@ -567,7 +581,7 @@ For normal work, you can stop Vite with `Ctrl + C`. You can also build the final
 npm run build
 ```
 
-## 17. Run the automated checks
+## 18. Run the automated checks
 
 Run these commands from the project folder.
 
@@ -620,7 +634,7 @@ This shows all registered URLs and their controller or action.
 php artisan optimize:clear
 ```
 
-## 18. Useful commands
+## 19. Useful commands
 
 | Command | What it does |
 |---|---|
@@ -635,7 +649,7 @@ php artisan optimize:clear
 | `npm run dev` | Starts the Vite development server |
 | `npm run build` | Builds frontend assets |
 
-## 19. Troubleshooting
+## 20. Troubleshooting
 
 ### `composer` is not recognized
 
@@ -757,7 +771,7 @@ php artisan owner:bootstrap --show-password
 
 If you no longer need the local Administrator, ask before removing the protected file or changing the account.
 
-## 20. Project folder guide
+## 21. Project folder guide
 
 These are the folders you will use most often:
 
@@ -779,7 +793,7 @@ Do not edit files in `vendor/`, `node_modules/`, or `public/build/` by hand. The
 
 `FOR_UI/adminator (FOR USER DASHBOARD)` is a read-only visual reference. It is not the application source code.
 
-## 21. Security rules
+## 22. Security rules
 
 Keep these rules in mind:
 
@@ -791,7 +805,7 @@ Keep these rules in mind:
 - Keep `MAIL_MAILER=log` for local demonstrations.
 - Do not use a real payment secret until the payment architecture phase is approved.
 
-## 22. Recommended beginner order
+## 23. Recommended beginner order
 
 When you are learning the project, use this order:
 
@@ -809,7 +823,8 @@ When you are learning the project, use this order:
 12. Add a text material and a link material to a Lesson.
 13. Publish the Course, then unpublish it.
 14. Open `/courses` in a private window and browse the published Course.
-15. Read the relevant test before changing a feature.
-16. Run `php artisan test` before and after your change.
+15. Run `php artisan migrate:status` and confirm the enrollment migration ran.
+16. Read the relevant test before changing a feature.
+17. Run `php artisan test` before and after your change.
 
 You do not need to understand the whole Laravel framework before running the application. Start with the commands in this tutorial, then inspect one small feature at a time.

@@ -414,6 +414,39 @@ Phase 5F rules:
 - The catalog needs no account. Browsing is public.
 - Phase 5F does not add enrollment, payment, progress, certificates, uploads, downloads, delete, or archive behavior.
 
+### Phase 6A enrollment foundation
+
+Phase 6A creates the canonical enrollment record before any enrollment UI.
+
+Phase 6A includes:
+
+- `enrollments` table
+- `EnrollmentStatus` enum
+- `Enrollment` model with Student and Course relationships
+- `User::enrollments()` and `Course::enrollments()` relationships
+- Enrollment factory
+- Migration and model tests
+
+Phase 6A rules:
+
+- One canonical enrollment per Student and Course, enforced by a unique database rule.
+- Status accepts only `pending_payment`, `active`, `completed`, or `cancelled`, and defaults to `pending_payment`.
+- `status` and every timestamp stay server-owned.
+- Deleting a Course or User that has enrollments is rejected, so student history stays intact.
+- Phase 6A adds no enrollment route, form, or page, and no payment behavior.
+
+### Phase 6B free enrollment UI
+
+Phase 6B lets a Student enroll once in a published free Course and see only their own enrollments.
+
+Phase 6B rules:
+
+- Only the student role can enroll, and only in a published free Course.
+- A draft, archived, or paid Course cannot be enrolled in this phase.
+- A repeated request reuses the existing enrollment instead of creating a duplicate.
+- A new enrollment is `active` with `activated_at` set by the server.
+- No payment, no PayMongo behavior, no lesson content, and no progress.
+
 ### Deferred: delete and archive
 
 Delete is deliberately not part of Phase 5C.
