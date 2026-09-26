@@ -39,10 +39,17 @@ class CourseCatalogSeeder extends Seeder
      * The account that owns the catalog. Seed data needs a real owner because
      * the instructor_id is a foreign key, and a course cannot exist without one.
      *
-     * The password is a documented demo value rather than a secret, and it can
-     * be overridden from the environment for a shared environment.
+     * This is the project's own Instructor account, matched on its email. If it
+     * already exists the seeder uses it as it is, so the catalog belongs to the
+     * person who actually teaches here rather than to an invented name. If it
+     * does not exist yet, a fresh database gets one with the same identity.
+     *
+     * The password below is a documented demo value rather than a secret, and it
+     * is only ever used when the account has to be created from nothing.
      */
-    private const INSTRUCTOR_EMAIL = 'catalog.instructor@ncst.edu.ph';
+    private const INSTRUCTOR_EMAIL = 'jayzeeb65@gmail.com';
+
+    private const INSTRUCTOR_NAME = 'Jay Zee Test';
 
     public function run(): void
     {
@@ -66,11 +73,16 @@ class CourseCatalogSeeder extends Seeder
         $existing = User::query()->where('email', self::INSTRUCTOR_EMAIL)->first();
 
         if ($existing !== null) {
-            return $existing;
+            // Only the role is enforced. An existing account keeps its own name,
+            // password, and biography, because this is a real account rather than
+            // a fixture the seeder is allowed to reshape.
+            $existing->profile->forceFill(['role' => UserRole::Instructor])->save();
+
+            return $existing->fresh();
         }
 
         $user = User::factory()->create([
-            'name' => 'Ramon Delos Reyes',
+            'name' => self::INSTRUCTOR_NAME,
             'email' => self::INSTRUCTOR_EMAIL,
             'password' => Hash::make((string) env('SEED_INSTRUCTOR_PASSWORD', 'ChangeMe!Catalog2026')),
         ]);
