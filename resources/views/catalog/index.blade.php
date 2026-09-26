@@ -46,9 +46,9 @@
                 </select>
             </div>
 
-            <div class="flex items-end gap-3">
-                <button type="submit" class="inline-flex min-h-11 flex-1 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Apply filters</button>
-                <a href="{{ route('courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Clear filters</a>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus sm:w-auto sm:flex-1">Apply filters</button>
+                <a href="{{ route('courses.index') }}" class="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus sm:w-auto">Clear filters</a>
             </div>
         </form>
 

@@ -43,23 +43,23 @@
 
     <div class="flex min-h-screen flex-col">
         <header class="sticky top-0 z-30 border-b border-line bg-canvas">
-            <div class="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-                <a href="{{ route('home') }}" class="flex min-h-11 items-center rounded-md" aria-label="IT Learning Hub home">
-                    <span class="leading-tight">
-                        <span class="block text-sm font-semibold text-ink">IT Learning Hub</span>
-                        <span class="block text-xs text-ink-muted">Academic learning platform</span>
+            <div class="mx-auto flex min-h-16 w-full max-w-7xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-2 sm:flex-nowrap sm:py-0 sm:px-6 lg:px-8">
+                <a href="{{ route('home') }}" class="flex min-w-0 min-h-11 items-center rounded-md" aria-label="IT Learning Hub home">
+                    <span class="min-w-0 leading-tight">
+                        <span class="block truncate text-sm font-semibold text-ink">IT Learning Hub</span>
+                        <span class="hidden truncate text-xs text-ink-muted sm:block">Academic learning platform</span>
                     </span>
                 </a>
 
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Courses</a>
+                <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                    <a href="{{ route('courses.index') }}" class="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-md border border-line bg-surface px-2.5 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus sm:px-3 sm:py-2 sm:text-sm">Courses</a>
                     @auth
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Sign out</button>
+                            <button type="submit" class="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-md border border-line bg-surface px-2.5 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus sm:px-3 sm:py-2 sm:text-sm">Sign out</button>
                         </form>
                     @else
-                        <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Sign in</a>
+                        <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-md border border-line bg-surface px-2.5 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus sm:px-3 sm:py-2 sm:text-sm">Sign in</a>
                     @endauth
                     <x-theme-toggle />
                 </div>
@@ -73,7 +73,7 @@
         <footer class="border-t border-line bg-surface">
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-ink-muted sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
                 <p>IT Learning Hub</p>
-                <p>Public course catalog. Enrollment, lesson content, progress, and payments are not enabled yet.</p>
+                <p>Free course enrollment and lesson reading are live. Progress, quizzes, uploads, and payments are not enabled yet.</p>
             </div>
         </footer>
     </div>

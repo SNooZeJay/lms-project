@@ -57,6 +57,10 @@ The design must help users:
 
 Usability, accessibility, consistency, and responsiveness take priority over visual novelty.
 
+### Hard layout rule
+
+No page may be wider than the viewport. The shared header must never force horizontal overflow on a 390 pixel screen, so the brand truncates, the subtitle is hidden on small screens, the row may wrap, and the action buttons shrink on mobile. Any row of controls must wrap or stack instead of pushing content off screen. `overflow-x-hidden` is a safety net, never a fix, because it hides the symptom by cutting content off.
+
 ## 4. Visual identity
 
 ### Identity motif

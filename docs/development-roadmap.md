@@ -2186,6 +2186,31 @@ This slice follows the reading above: the enrollment and the history are preserv
 - Link materials open in a new tab with `rel="noopener noreferrer"`
 - Lesson text is escaped by Blade and paragraphs are split on blank lines only
 
+### Phase 6C assisted review evidence
+
+The desktop browser connector was not connected to the session, so the review was run without it. The reviewer approved running it in this shape.
+
+Method:
+
+- A scripted HTTP walkthrough with real login sessions and cookies, covering the guest, student, unenrolled student, and instructor paths.
+- Headless Edge driven over the DevTools protocol, which allows a real session cookie to be set, so authenticated pages could be measured and captured.
+
+Walkthrough results: 17 checks, all passing. Guest sees the catalog and the sign-in prompt, a student enrolls once, the student course page lists the published lesson, the lesson page shows content and both materials, the course page flips to `Enrolled`, storage details and progress controls are absent, an unenrolled student gets `403`, an instructor gets `403`, a cross-course lesson id gets `404`, and a guest is redirected to sign in.
+
+Findings and fixes:
+
+- The shared header could not shrink below about 440 pixels, so on a 390 pixel viewport the actions were pushed past the edge. The brand text now truncates, the subtitle is hidden on small screens, the header can wrap, and the buttons use smaller padding and size on mobile. This is a layout hardening change on a shared component.
+- The catalog filter buttons sat in a non-wrapping row, so `Clear filters` was pushed off a narrow screen. The row now stacks on mobile and sits in one row from `sm` up.
+- The footer still claimed that enrollment and lesson content were not enabled. The copy now matches the built behavior.
+
+Measured overflow after the fixes, at 390 and 1440 pixels, for the catalog, the public course page, `My courses`, the student course page, the lesson page, and the forbidden page: `scrollWidth` equals `clientWidth` on every page and no element extends past the right edge.
+
+Screenshots reviewed at 390 and 1440 pixels: catalog, public course page, `My courses`, student course page, lesson page, and the 403 page. All render correctly, no clipped content, no leaked lesson text on the forbidden page.
+
+Cleanup: the temporary review course, modules, lessons, materials, enrollment, and three temporary accounts were deleted, and the database was verified back to its original three users, two courses, and one enrollment.
+
+Limitation: layout is verified by measurement and screenshots, not by an automated layout regression test, because this project has no browser test runner.
+
 ### Phase 6C security tests
 
 - A Student with a granting enrollment reads a published Lesson.
