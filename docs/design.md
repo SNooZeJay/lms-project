@@ -444,6 +444,17 @@ Phase 5C adds three edit forms and Edit links on the Course outline:
 - Read-only facts stay visible: slug, position, status, and price rule help text
 - No delete, archive, reorder, publish, or upload control appears
 
+### Phase 5D Learning Material authoring
+
+Phase 5D adds material metadata to each Lesson on the outline:
+
+- **Add material** uses a title, a type select, and a matching content or link field
+- Only `Text`, `Code`, `Video link`, and `External link` appear in the type select
+- File types are not offered because uploads are not built yet
+- Each material row shows its type and position and links to its edit page
+- Failed submits keep the typed text and reopen the same form
+- No upload, download, delete, or publish control appears
+
 ### Course catalog
 
 - Search by course title

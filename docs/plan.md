@@ -343,6 +343,29 @@ Phase 5C rules:
 - Free Courses must still use a price of `0` and paid Courses a positive price.
 - Phase 5C does not add delete, archive, reorder, publish, upload, enrollment, or payment behavior.
 
+### Phase 5D Learning Material metadata authoring
+
+Phase 5D lets an Instructor add and edit Learning Material records on an owned Lesson.
+
+Phase 5D includes:
+
+- Add Material form and action
+- Edit Material form and action
+- Text, code, video link, and external link types only
+- Server-owned parent ID, uploader, position, and storage metadata
+- LearningMaterialPolicy ownership checks
+
+Phase 5D rules:
+
+- Only the owning Instructor can add or edit materials.
+- Material positions are assigned by the server inside the Lesson.
+- The acting Instructor is recorded as the uploader.
+- Storage disk, path, MIME type, and byte size stay empty and server-owned.
+- Image, PDF, and document types are rejected because uploads are not built yet.
+- Video link and external link materials must carry a valid link.
+- Text and code materials must carry their content.
+- Phase 5D does not add upload, download, delete, archive, publish, enrollment, or payment behavior.
+
 ### Deferred: delete and archive
 
 Delete is deliberately not part of Phase 5C.

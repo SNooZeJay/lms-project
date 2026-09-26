@@ -41,6 +41,9 @@ Route::middleware([...$authenticated, 'role:instructor'])->group(function (): vo
     Route::post('/instructor/courses/{course}/modules/{module}/lessons', [CurriculumController::class, 'storeLesson'])->name('instructor.courses.modules.lessons.store');
     Route::get('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/edit', [CurriculumController::class, 'editLesson'])->name('instructor.courses.modules.lessons.edit');
     Route::patch('/instructor/courses/{course}/modules/{module}/lessons/{lesson}', [CurriculumController::class, 'updateLesson'])->name('instructor.courses.modules.lessons.update');
+    Route::post('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials', [CurriculumController::class, 'storeMaterial'])->name('instructor.courses.materials.store');
+    Route::get('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials/{material}/edit', [CurriculumController::class, 'editMaterial'])->name('instructor.courses.materials.edit');
+    Route::patch('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials/{material}', [CurriculumController::class, 'updateMaterial'])->name('instructor.courses.materials.update');
 });
 
 Route::middleware([...$authenticated, 'role:administrator'])->group(function (): void {

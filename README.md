@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, and Phase 5B curriculum authoring are human-approved. Phase 5C content editing is implemented and awaiting browser review.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, and Phase 5C content editing are human-approved. Phase 5D Learning Material metadata authoring is implemented and awaiting browser review.
 
 The repository currently contains:
 
@@ -184,19 +184,20 @@ npm audit
 npm run build
 ```
 
-## Phase 5C checkpoint
+## Phase 5D checkpoint
 
-Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, and Phase 5B curriculum authoring are human-approved. The Phase 5C slice adds:
+Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, and Phase 5C content editing are human-approved. The Phase 5D slice adds:
 
-- Instructor-owned edit forms for Course, Module, and Lesson
-- Server-owned owner, parent, position, status, currency, and slug fields
-- Shared free and paid price rules for create and update
-- `CoursePolicy`, `ModulePolicy`, and `LessonPolicy` checks on every edit
-- No delete, archive, reorder, publish, upload, enrollment, or payment behavior
+- Instructor-owned Learning Material metadata forms on each Lesson
+- Text, code, video link, and external link materials only
+- Rejection of image, PDF, and document types until uploads exist
+- Server-owned parent, uploader, position, and storage metadata
+- `LearningMaterialPolicy` checks on every material action
+- No upload field, download route, delete, publish, enrollment, or payment behavior
 
 Delete is deferred on purpose. A later phase will use status-based archiving so student progress and payment history stay intact.
 
-The Phase 5C browser review checkpoint is open.
+The Phase 5D browser review checkpoint is open.
 
 The local Administrator is provisioned with:
 

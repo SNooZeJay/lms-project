@@ -72,13 +72,50 @@
                                 @foreach ($lesson->learningMaterials as $material)
                                     <li class="border-l-2 border-line px-3 py-2 text-sm">
                                         <span class="font-medium text-ink">{{ $material->title }}</span>
-                                        <span class="block text-xs text-ink-muted">{{ ucfirst($material->material_type->value) }} · Position {{ $material->position }}</span>
+                                        <span class="block text-xs text-ink-muted">{{ ucfirst(str_replace('_', ' ', $material->material_type->value)) }} · Position {{ $material->position }}</span>
+                                        <a href="{{ route('instructor.courses.materials.edit', [$course, $module, $lesson, $material]) }}" class="mt-2 inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Edit material</a>
                                     </li>
                                 @endforeach
                             </ul>
                         @else
                             <p class="mt-4 text-sm text-ink-muted">No Learning Materials are recorded yet.</p>
                         @endif
+
+                        @php
+                            $materialFailed = old('form_context') === 'material:'.$lesson->id;
+                        @endphp
+                        <details class="mt-4 border border-line bg-surface-muted px-4 py-3"{!! $materialFailed ? ' open' : '' !!}>
+                            <summary class="cursor-pointer text-sm font-semibold text-primary-text">Add material</summary>
+                            <form method="POST" action="{{ route('instructor.courses.materials.store', [$course, $module, $lesson]) }}" class="mt-4 space-y-4">
+                                @csrf
+                                <input type="hidden" name="form_context" value="material:{{ $lesson->id }}">
+                                <div>
+                                    <label for="material-title-{{ $lesson->id }}" class="block text-sm font-semibold text-ink">Material title</label>
+                                    <input id="material-title-{{ $lesson->id }}" name="title" type="text" required maxlength="255" value="{{ $materialFailed ? old('title') : '' }}" class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                                </div>
+                                <div>
+                                    <label for="material-type-{{ $lesson->id }}" class="block text-sm font-semibold text-ink">Material type</label>
+                                    <select id="material-type-{{ $lesson->id }}" name="material_type" required class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                                        @foreach (\App\Enums\LearningMaterialType::cases() as $type)
+                                            @continue(in_array($type->value, ['image', 'pdf', 'document'], true))
+                                            <option value="{{ $type->value }}" @selected($materialFailed && old('material_type') === $type->value)>{{ ucfirst(str_replace('_', ' ', $type->value)) }}</option>
+                                        @endforeach
+                                    </select>
+                                    <p class="mt-2 text-xs leading-5 text-ink-muted">File uploads are not available yet, so only text and link types are listed.</p>
+                                </div>
+                                <div>
+                                    <label for="material-content-{{ $lesson->id }}" class="block text-sm font-semibold text-ink">Material content</label>
+                                    <textarea id="material-content-{{ $lesson->id }}" name="content_text" rows="4" maxlength="100000" class="mt-2 w-full rounded-md border border-line bg-surface px-3 py-2 font-mono text-sm text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">{{ $materialFailed ? old('content_text') : '' }}</textarea>
+                                    <p class="mt-2 text-xs leading-5 text-ink-muted">Required for Text and Code materials.</p>
+                                </div>
+                                <div>
+                                    <label for="material-link-{{ $lesson->id }}" class="block text-sm font-semibold text-ink">Material link</label>
+                                    <input id="material-link-{{ $lesson->id }}" name="external_url" type="url" inputmode="url" maxlength="2048" placeholder="https://example.com/page" value="{{ $materialFailed ? old('external_url') : '' }}" class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                                    <p class="mt-2 text-xs leading-5 text-ink-muted">Required for Video link and External link materials.</p>
+                                </div>
+                                <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Add material</button>
+                            </form>
+                        </details>
                     </article>
                 @empty
                     <p class="px-5 py-5 text-sm text-ink-muted">No Lessons are recorded in this Module yet.</p>

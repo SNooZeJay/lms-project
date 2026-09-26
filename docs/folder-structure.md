@@ -61,8 +61,10 @@ lms-project/
 │   │   ├── Courses/
 │   │   │   ├── CreateCourse.php
 │   │   │   ├── Curriculum/
+│   │   │   │   ├── CreateLearningMaterial.php
 │   │   │   │   ├── CreateLesson.php
 │   │   │   │   ├── CreateModule.php
+│   │   │   │   ├── UpdateLearningMaterial.php
 │   │   │   │   ├── UpdateLesson.php
 │   │   │   │   └── UpdateModule.php
 │   │   │   ├── PublishCourse.php
@@ -143,9 +145,11 @@ lms-project/
 │   │   │   ├── Auth/
 │   │   │   ├── Courses/
 │   │   │   │   ├── CreateCourseRequest.php
+│   │   │   │   ├── CreateLearningMaterialRequest.php
 │   │   │   │   ├── CreateLessonRequest.php
 │   │   │   │   ├── CreateModuleRequest.php
 │   │   │   │   ├── UpdateCourseRequest.php
+│   │   │   │   ├── UpdateLearningMaterialRequest.php
 │   │   │   │   ├── UpdateLessonRequest.php
 │   │   │   │   └── UpdateModuleRequest.php
 │   │   │   ├── Enrollment/
@@ -297,6 +301,7 @@ lms-project/
 │   │   ├── Phase5A/
 │   │   ├── Phase5B/
 │   │   ├── Phase5C/
+│   │   ├── Phase5D/
 │   │   ├── Role/
 │   │   ├── Student/
 │   │   └── Webhooks/

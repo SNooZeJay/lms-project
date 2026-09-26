@@ -278,6 +278,16 @@ Phase 5B assigns positions, status, parent IDs, and Lesson slugs on the server. 
 
 Phase 5C keeps owner, parent, position, status, currency, and slugs server-owned. It does not add delete, archive, reorder, publish, upload, download, enrollment, or payment routes.
 
+### Phase 5D Learning Material routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| POST | `/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials` | Add a Learning Material | Instructor role and LearningMaterialPolicy |
+| GET | `/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials/{material}/edit` | Show the Material edit form | Instructor role and LearningMaterialPolicy |
+| PATCH | `/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials/{material}` | Save Material metadata | Instructor role and LearningMaterialPolicy |
+
+Phase 5D accepts only `text`, `code`, `video_link`, and `external_link` materials. It does not add an upload field, a download route, delete, archive, publish, enrollment, or payment routes.
+
 ### Student routes
 
 
@@ -711,6 +721,50 @@ flowchart TD
 - Corrected Course, Module, or Lesson records
 - Updated owned Course outline
 - No delete, archive, reorder, publish, upload, enrollment, or payment behavior
+
+### Phase 5D Learning Material authoring flow
+
+```mermaid
+flowchart TD
+    O[Open an owned Lesson] --> M[Submit Material form]
+    M --> P[LearningMaterialPolicy checks Lesson ownership]
+    P --> V[Validate the Material Form Request]
+    V --> R[Reject parent, uploader, position, storage, and file fields]
+    R --> T[Reject image, PDF, and document types]
+    T --> C[Require content or a valid link for the chosen type]
+    C --> S[Assign the next position and record the uploader]
+    S --> D[Save Material in a transaction]
+    D --> B[Redirect to the owned Course outline]
+```
+
+### Phase 5D Input, Process, and Output
+
+**Input**
+
+- Owned Lesson ID
+- Material title
+- Material type: `text`, `code`, `video_link`, or `external_link`
+- Material content text for `text` and `code`
+- Material link for `video_link` and `external_link`
+
+**Process**
+
+- Run LearningMaterialPolicy for the acting Instructor
+- Validate the Material Form Request
+- Reject `lesson_id`, `uploaded_by`, `position`, `storage_disk`, `storage_path`, `mime_type`, `byte_size`, and any `file` input
+- Reject image, PDF, and document types with a clear message
+- Require content text for text and code materials
+- Require a valid link for video link and external link materials
+- Assign the next position inside the Lesson and store the acting Instructor as uploader
+- Keep all storage metadata empty
+- Save inside a database transaction
+
+**Output**
+
+- Ordered Learning Material metadata
+- Updated owned Course outline
+- Empty storage metadata
+- No public content, upload, download, delete, enrollment, or payment behavior
 
 ## 8. Authorization
 

@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers\Instructor;
 
+use App\Actions\Courses\Curriculum\CreateLearningMaterial;
 use App\Actions\Courses\Curriculum\CreateLesson;
 use App\Actions\Courses\Curriculum\CreateModule;
+use App\Actions\Courses\Curriculum\UpdateLearningMaterial;
 use App\Actions\Courses\Curriculum\UpdateLesson;
 use App\Actions\Courses\Curriculum\UpdateModule;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Courses\CreateLearningMaterialRequest;
 use App\Http\Requests\Courses\CreateLessonRequest;
 use App\Http\Requests\Courses\CreateModuleRequest;
+use App\Http\Requests\Courses\UpdateLearningMaterialRequest;
 use App\Http\Requests\Courses\UpdateLessonRequest;
 use App\Http\Requests\Courses\UpdateModuleRequest;
 use App\Models\Course;
+use App\Models\LearningMaterial;
 use App\Models\Lesson;
 use App\Models\Module;
 use Illuminate\Contracts\View\View;
@@ -76,8 +81,7 @@ class CurriculumController extends Controller
 
     public function editLesson(Course $course, Module $module, Lesson $lesson): View
     {
-        abort_unless($module->course_id === $course->id, 404);
-        abort_unless($lesson->module_id === $module->id, 404);
+        abort_unless($this->lessonBelongsToCourse($course, $module, $lesson), 404);
         Gate::authorize('update', $lesson);
 
         return view('instructor.courses.lessons.edit', [
@@ -94,13 +98,65 @@ class CurriculumController extends Controller
         Lesson $lesson,
         UpdateLesson $updateLesson,
     ): RedirectResponse {
-        abort_unless($module->course_id === $course->id, 404);
-        abort_unless($lesson->module_id === $module->id, 404);
+        abort_unless($this->lessonBelongsToCourse($course, $module, $lesson), 404);
         Gate::authorize('update', $lesson);
         $updateLesson->handle($request->user(), $lesson, $request->validated());
 
         return redirect()
             ->route('instructor.courses.show', $course)
             ->with('status', 'Lesson updated.');
+    }
+
+    public function storeMaterial(
+        CreateLearningMaterialRequest $request,
+        Course $course,
+        Module $module,
+        Lesson $lesson,
+        CreateLearningMaterial $createLearningMaterial,
+    ): RedirectResponse {
+        abort_unless($this->lessonBelongsToCourse($course, $module, $lesson), 404);
+        Gate::authorize('create', [LearningMaterial::class, $lesson]);
+        $createLearningMaterial->handle($request->user(), $lesson, $request->validated());
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Learning Material added.');
+    }
+
+    public function editMaterial(Course $course, Module $module, Lesson $lesson, LearningMaterial $material): View
+    {
+        abort_unless($this->lessonBelongsToCourse($course, $module, $lesson), 404);
+        abort_unless($material->lesson_id === $lesson->id, 404);
+        Gate::authorize('update', $material);
+
+        return view('instructor.courses.materials.edit', [
+            'course' => $course,
+            'module' => $module,
+            'lesson' => $lesson,
+            'material' => $material,
+        ]);
+    }
+
+    public function updateMaterial(
+        UpdateLearningMaterialRequest $request,
+        Course $course,
+        Module $module,
+        Lesson $lesson,
+        LearningMaterial $material,
+        UpdateLearningMaterial $updateLearningMaterial,
+    ): RedirectResponse {
+        abort_unless($this->lessonBelongsToCourse($course, $module, $lesson), 404);
+        abort_unless($material->lesson_id === $lesson->id, 404);
+        Gate::authorize('update', $material);
+        $updateLearningMaterial->handle($request->user(), $material, $request->validated());
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Learning Material updated.');
+    }
+
+    private function lessonBelongsToCourse(Course $course, Module $module, Lesson $lesson): bool
+    {
+        return $module->course_id === $course->id && $lesson->module_id === $module->id;
     }
 }

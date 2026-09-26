@@ -4,7 +4,7 @@
 
 This roadmap turns the approved LMS plan into small, testable steps.
 
-Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, and Phase 5B are human-approved. Phase 5C content editing is the active slice. No later business phase has started.
+Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, Phase 5B, and Phase 5C are human-approved. Phase 5D Learning Material metadata authoring is the active slice. No later business phase has started.
 
 Do not skip directly to payment processing or dashboard polish.
 
@@ -1478,7 +1478,133 @@ Delete is not part of this phase. Hard delete can remove student progress, grade
 - Free and paid price rules still apply on update.
 - No delete, upload, download, payment, or enrollment route exists.
 
-## 14. Phase 5D: course catalog
+### Phase 5C checkpoint
+
+Human review approved Course, Module, and Lesson editing on September 26, 2026.
+
+### Phase 5D status
+
+Phase 5C content editing is human-approved.
+
+## 14. Phase 5D: Learning Material metadata authoring
+
+### Goal
+
+Let an Instructor add and edit Learning Material records on an owned Lesson without any file upload.
+
+### Status
+
+Approved on September 26, 2026. Material metadata authoring is implemented and passes 136 tests. Human browser review is the open checkpoint.
+
+### Confirmed scope
+
+- Add text, code, video link, and external link materials to an owned Lesson
+- Edit those same material fields
+- Server-owned parent, uploader, position, and storage metadata
+- Reject file types and any upload field in this phase
+- Link materials must carry a valid link
+- Text and code materials must carry their content
+- No upload, download, delete, archive, publish, enrollment, or payment behavior
+
+### Explicitly not included
+
+- No file upload for image, PDF, or document materials
+- No upload form, no file field, and no download route
+- Storage disk, path, MIME type, and byte size stay server-owned and empty
+
+### Input, Process, and Output
+
+**Input**
+
+- Owned Lesson ID
+- Material title
+- Material type: `text`, `code`, `video_link`, or `external_link`
+- Material content text for `text` and `code`
+- Material link for `video_link` and `external_link`
+
+**Process**
+
+- Run LearningMaterialPolicy against the Lesson owner
+- Validate the Form Request
+- Reject `lesson_id`, `uploaded_by`, `position`, `storage_disk`, `storage_path`, `mime_type`, `byte_size`, and any `file` input
+- Reject image, PDF, and document types with a clear message
+- Require content for text and code materials
+- Require a valid link for video link and external link materials
+- Assign the next position inside the Lesson and record the acting Instructor as uploader
+- Save inside a database transaction
+- Redirect to the owned Course outline
+
+**Output**
+
+- Ordered Learning Material metadata
+- Updated owned Course outline
+- Empty storage metadata
+- No public content, upload, download, delete, enrollment, or payment behavior
+
+### Task list
+
+- [x] Task 1: Update Phase 5D requirements, routes, policies, and flow
+- [x] Task 2: Add failing Learning Material authoring tests
+- [x] Task 3: Add Learning Material Form Requests and Actions
+- [x] Task 4: Add LearningMaterialPolicy, routes, and controller methods
+- [x] Task 5: Add accessible material forms and outline edit links
+- [x] Task 6: Run test, build, and security gates
+- [ ] Task 7: Human browser review of material authoring
+
+### Phase 5D implementation evidence
+
+- `app/Policies/LearningMaterialPolicy.php`
+- `app/Http/Requests/Courses/CreateLearningMaterialRequest.php`
+- `app/Http/Requests/Courses/UpdateLearningMaterialRequest.php`
+- `app/Actions/Courses/Curriculum/CreateLearningMaterial.php`
+- `app/Actions/Courses/Curriculum/UpdateLearningMaterial.php`
+- `app/Http/Controllers/Instructor/CurriculumController.php`
+- `app/Providers/AppServiceProvider.php`
+- `resources/views/instructor/courses/materials/edit.blade.php`
+- `resources/views/instructor/courses/show.blade.php`
+- `tests/Feature/Phase5D/LearningMaterialAuthoringTest.php`
+
+### Phase 5D automated evidence
+
+- `php artisan test` passes with 136 tests and 572 assertions
+- `./vendor/bin/pint --test` passes on 127 files
+- `npm run build` succeeds
+- `composer validate`, `composer audit`, and `npm audit` pass
+- Route, config, and view cache checks pass
+- No database migration was needed for Phase 5D
+
+### Phase 5D security notes
+
+- `lesson_id`, `uploaded_by`, `position`, `storage_disk`, `storage_path`, `mime_type`, `byte_size`, and `file` are prohibited
+- Image, PDF, and document types are rejected with a clear message because uploads are not built
+- Link materials must carry a valid `http` or `https` link
+- Text and code materials must carry their content
+- Position and uploader are assigned by the server inside a database transaction
+- Storage metadata stays empty and is never accepted from a request
+- `lessonBelongsToCourse` and a Lesson ownership check stop cross-lesson and cross-course edits
+- Earlier Phase 4B and Phase 5B guards were updated to check the new upload route name instead of the now-approved material store route
+
+### Phase 5D security tests
+
+- An Instructor can add and edit materials only on an owned Lesson.
+- Students and other Instructors receive `403`.
+- Parent, uploader, position, and storage fields are rejected.
+- Image, PDF, and document types are rejected with a clear message.
+- Link materials require a valid link.
+- Storage metadata stays empty.
+- No upload, download, delete, payment, or enrollment route exists.
+
+### Phase 5D security tests
+
+- An Instructor can add and edit materials only on an owned Lesson.
+- Students and other Instructors receive `403`.
+- Parent, uploader, position, and storage fields are rejected.
+- Image, PDF, and document types are rejected with a clear message.
+- Link materials require a valid link.
+- Storage metadata stays empty.
+- No upload, download, delete, payment, or enrollment route exists.
+
+## 15. Phase 5E: course catalog
 
 ### Goal
 
@@ -1508,7 +1634,7 @@ Publish safe public Course metadata.
 
 An Instructor can create and publish a Course, and a guest can view safe public details.
 
-## 15. Phase 6: curriculum and materials
+## 16. Phase 6: curriculum and materials
 
 ### Goal
 
@@ -1538,7 +1664,7 @@ Manage ordered Modules, Lessons, and protected Learning Materials.
 
 An Instructor can build a complete Course outline with authorized material access.
 
-## 16. Phase 7: free enrollment
+## 17. Phase 7: free enrollment
 
 ### Goal
 
@@ -1566,7 +1692,7 @@ Prove the first complete learning access workflow before payment work.
 
 A Student can enroll once in a free Course and open authorized published Lessons.
 
-## 17. Phase 8: lesson access and progress
+## 18. Phase 8: lesson access and progress
 
 ### Goal
 
@@ -1594,7 +1720,7 @@ Persist Lesson activity and calculate progress from records.
 
 A Student can complete Lessons and see database-backed progress.
 
-## 18. Phase 9: quizzes
+## 19. Phase 9: quizzes
 
 ### Goal
 
@@ -1625,7 +1751,7 @@ Deliver safe Questions and enforce server-side grading.
 
 A Student can complete a Quiz and receive a correct server-calculated result.
 
-## 19. Phase 10: completion and certificates
+## 20. Phase 10: completion and certificates
 
 ### Goal
 
@@ -1653,7 +1779,7 @@ Verify Course completion and issue one certificate.
 
 An eligible Student receives one printable certificate with safe authenticated access.
 
-## 20. Phase 11: payment architecture
+## 21. Phase 11: payment architecture
 
 ### Goal
 
@@ -1682,7 +1808,7 @@ Finalize payment behavior before calling PayMongo.
 
 Payment state transitions are fully specified and testable without live credentials.
 
-## 21. Phase 12: PayMongo integration
+## 22. Phase 12: PayMongo integration
 
 ### Goal
 
@@ -1708,7 +1834,7 @@ Run the approved webhook scenarios from `plan.md` and `architecture.md`.
 
 A real test-mode payment activates one paid Enrollment once, and repeated delivery causes no duplicate.
 
-## 22. Phase 13: dashboards and reports
+## 23. Phase 13: dashboards and reports
 
 ### Goal
 
@@ -1735,7 +1861,7 @@ Add role-specific pages using real authorized data.
 
 All dashboards work with real authorized data and approved empty states.
 
-## 23. Phase 14: quality and accessibility
+## 24. Phase 14: quality and accessibility
 
 ### Goal
 
@@ -1780,7 +1906,7 @@ php artisan route:list
 
 Every acceptance criterion in `plan.md` passes with recorded evidence.
 
-## 24. Phase 15: deployment and defense
+## 25. Phase 15: deployment and defense
 
 ### Goal
 
@@ -1816,7 +1942,7 @@ Deploy a tested release and prepare the SIA1 presentation.
 
 The deployed application works, the team can explain the architecture, and critical workflows remain testable.
 
-## 25. Commands after scaffolding
+## 26. Commands after scaffolding
 
 Use the commands generated by the selected Laravel starter kit.
 
@@ -1836,7 +1962,7 @@ npm run build
 
 Do not run `migrate:fresh` against a shared or production database.
 
-## 26. Definition of ready
+## 27. Definition of ready
 
 A task is ready when:
 
@@ -1848,7 +1974,7 @@ A task is ready when:
 - Documentation impact is known
 - No unresolved product decision remains
 
-## 27. Definition of done
+## 28. Definition of done
 
 A task is done when:
 
@@ -1862,8 +1988,8 @@ A task is done when:
 - No unrelated file changed
 - The team can explain the change
 
-## 28. Current next action
+## 29. Current next action
 
-The current next action is Phase 5C Instructor content editing.
+The current next action is Phase 5D Learning Material metadata authoring.
 
-Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Course outline UI, and Phase 5B curriculum authoring are complete and human-approved. Do not add public catalog, enrollment, payment, upload, delete, or publish behavior.
+Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Course outline UI, Phase 5B curriculum authoring, and Phase 5C content editing are complete and human-approved. Do not add public catalog, enrollment, payment, upload, download, delete, or publish behavior.

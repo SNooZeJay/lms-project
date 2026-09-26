@@ -146,7 +146,7 @@ class LearningMaterialFoundationTest extends TestCase
 
     public function test_phase_four_b_two_does_not_add_upload_or_curriculum_routes(): void
     {
-        $this->assertFalse(Route::has('instructor.courses.materials.store'));
+        $this->assertFalse(Route::has('instructor.courses.materials.upload'));
         $this->assertFalse(Route::has('student.materials.download'));
         $this->assertFalse(Schema::hasTable('enrollments'));
         $this->assertFalse(Schema::hasTable('payments'));
