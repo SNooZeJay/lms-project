@@ -33,6 +33,12 @@ Route::post('/webhooks/paymongo', PayMongoWebhookController::class)
 Route::get('/courses', [CourseCatalogController::class, 'index'])->name('courses.index');
 Route::get('/courses/{course:slug}', [CourseCatalogController::class, 'show'])->name('courses.show');
 
+// Public, because the sign in and sign up pages link to them. A link to a page
+// that does not exist is worse than having no link at all, so these are real
+// pages with content taken from what the application actually does.
+Route::view('/terms', 'legal.terms')->name('legal.terms');
+Route::view('/privacy', 'legal.privacy')->name('legal.privacy');
+
 $authenticated = ['auth', 'account.active', 'verified', 'password.change'];
 
 Route::middleware($authenticated)->group(function (): void {
