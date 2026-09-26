@@ -34,7 +34,14 @@ class PayMongoApiClient implements PayMongoClient
                 ->post(self::BASE_URL.'/checkout_sessions', [
                     'data' => [
                         'attributes' => [
-                            'description' => 'Course enrollment payment',
+                            // The hosted page renders this under the amount,
+                            // which makes it the one place the merchant can be
+                            // named. The name in the corner comes from the
+                            // provider account profile. The create endpoint
+                            // accepts a branding block and a merchant name
+                            // without complaint and then stores neither, so
+                            // neither of those can be overridden.
+                            'description' => 'IT Learning Hub — course enrollment',
                             'line_items' => [
                                 [
                                     'currency' => $payment->currency,
