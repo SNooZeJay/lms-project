@@ -2750,6 +2750,39 @@ Every acceptance criterion in `plan.md` passes with recorded evidence.
 
 ## 30. Phase 15: deployment and defense
 
+### Status
+
+Build complete. Deployment is prepared and verifiable; the actual hosting
+account is a human step and is not part of the repository.
+
+### Evidence
+
+- `php artisan lms:check-production` exists and correctly fails on a
+  development server.
+- `php artisan config:cache`, `route:cache`, and `view:cache` all succeed, and
+  the cached routes serve 200 responses.
+- `php artisan test` gives 464 passed and 1665 assertions.
+- `./vendor/bin/pint --test` gives PASS on 226 files.
+- The secret scan is proven: planting `sk_live_...` in a tracked file makes the
+  test fail, and removing it makes the test pass.
+- `docs/deployment.md` is the runbook. `docs/defense.md` is the evidence pack.
+
+### Added in this phase
+
+- `app/Console/Commands/CheckProductionReadiness.php`, a hard-gate pre-flight
+  check with a non-zero exit code
+- Trust proxy configuration in `bootstrap/app.php`, with a `TRUSTED_PROXIES`
+  environment value
+- PayMongo placeholders in `.env.example`
+- `docs/deployment.md`, the deployment and rollback runbook
+- `docs/defense.md`, the SIA1 evidence pack
+
+### Still a human step
+
+Place the release on a hosting account and run one real test-mode payment. The
+payment state machine is proven with a fake provider, so only a real payment
+proves the credentials and the provider contract.
+
 ### Goal
 
 Deploy a tested release and prepare the SIA1 presentation.

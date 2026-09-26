@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Console\Commands\CheckProductionReadiness;
 use App\Contracts\LocalSecretStore;
 use App\Contracts\PayMongoClient;
 use App\Models\ActivityLog;
@@ -42,6 +43,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->commands([CheckProductionReadiness::class]);
+
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(ActivityLog::class, ActivityLogPolicy::class);
         Gate::policy(Course::class, CoursePolicy::class);

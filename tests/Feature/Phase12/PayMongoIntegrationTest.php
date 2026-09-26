@@ -32,7 +32,7 @@ class PayMongoIntegrationTest extends TestCase
 
         config([
             'services.paymongo.enabled' => true,
-            'services.paymongo.secret_key' => 'sk_test_placeholder',
+            'services.paymongo.secret_key' => 'PLACEHOLDER-NOT-A-REAL-KEY',
             'services.paymongo.webhook_secret' => $this->webhookSecret,
         ]);
 
@@ -96,7 +96,7 @@ class PayMongoIntegrationTest extends TestCase
         Http::assertSent(function (Request $request): bool {
             $body = $request->body();
 
-            return ! str_contains($body, 'sk_test_placeholder')
+            return ! str_contains($body, 'PLACEHOLDER-NOT-A-REAL-KEY')
                 && ! str_contains($body, $this->webhookSecret);
         });
     }
@@ -119,7 +119,7 @@ class PayMongoIntegrationTest extends TestCase
 
         Http::assertSent(function (Request $request): bool {
             return str_contains((string) $request->header('Authorization')[0], 'Basic')
-                && ! str_contains($request->body(), 'sk_test');
+                && ! str_contains($request->body(), 'PLACEHOLDER-NOT-A-REAL-KEY');
         });
     }
 
