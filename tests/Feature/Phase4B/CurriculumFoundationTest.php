@@ -221,7 +221,6 @@ class CurriculumFoundationTest extends TestCase
         $this->assertFalse(Route::has('instructor.courses.modules.index'));
         $this->assertFalse(Route::has('student.learn.index'));
         // quizzes arrive in Phase 9 and are covered there.
-        $this->assertFalse(Schema::hasTable('payments'));
     }
 
     private function insertModule(array $overrides = []): void

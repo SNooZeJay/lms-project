@@ -16,10 +16,18 @@ use App\Http\Controllers\Role\InstructorController;
 use App\Http\Controllers\Role\StudentController;
 use App\Http\Controllers\Student\CertificateController as StudentCertificateController;
 use App\Http\Controllers\Student\EnrollmentController;
+use App\Http\Controllers\Student\PaymentController as StudentPaymentController;
 use App\Http\Controllers\Student\QuizController as StudentQuizController;
+use App\Http\Controllers\Webhooks\PayMongoWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+
+// The provider calls this endpoint, so it is public and signed, not session
+// authenticated. It is registered before the authenticated groups on purpose.
+Route::post('/webhooks/paymongo', PayMongoWebhookController::class)
+    ->middleware('throttle:120,1')
+    ->name('webhooks.paymongo');
 
 Route::get('/courses', [CourseCatalogController::class, 'index'])->name('courses.index');
 Route::get('/courses/{course:slug}', [CourseCatalogController::class, 'show'])->name('courses.show');
@@ -48,6 +56,8 @@ Route::middleware([...$authenticated, 'role:student'])->group(function (): void 
     Route::get('/student/certificates', [StudentCertificateController::class, 'index'])->name('student.certificates.index');
     Route::get('/student/certificates/{certificate}', [StudentCertificateController::class, 'show'])->name('student.certificates.show');
     Route::post('/student/courses/{course}/complete', [StudentCertificateController::class, 'complete'])->name('student.courses.complete');
+    Route::post('/student/courses/{course}/checkout', [StudentPaymentController::class, 'checkout'])->name('student.payments.checkout');
+    Route::get('/student/courses/{course}/checkout/return', [StudentPaymentController::class, 'return'])->name('student.payments.return');
     Route::post('/student/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('student.enrollments.store');
 });
 

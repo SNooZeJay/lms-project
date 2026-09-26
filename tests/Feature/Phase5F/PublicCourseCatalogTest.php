@@ -316,7 +316,6 @@ class PublicCourseCatalogTest extends TestCase
     public function test_phase_five_f_adds_no_lesson_access_payment_or_download_routes(): void
     {
         $this->assertFalse(Route::has('student.enrollments.index'));
-        $this->assertFalse(Route::has('student.payments.checkout'));
         $this->assertFalse(Route::has('student.progress.show'));
         $this->assertFalse(Route::has('instructor.courses.materials.upload'));
     }

@@ -311,7 +311,6 @@ class FreeEnrollmentTest extends TestCase
 
     public function test_phase_six_b_adds_no_payment_or_progress_routes(): void
     {
-        $this->assertFalse(Route::has('student.payments.checkout'));
         $this->assertFalse(Route::has('student.progress.index'));
         $this->assertFalse(Route::has('student.enrollments.cancel'));
     }

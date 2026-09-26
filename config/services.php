@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | PayMongo
+    |--------------------------------------------------------------------------
+    |
+    | Server-only credentials. These are never rendered, logged, or stored on a
+    | payment record. Use the test-mode secret key in local development.
+    |
+    */
+
+    'paymongo' => [
+        'secret_key' => env('PAYMONGO_SECRET_KEY'),
+        'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET'),
+        'enabled' => (bool) env('PAYMONGO_ENABLED', false),
+    ],
+
 ];

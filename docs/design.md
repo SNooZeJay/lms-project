@@ -508,6 +508,14 @@ Phase 6E adds progress that is always visible and always honest:
 - While a Course is unpublished, the percentage is hidden and a note explains why
 - No percentage is ever accepted from the browser
 
+### Phase 11 and 12 payments
+
+- A pending enrollment shows a Pay button with the exact amount, never a generic "Buy"
+- The return page says plainly that it does not confirm payment by itself, so a Student is never misled while waiting
+- Payment state is written in words: Waiting for payment confirmation, Payment confirmed, Payment did not go through
+- The reference number is shown in monospace so a Student can quote it in support
+- The amount is always stated as coming from the course record, so a tampered browser value is visibly irrelevant
+
 ### Phase 10 certificates
 
 - The Student course page shows a Certificate panel with either the certificate, a claim button, or the exact list of what is still missing

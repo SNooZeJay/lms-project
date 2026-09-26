@@ -95,6 +95,5 @@ class FoundationDatabaseTest extends TestCase
 
         // Quizzes arrive in Phase 9 and are covered there.
         // certificates arrive in Phase 10 and are covered there.
-        $this->assertFalse(Schema::hasTable('payments'));
     }
 }

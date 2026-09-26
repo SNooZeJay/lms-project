@@ -216,7 +216,5 @@ class EnrollmentFoundationTest extends TestCase
     public function test_phase_six_a_adds_no_lesson_access_or_payment_routes(): void
     {
         $this->assertFalse(Route::has('student.progress.index'));
-        $this->assertFalse(Route::has('student.payments.checkout'));
-        $this->assertFalse(Schema::hasTable('payments'));
     }
 }

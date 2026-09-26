@@ -72,6 +72,12 @@
 
                         @if ($enrollment->grantsAccess() && $course)
                             <a href="{{ route('student.courses.show', $course) }}" class="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open course</a>
+                        @elseif ($enrollment->status === \App\Enums\EnrollmentStatus::PendingPayment && $course?->course_type === \App\Enums\CourseType::Paid)
+                            <p class="mt-4 border-l-4 border-line bg-surface-muted px-3 py-2 text-sm leading-6 text-ink-muted">Payment is still pending, so this course is not open yet.</p>
+                            <form method="POST" action="{{ route('student.payments.checkout', $course) }}" class="mt-3">
+                                @csrf
+                                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Pay {{ $course->currency }} {{ number_format($course->price_minor / 100, 2) }}</button>
+                            </form>
                         @endif
 
                         @if ($course?->status === \App\Enums\CourseStatus::Published)

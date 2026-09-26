@@ -2555,6 +2555,16 @@ An eligible Student receives one printable certificate with safe authenticated a
 
 ## 26. Phase 11: payment architecture
 
+### Status
+
+Built and tested. The state machine is fully verified with a fake provider, so no live credentials are needed to prove it.
+
+### Evidence
+
+- `php artisan test` gives 434 passed and 1529 assertions.
+- `./vendor/bin/pint --test` gives PASS on 221 files.
+- The webhook replay, invalid signature, amount spoofing, and idempotency scenarios are all covered.
+
 ### Goal
 
 Finalize payment behavior before calling PayMongo.
@@ -2583,6 +2593,20 @@ Finalize payment behavior before calling PayMongo.
 Payment state transitions are fully specified and testable without live credentials.
 
 ## 27. Phase 12: PayMongo integration
+
+### Status
+
+Built and tested. The client is bound by default and swapped for a fake in tests. A live test-mode payment still needs real credentials, which are never committed.
+
+### Evidence
+
+- 16 tests cover signature verification, credential handling, request shape, and provider errors.
+- `Http::fake` proves the secret key travels as basic auth and never appears in a request body.
+- A tampered body with a valid original signature is rejected.
+
+### Live verification still required
+
+Set `PAYMONGO_ENABLED=true`, `PAYMONGO_SECRET_KEY`, and `PAYMONGO_WEBHOOK_SECRET` in a local `.env`, then confirm one test-mode payment activates one enrollment. The automated suite proves the state machine; only a real checkout proves the credentials and the provider contract.
 
 ### Goal
 

@@ -342,7 +342,6 @@ class LessonProgressTest extends TestCase
     public function test_phase_six_e_adds_only_the_lesson_complete_route(): void
     {
         $this->assertTrue(Route::has('student.lessons.complete'));
-        $this->assertFalse(Route::has('student.payments.checkout'));
         $this->assertFalse(Route::has('student.continue.index'));
     }
 

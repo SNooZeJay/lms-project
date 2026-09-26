@@ -213,7 +213,6 @@ class CoursePublishingTest extends TestCase
         // instructor.courses.archive arrives in Phase 7B and is covered there.
         $this->assertFalse(Route::has('instructor.courses.destroy'));
         $this->assertFalse(Route::has('student.enrollments.cancel'));
-        $this->assertFalse(Route::has('student.payments.checkout'));
     }
 
     private function makeInstructor(): User

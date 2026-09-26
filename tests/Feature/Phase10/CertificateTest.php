@@ -437,10 +437,11 @@ class CertificateTest extends TestCase
             ->assertSee('Valid');
     }
 
-    public function test_phase_ten_adds_no_payment_routes(): void
+    public function test_phase_ten_adds_no_reporting_routes(): void
     {
-        $this->assertFalse(Route::has('student.payments.checkout'));
-        $this->assertFalse(Route::has('webhooks.paymongo'));
+        // Payments arrive in Phase 11 and reports in Phase 13, so this guard
+        // now checks the identifier that is still absent.
+        $this->assertFalse(Route::has('admin.reports.index'));
     }
 
     /**

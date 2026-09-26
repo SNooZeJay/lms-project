@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Enums\CourseStatus;
+use App\Enums\CourseType;
 use App\Enums\EnrollmentStatus;
 use App\Enums\UserAccountStatus;
 use App\Enums\UserRole;
@@ -27,6 +28,27 @@ class EnrollmentPolicy
     {
         return $this->isActiveStudent($actor)
             && $course->status === CourseStatus::Published;
+    }
+
+    /**
+     * Only a Student with a pending enrollment for a paid published Course may
+     * start a checkout.
+     */
+    public function pay(User $actor, Enrollment $enrollment): bool
+    {
+        if (! $this->isActiveStudent($actor) || $enrollment->student_id !== $actor->id) {
+            return false;
+        }
+
+        if ($enrollment->status !== EnrollmentStatus::PendingPayment) {
+            return false;
+        }
+
+        $course = $enrollment->course;
+
+        return $course->status === CourseStatus::Published
+            && $course->course_type === CourseType::Paid
+            && (int) $course->price_minor > 0;
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\LocalSecretStore;
+use App\Contracts\PayMongoClient;
 use App\Models\ActivityLog;
 use App\Models\Course;
 use App\Models\Enrollment;
@@ -17,6 +18,7 @@ use App\Policies\LearningMaterialPolicy;
 use App\Policies\LessonPolicy;
 use App\Policies\ModulePolicy;
 use App\Policies\UserPolicy;
+use App\Services\Payments\PayMongoApiClient;
 use App\Support\WindowsDpapiSecretStore;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -29,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(LocalSecretStore::class, WindowsDpapiSecretStore::class);
+
+        // The live client is the default. Tests bind a fake so the payment
+        // state machine is verifiable without credentials.
+        $this->app->bind(PayMongoClient::class, PayMongoApiClient::class);
     }
 
     /**

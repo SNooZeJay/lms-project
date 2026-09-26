@@ -3,10 +3,27 @@
 namespace App\Support;
 
 use App\Enums\CourseType;
+use App\Models\Course;
 use Illuminate\Validation\ValidationException;
 
 class CoursePrice
 {
+    /**
+     * The amount a Student owes, in integer minor units with an ISO currency.
+     *
+     * This is the only place a chargeable amount is produced, so it can never
+     * come from a request.
+     *
+     * @return array{amount_minor: int, currency: string}
+     */
+    public static function forCourse(Course $course): array
+    {
+        return [
+            'amount_minor' => (int) $course->price_minor,
+            'currency' => (string) $course->currency,
+        ];
+    }
+
     /**
      * Keep the free and paid price rules in one place.
      */

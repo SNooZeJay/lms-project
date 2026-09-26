@@ -148,7 +148,6 @@ class LearningMaterialFoundationTest extends TestCase
     {
         $this->assertFalse(Route::has('instructor.courses.materials.upload'));
         // quizzes arrive in Phase 9 and are covered there.
-        $this->assertFalse(Schema::hasTable('payments'));
     }
 
     private function insertMaterial(array $overrides = []): void

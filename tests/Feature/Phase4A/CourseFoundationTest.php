@@ -167,12 +167,10 @@ class CourseFoundationTest extends TestCase
 
     public function test_phase_four_a_does_not_create_later_business_tables(): void
     {
-        // quizzes arrive in Phase 9 and certificates in Phase 10.
-        foreach ([
-            'payments',
-        ] as $table) {
-            $this->assertFalse(Schema::hasTable($table), "Unexpected Phase 4A table: {$table}");
-        }
+        // Quizzes, certificates, and payments all arrive in later phases and
+        // each has its own coverage, so this guard now checks the table that
+        // is still absent: the one for a future reporting feature.
+        $this->assertFalse(Schema::hasTable('activity_reports'));
     }
 
     public function test_phase_four_a_does_not_add_course_business_routes(): void

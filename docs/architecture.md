@@ -1117,6 +1117,51 @@ flowchart TD
 - A Lesson page with content and Learning Materials
 - No progress, no quiz, no payment, and no download
 
+### Phase 11 and 12 payment routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| POST | `/student/courses/{course}/checkout` | Create a pending Payment and a provider checkout | Student group and EnrollmentPolicy `pay` |
+| GET | `/student/courses/{course}/checkout/return` | Provider return page | Student group and EnrollmentPolicy `view` |
+| POST | `/webhooks/paymongo` | Provider event delivery | Public, signed, throttled |
+
+The webhook route is registered before the authenticated groups on purpose. It is the one route a browser session must never protect, and the one route a signature must always protect.
+
+### Payment security rules
+
+- Money is integer minor units with an ISO currency code. `App\Support\CoursePrice::forCourse` is the only place a chargeable amount is produced, so the amount can never come from a request.
+- The idempotency key is derived from the enrollment and is unique with it, so a double click cannot create two charges.
+- A checkout is only allowed for a Student's own `pending_payment` enrollment in a paid, published Course. Another Student receives `404`, because the controller resolves the acting Student's own enrollment.
+- Activating an enrollment happens in the same transaction as marking the payment paid, so a Student is never left active without a paid record.
+- The provider event id is unique per provider. A replayed delivery is recorded and changes nothing, so a duplicate paid event cannot create duplicate access.
+- An unverified signature is recorded as `ignored` and changes no state. A tampered body with a valid original signature is rejected by the HMAC check.
+- Signature comparison uses `hash_equals`, and a missing or empty signature is never treated as a pass.
+- A failed or cancelled payment leaves the enrollment `pending_payment`, so a Student can retry. A refund cancels the enrollment and removes access.
+- Credentials live only in server-only configuration. They are never rendered, logged, or written to a payment record, and a test asserts both.
+- The return page never confirms a payment by itself. It states that the page does not confirm payment, and only a verified webhook can do that.
+
+### Payment flow
+
+```mermaid
+flowchart TD
+    C[Student starts checkout] --> P[EnrollmentPolicy pay]
+    P -->|Denied| F[Return 403 or 404]
+    P -->|Allowed| A[Amount read from the Course record]
+    A --> R[Pending Payment created with an enrollment idempotency key]
+    R --> X[Provider checkout requested]
+    X --> W[Student returns to the return page]
+    W --> U[Page says payment is not confirmed yet]
+    H[Provider sends a webhook] --> S[Verify the signature]
+    S -->|Invalid| I[Record as ignored, change nothing]
+    S -->|Valid| E[Record the event once by provider event id]
+    E -->|Already processed| N[Change nothing]
+    E --> T[Apply the state transition in one transaction]
+    T --> Q{Event type}
+    Q -->|Paid| A1[Mark paid and activate the enrollment]
+    Q -->|Failed or cancelled| A2[Keep the enrollment pending]
+    Q -->|Refund| A3[Refund the payment and remove access]
+```
+
 ### Phase 10 completion and certificate routes
 
 | Method | URI | Purpose | Protection |

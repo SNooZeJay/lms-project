@@ -223,7 +223,6 @@ class LessonProgressFoundationTest extends TestCase
         // student.lessons.complete arrives in Phase 6E, quizzes in Phase 9,
         // and certificates in Phase 10.
         $this->assertFalse(Route::has('student.progress.index'));
-        $this->assertFalse(Route::has('student.payments.checkout'));
     }
 
     /**
