@@ -71,7 +71,14 @@
                             @endif
 
                             @if ($material->storage_path)
-                                <p class="mt-3 text-sm text-ink-muted">A file is attached to this material. File downloads are not available yet.</p>
+                                <p class="mt-3">
+                                    <a href="{{ route('student.materials.download', [$course, $lesson, $material]) }}" class="inline-flex min-h-11 items-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">
+                                        Download {{ $material->title }}
+                                    </a>
+                                    <span class="mt-1 block text-xs text-ink-muted">
+                                        Stored privately. This link works only while you are enrolled.
+                                    </span>
+                                </p>
                             @endif
                         </li>
                     @endforeach

@@ -8,6 +8,7 @@ use App\Http\Controllers\Catalog\CourseCatalogController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Instructor\CourseController;
 use App\Http\Controllers\Instructor\CurriculumController;
+use App\Http\Controllers\MaterialDownloadController;
 use App\Http\Controllers\Role\AdministratorController;
 use App\Http\Controllers\Role\InstructorController;
 use App\Http\Controllers\Role\StudentController;
@@ -34,6 +35,7 @@ Route::middleware([...$authenticated, 'role:student'])->group(function (): void 
     Route::get('/student/courses/{course}', [EnrollmentController::class, 'show'])->name('student.courses.show');
     Route::get('/student/courses/{course}/lessons/{lesson}', [EnrollmentController::class, 'showLesson'])->name('student.lessons.show');
     Route::post('/student/courses/{course}/lessons/{lesson}/complete', [EnrollmentController::class, 'completeLesson'])->name('student.lessons.complete');
+    Route::get('/student/courses/{course}/lessons/{lesson}/materials/{material}/download', [MaterialDownloadController::class, 'show'])->name('student.materials.download');
     Route::post('/student/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('student.enrollments.store');
 });
 
@@ -64,10 +66,12 @@ Route::middleware([...$authenticated, 'role:instructor'])->group(function (): vo
     Route::post('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials', [CurriculumController::class, 'storeMaterial'])->name('instructor.courses.materials.store');
     Route::get('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials/{material}/edit', [CurriculumController::class, 'editMaterial'])->name('instructor.courses.materials.edit');
     Route::patch('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials/{material}', [CurriculumController::class, 'updateMaterial'])->name('instructor.courses.materials.update');
+    Route::get('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials/{material}/download', [MaterialDownloadController::class, 'show'])->name('instructor.courses.materials.download');
 });
 
 Route::middleware([...$authenticated, 'role:administrator'])->group(function (): void {
     Route::get('/admin', AdministratorController::class)->name('administrator.dashboard');
+    Route::get('/admin/materials/{material}/download', [MaterialDownloadController::class, 'show'])->name('admin.materials.download');
     Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users.index');
     Route::patch('/admin/users/{user}/role', [UserController::class, 'updateRole'])->name('admin.users.role.update');
     Route::patch('/admin/users/{user}/status', [UserController::class, 'updateStatus'])->name('admin.users.status.update');

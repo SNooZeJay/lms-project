@@ -318,7 +318,6 @@ class PublicCourseCatalogTest extends TestCase
         $this->assertFalse(Route::has('student.enrollments.index'));
         $this->assertFalse(Route::has('student.payments.checkout'));
         $this->assertFalse(Route::has('student.progress.show'));
-        $this->assertFalse(Route::has('student.materials.download'));
         $this->assertFalse(Route::has('instructor.courses.materials.upload'));
     }
 

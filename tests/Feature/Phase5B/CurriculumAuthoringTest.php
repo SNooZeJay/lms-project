@@ -214,7 +214,6 @@ class CurriculumAuthoringTest extends TestCase
     public function test_phase_five_b_does_not_add_public_or_upload_routes(): void
     {
         $this->assertFalse(Route::has('instructor.courses.materials.upload'));
-        $this->assertFalse(Route::has('student.materials.download'));
     }
 
     private function makeInstructor(): User

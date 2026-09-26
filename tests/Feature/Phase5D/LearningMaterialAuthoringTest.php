@@ -126,7 +126,7 @@ class LearningMaterialAuthoringTest extends TestCase
         $this->assertDatabaseMissing('learning_materials', ['title' => 'Missing Link']);
     }
 
-    public function test_file_material_types_are_rejected(): void
+    public function test_file_material_types_need_a_file(): void
     {
         $instructor = $this->makeInstructor();
         [$course, $module, $lesson] = $this->makeLesson($instructor);
@@ -138,7 +138,7 @@ class LearningMaterialAuthoringTest extends TestCase
                     'title' => "Attempted {$type} material",
                     'material_type' => $type,
                 ])
-                ->assertSessionHasErrors('material_type');
+                ->assertSessionHasErrors('file');
         }
 
         $this->assertDatabaseMissing('learning_materials', ['title' => 'Attempted image material']);
@@ -345,12 +345,12 @@ class LearningMaterialAuthoringTest extends TestCase
             ->assertSee(route('instructor.courses.materials.edit', [$course, $module, $lesson, $material]), false);
     }
 
-    public function test_phase_five_d_adds_no_upload_download_or_delete_routes(): void
+    public function test_phase_five_d_adds_no_delete_routes(): void
     {
-        $this->assertFalse(Route::has('instructor.courses.materials.upload'));
-        $this->assertFalse(Route::has('instructor.courses.materials.download'));
+        // Uploads and downloads arrive in Phase 7C. Deleting is never added.
         $this->assertFalse(Route::has('instructor.courses.materials.destroy'));
         $this->assertFalse(Route::has('student.materials.show'));
+        $this->assertFalse(Route::has('student.materials.destroy'));
     }
 
     private function makeInstructor(): User

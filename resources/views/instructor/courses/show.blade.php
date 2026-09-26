@@ -155,11 +155,15 @@
                                     <label for="material-type-{{ $lesson->id }}" class="block text-sm font-semibold text-ink">Material type</label>
                                     <select id="material-type-{{ $lesson->id }}" name="material_type" required class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
                                         @foreach (\App\Enums\LearningMaterialType::cases() as $type)
-                                            @continue(in_array($type->value, ['image', 'pdf', 'document'], true))
                                             <option value="{{ $type->value }}" @selected($materialFailed && old('material_type') === $type->value)>{{ ucfirst(str_replace('_', ' ', $type->value)) }}</option>
                                         @endforeach
                                     </select>
-                                    <p class="mt-2 text-xs leading-5 text-ink-muted">File uploads are not available yet, so only text and link types are listed.</p>
+                                    <p class="mt-2 text-xs leading-5 text-ink-muted">Image, PDF, and Document materials need a file. Files are stored privately and served only to authorized readers.</p>
+                                </div>
+                                <div>
+                                    <label for="material-file-{{ $lesson->id }}" class="block text-sm font-semibold text-ink">Material file</label>
+                                    <input id="material-file-{{ $lesson->id }}" name="file" type="file" class="mt-2 block w-full min-h-11 rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink file:mr-3 file:min-h-11 file:rounded-md file:border-0 file:bg-surface-muted file:px-3 file:text-sm file:font-semibold file:text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                                    <p class="mt-2 text-xs leading-5 text-ink-muted">10 MB maximum. Executables and scripts are rejected.</p>
                                 </div>
                                 <div>
                                     <label for="material-content-{{ $lesson->id }}" class="block text-sm font-semibold text-ink">Material content</label>

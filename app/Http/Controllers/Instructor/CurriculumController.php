@@ -120,7 +120,12 @@ class CurriculumController extends Controller
     ): RedirectResponse {
         abort_unless($this->lessonBelongsToCourse($course, $module, $lesson), 404);
         Gate::authorize('create', [LearningMaterial::class, $lesson]);
-        $createLearningMaterial->handle($request->user(), $lesson, $request->validated());
+        $createLearningMaterial->handle(
+            $request->user(),
+            $lesson,
+            $request->safe()->only(['title', 'material_type', 'content_text', 'external_url']),
+            $request->file('file'),
+        );
 
         return redirect()
             ->route('instructor.courses.show', $course)

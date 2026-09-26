@@ -313,7 +313,6 @@ class FreeEnrollmentTest extends TestCase
     {
         $this->assertFalse(Route::has('student.payments.checkout'));
         $this->assertFalse(Route::has('student.progress.index'));
-        $this->assertFalse(Route::has('student.materials.download'));
         $this->assertFalse(Route::has('student.enrollments.cancel'));
     }
 
