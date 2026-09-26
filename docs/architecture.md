@@ -1153,9 +1153,13 @@ The webhook route is registered before the authenticated groups on purpose. It i
 - The provider event id is unique per provider. A replayed delivery is recorded and changes nothing, so a duplicate paid event cannot create duplicate access.
 - An unverified signature is recorded as `ignored` and changes no state. A tampered body with a valid original signature is rejected by the HMAC check.
 - Signature comparison uses `hash_equals`, and a missing or empty signature is never treated as a pass.
+- The signature header is not a bare digest. It carries a timestamp and one signature per mode: `t=1496734173,te=<hex>,li=`. The signed message is the timestamp, a period, and the untouched request body, hashed with the endpoint's secret using SHA-256. `te` is compared on a test deployment and `li` on a live one, so a signature from the other mode is never accepted.
+- The timestamp is not checked for freshness. PayMongo retries a failed delivery up to twelve times and every retry carries the timestamp of the original event, so a freshness window would reject exactly the deliveries an endpoint most needs to accept. Replay is prevented by the provider event id being recorded once instead.
+- A `payment.paid` event carries no `reference_number`, so it cannot be matched to a Payment row and is recorded as ignored. Only `checkout_session.payment.paid` settles a payment, which is why the endpoint subscribes to it alone.
 - A failed or cancelled payment leaves the enrollment `pending_payment`, so a Student can retry. A refund cancels the enrollment and removes access.
+- A Student sees one derived state per enrollment, from `App\Support\StudentPaymentState`: Paid, Included, Awaiting payment, Payment failed, Payment expired, Refunded, or Payment cancelled. A pending payment older than a day reads as expired, because a checkout left open cannot be completed. A declined card offers a retry and never tells a Student to contact an administrator.
 - Credentials live only in server-only configuration. They are never rendered, logged, or written to a payment record, and a test asserts both.
-- The return page never confirms a payment by itself. It states that the page does not confirm payment, and only a verified webhook can do that.
+- The return page never confirms a payment by itself. It states that the page does not confirm payment, and only a verified webhook can do that. It reloads itself while a payment is pending, because the confirmation arrives by webhook rather than by the browser returning.
 
 ### Payment flow
 

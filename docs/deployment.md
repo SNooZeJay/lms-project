@@ -328,6 +328,37 @@ Step 6 is the only way to prove the credentials and the provider contract. The
 automated suite proves the state machine with a fake provider, so only a real
 payment proves the secrets.
 
+The signing secret is not the API secret key. It is shown only on the endpoint
+page, under Developers → Webhooks → your endpoint, and each endpoint has its own.
+The API deliberately does not return it, so it cannot be recovered from a
+credential and must be copied from that page.
+
+### The signature header
+
+It is not a bare digest, and this is the single easiest thing to get wrong:
+
+```text
+t=1496734173,te=<hex signature>,li=
+```
+
+The three parts are a timestamp, the test-mode signature, and the live-mode
+signature. Only one of `te` and `li` is ever populated. The signed message is
+the timestamp, a period, and the untouched request body:
+
+```text
+<t>.<raw body>
+```
+
+Hash that with the endpoint's secret using SHA-256 and compare against `te` on a
+test deployment or `li` on a live one. Hashing only the body, or comparing the
+whole header to a digest, silently rejects every genuine delivery while looking
+correct in review.
+
+Do not add a freshness window on the timestamp. PayMongo retries a failed
+delivery up to twelve times with backoff, and every retry carries the timestamp
+of the original event, so a window would reject the retries that matter.
+Deduplicate on the provider event id instead.
+
 ### PayMongo names events two ways
 
 The dashboard label and the event type in the payload have differed. Both
