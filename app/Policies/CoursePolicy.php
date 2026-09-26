@@ -30,6 +30,16 @@ class CoursePolicy
         return $this->view($actor, $course);
     }
 
+    public function publish(User $actor, Course $course): bool
+    {
+        return $this->view($actor, $course);
+    }
+
+    public function unpublish(User $actor, Course $course): bool
+    {
+        return $this->view($actor, $course);
+    }
+
     private function isActiveInstructor(User $actor): bool
     {
         return $actor->profile?->role === UserRole::Instructor

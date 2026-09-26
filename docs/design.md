@@ -455,6 +455,17 @@ Phase 5D adds material metadata to each Lesson on the outline:
 - Failed submits keep the typed text and reopen the same form
 - No upload, download, delete, or publish control appears
 
+### Phase 5E publishing
+
+Phase 5E adds two state controls to the Instructor workspace:
+
+- **Publish course** appears on a `draft` Course
+- **Unpublish course** appears on a `published` Course
+- Only one of the two controls is shown at a time
+- The outline header shows the current status and the first publish time
+- A blocked publish explains what is missing, such as a missing Lesson
+- No archive, delete, or public preview control appears
+
 ### Course catalog
 
 - Search by course title

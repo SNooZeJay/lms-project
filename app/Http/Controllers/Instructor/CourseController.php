@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Instructor;
 
 use App\Actions\Courses\CreateCourse;
+use App\Actions\Courses\PublishCourse;
+use App\Actions\Courses\UnpublishCourse;
 use App\Actions\Courses\UpdateCourse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Courses\CreateCourseRequest;
@@ -84,5 +86,27 @@ class CourseController extends Controller
         return redirect()
             ->route('instructor.courses.show', $course)
             ->with('status', 'Course details updated.');
+    }
+
+    public function publish(Course $course, PublishCourse $publishCourse): RedirectResponse
+    {
+        Gate::authorize('publish', $course);
+
+        $publishCourse->handle(request()->user(), $course);
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Course published. It can now appear in the public catalog.');
+    }
+
+    public function unpublish(Course $course, UnpublishCourse $unpublishCourse): RedirectResponse
+    {
+        Gate::authorize('unpublish', $course);
+
+        $unpublishCourse->handle(request()->user(), $course);
+
+        return redirect()
+            ->route('instructor.courses.show', $course)
+            ->with('status', 'Course unpublished. It is hidden from the public catalog.');
     }
 }

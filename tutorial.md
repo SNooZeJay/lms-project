@@ -26,12 +26,13 @@ The current project includes:
 - Instructor Module and Lesson authoring with server-assigned order
 - Instructor editing for Course, Module, and Lesson
 - Instructor Learning Material metadata for text, code, and link materials
+- Instructor publish and unpublish for owned courses
 
 The following features are not built yet:
 
 - Public course catalog
 - Enrollment
-- Reordering, publishing, deleting, or archiving curriculum content
+- Reordering, deleting, or archiving curriculum content
 - File uploads and material downloads
 - Full role-specific business dashboards
 - Quizzes
@@ -464,7 +465,28 @@ Sign in as the Instructor and open a Course with a Lesson.
 
 File uploads are not built yet, so there is no file field and no download button.
 
-## 12. Create a Student account
+## 12. Review the Instructor publishing
+
+Sign in as the Instructor.
+
+1. Open `/instructor/courses`.
+2. Create a Course and open it without adding a Module.
+3. Select **Publish course**. Confirm the page explains that a Module is missing.
+4. Confirm the Course is still `Draft`.
+5. Add a Module but no Lesson, then select **Publish course** again. Confirm the message mentions a Lesson.
+6. Add a Lesson to that Module.
+7. Select **Publish course**. Confirm the status becomes `Published`.
+8. Confirm the Module and Lesson statuses also became `Published`.
+9. Confirm the outline shows the first published time.
+10. Confirm the button changed to **Unpublish course**.
+11. Select **Unpublish course**. Confirm the status returns to `Draft` and the content returns to `Draft`.
+12. Confirm the first published time is still shown.
+13. Open `/instructor/courses` and confirm each row shows the right control.
+14. Check the list and outline at 390px width.
+
+Nothing is public yet. The public catalog is the next phase.
+
+## 13. Create a Student account
 
 Use a separate browser or private window if you want to keep the Administrator session.
 
@@ -477,7 +499,7 @@ Use a separate browser or private window if you want to keep the Administrator s
 
 The registration form has no role selector. Public registration cannot create an Administrator.
 
-## 13. Find email verification and reset links
+## 14. Find email verification and reset links
 
 The local development environment uses Laravel's log mailer.
 
@@ -499,7 +521,7 @@ Copy the local link into the browser.
 
 The log is local. Do not upload or share `storage/logs/laravel.log` because it can contain private links and account details.
 
-## 14. Run the frontend development server
+## 15. Run the frontend development server
 
 Use this when you are changing CSS or JavaScript.
 
@@ -524,7 +546,7 @@ For normal work, you can stop Vite with `Ctrl + C`. You can also build the final
 npm run build
 ```
 
-## 15. Run the automated checks
+## 16. Run the automated checks
 
 Run these commands from the project folder.
 
@@ -577,7 +599,7 @@ This shows all registered URLs and their controller or action.
 php artisan optimize:clear
 ```
 
-## 16. Useful commands
+## 17. Useful commands
 
 | Command | What it does |
 |---|---|
@@ -592,7 +614,7 @@ php artisan optimize:clear
 | `npm run dev` | Starts the Vite development server |
 | `npm run build` | Builds frontend assets |
 
-## 17. Troubleshooting
+## 18. Troubleshooting
 
 ### `composer` is not recognized
 
@@ -714,7 +736,7 @@ php artisan owner:bootstrap --show-password
 
 If you no longer need the local Administrator, ask before removing the protected file or changing the account.
 
-## 18. Project folder guide
+## 19. Project folder guide
 
 These are the folders you will use most often:
 
@@ -736,7 +758,7 @@ Do not edit files in `vendor/`, `node_modules/`, or `public/build/` by hand. The
 
 `FOR_UI/adminator (FOR USER DASHBOARD)` is a read-only visual reference. It is not the application source code.
 
-## 19. Security rules
+## 20. Security rules
 
 Keep these rules in mind:
 
@@ -748,7 +770,7 @@ Keep these rules in mind:
 - Keep `MAIL_MAILER=log` for local demonstrations.
 - Do not use a real payment secret until the payment architecture phase is approved.
 
-## 20. Recommended beginner order
+## 21. Recommended beginner order
 
 When you are learning the project, use this order:
 
@@ -764,7 +786,8 @@ When you are learning the project, use this order:
 10. Add one Module and one Lesson to your own Course.
 11. Edit the Course, the Module, and the Lesson.
 12. Add a text material and a link material to a Lesson.
-13. Read the relevant test before changing a feature.
-14. Run `php artisan test` before and after your change.
+13. Publish the Course, then unpublish it.
+14. Read the relevant test before changing a feature.
+15. Run `php artisan test` before and after your change.
 
 You do not need to understand the whole Laravel framework before running the application. Start with the commands in this tutorial, then inspect one small feature at a time.

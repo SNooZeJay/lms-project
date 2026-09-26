@@ -45,6 +45,17 @@
                             <div><dt class="text-ink-muted">Outline</dt><dd class="mt-1 font-medium text-ink">{{ $course->modules_count }} modules</dd></div>
                         </dl>
                         <a href="{{ route('instructor.courses.show', $course) }}" class="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">View outline</a>
+                        @if ($course->status === \App\Enums\CourseStatus::Draft)
+                            <form method="POST" action="{{ route('instructor.courses.publish', $course) }}" class="mt-3">
+                                @csrf
+                                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Publish course</button>
+                            </form>
+                        @else
+                            <form method="POST" action="{{ route('instructor.courses.unpublish', $course) }}" class="mt-3">
+                                @csrf
+                                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Unpublish course</button>
+                            </form>
+                        @endif
                     </article>
                 @endforeach
             </div>
@@ -78,7 +89,22 @@
                                 <td class="px-4 py-5 align-top text-ink">{{ ucfirst($course->level->value) }}</td>
                                 <td class="px-4 py-5 align-top text-ink">PHP {{ number_format($pesos) }}.{{ str_pad($cents, 2, '0', STR_PAD_LEFT) }}</td>
                                 <td class="px-4 py-5 align-top text-ink-muted">{{ $course->modules_count }} modules</td>
-                                <td class="px-4 py-5 align-top text-right"><a href="{{ route('instructor.courses.show', $course) }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">View outline</a></td>
+                                <td class="px-4 py-5 align-top text-right">
+                                    <div class="flex flex-col items-end gap-2">
+                                        <a href="{{ route('instructor.courses.show', $course) }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">View outline</a>
+                                        @if ($course->status === \App\Enums\CourseStatus::Draft)
+                                            <form method="POST" action="{{ route('instructor.courses.publish', $course) }}">
+                                                @csrf
+                                                <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Publish course</button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('instructor.courses.unpublish', $course) }}">
+                                                @csrf
+                                                <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Unpublish course</button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

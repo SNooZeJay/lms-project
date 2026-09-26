@@ -4,7 +4,7 @@
 
 This roadmap turns the approved LMS plan into small, testable steps.
 
-Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, Phase 5B, and Phase 5C are human-approved. Phase 5D Learning Material metadata authoring is the active slice. No later business phase has started.
+Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A, Phase 5B, Phase 5C, and Phase 5D are human-approved. Phase 5E Course publishing is the active slice. No later business phase has started.
 
 Do not skip directly to payment processing or dashboard polish.
 
@@ -1494,7 +1494,7 @@ Let an Instructor add and edit Learning Material records on an owned Lesson with
 
 ### Status
 
-Approved on September 26, 2026. Material metadata authoring is implemented and passes 136 tests. Human browser review is the open checkpoint.
+Approved on September 26, 2026. Material metadata authoring is implemented, tested, and human-approved.
 
 ### Confirmed scope
 
@@ -1587,25 +1587,111 @@ Approved on September 26, 2026. Material metadata authoring is implemented and p
 
 ### Phase 5D security tests
 
-- An Instructor can add and edit materials only on an owned Lesson.
-- Students and other Instructors receive `403`.
-- Parent, uploader, position, and storage fields are rejected.
-- Image, PDF, and document types are rejected with a clear message.
-- Link materials require a valid link.
-- Storage metadata stays empty.
-- No upload, download, delete, payment, or enrollment route exists.
+### Phase 5D checkpoint
 
-### Phase 5D security tests
+Human review approved Learning Material metadata authoring on September 26, 2026.
 
-- An Instructor can add and edit materials only on an owned Lesson.
-- Students and other Instructors receive `403`.
-- Parent, uploader, position, and storage fields are rejected.
-- Image, PDF, and document types are rejected with a clear message.
-- Link materials require a valid link.
-- Storage metadata stays empty.
-- No upload, download, delete, payment, or enrollment route exists.
+## 15. Phase 5E: Course publishing
 
-## 15. Phase 5E: course catalog
+### Goal
+
+Let an Instructor publish and unpublish an owned Course so the public catalog has real content in a later phase.
+
+### Status
+
+Approved on September 26, 2026. Publishing is implemented and passes 149 tests. Human browser review is the open checkpoint.
+
+### Confirmed scope
+
+- Publish and unpublish actions on an owned Course
+- `draft` to `published` and `published` to `draft` transitions only
+- Publishing requires at least one Module and at least one Lesson
+- Publishing also moves owned Module and Lesson content to `published`
+- Unpublishing returns that content to `draft` and keeps the first publish time
+- `published_at` is set by the server on publish and never accepted from a request
+- Publish and unpublish controls on the Course list and outline
+- No archive, delete, reorder, upload, download, catalog, enrollment, or payment behavior
+
+### Explicitly not included
+
+- The `archived` state stays unused. Archiving is a later approved phase.
+- No price lock on publish. That rule belongs to the enrollment phase.
+- No public catalog page yet. That is Phase 5F.
+
+### Input, Process, and Output
+
+**Input**
+
+- Owned Course ID
+- No other field. A publish request carries no trusted data.
+
+**Process**
+
+- Run CoursePolicy publish or unpublish ownership checks
+- Reject the action when the Course is not in the required starting state
+- Reject publish when the Course has no Module or no Lesson
+- Update the Course status inside a database transaction
+- Set `published_at` on the server when publishing
+- Move owned Module and Lesson content to the matching status in the same transaction
+- Redirect to the owned Course outline
+
+**Output**
+
+- A published or draft Course with matching content status
+- A server-owned `published_at` value
+- No public page, enrollment, payment, upload, or delete behavior
+
+### Task list
+
+- [x] Task 1: Update Phase 5E requirements, routes, policies, and flow
+- [x] Task 2: Add failing publish and unpublish tests
+- [x] Task 3: Add PublishCourse and UnpublishCourse Actions
+- [x] Task 4: Add CoursePolicy abilities, routes, and controller methods
+- [x] Task 5: Add publish and unpublish controls to the list and outline
+- [x] Task 6: Run test, build, and security gates
+- [ ] Task 7: Human browser review of publishing
+
+### Phase 5E implementation evidence
+
+- `app/Actions/Courses/PublishCourse.php`
+- `app/Actions/Courses/UnpublishCourse.php`
+- `app/Policies/CoursePolicy.php`
+- `app/Http/Controllers/Instructor/CourseController.php`
+- `app/Models/Course.php`
+- `resources/views/instructor/courses/show.blade.php`
+- `resources/views/instructor/courses/index.blade.php`
+- `tests/Feature/Phase5E/CoursePublishingTest.php`
+
+### Phase 5E automated evidence
+
+- `php artisan test` passes with 149 tests and 633 assertions
+- `./vendor/bin/pint --test` passes on 130 files
+- `npm run build` succeeds
+- `composer validate`, `composer audit`, and `npm audit` pass
+- Route, config, and view cache checks pass
+- No database migration was needed for Phase 5E
+
+### Phase 5E security notes
+
+- A publish request carries no trusted body fields
+- `status` and `published_at` are only written by the Actions
+- Only a `draft` Course can be published, and only a `published` Course can be unpublished
+- Publishing requires at least one Module and at least one Lesson
+- Course, Module, and Lesson status changes run in one database transaction
+- Unpublish keeps `published_at` for audit and never deletes content
+- `CoursePolicy` `publish` and `unpublish` require active Instructor ownership
+- The Phase 5C guard was updated to block the future archive route instead of the now-approved publish route
+
+### Phase 5E security tests
+
+- An Instructor can publish and unpublish only an owned Course.
+- Students, other Instructors, and suspended accounts are blocked.
+- A Course with no Module or no Lesson cannot be published.
+- A published Course cannot be published again, and a draft Course cannot be unpublished.
+- Injected `status`, `published_at`, or `instructor_id` values are ignored.
+- No archive, delete, catalog, enrollment, payment, or upload route exists.
+
+## 16. Phase 5F: course catalog
 
 ### Goal
 
@@ -1635,7 +1721,7 @@ Publish safe public Course metadata.
 
 An Instructor can create and publish a Course, and a guest can view safe public details.
 
-## 16. Phase 6: curriculum and materials
+## 17. Phase 6: curriculum and materials
 
 ### Goal
 
@@ -1665,7 +1751,7 @@ Manage ordered Modules, Lessons, and protected Learning Materials.
 
 An Instructor can build a complete Course outline with authorized material access.
 
-## 17. Phase 7: free enrollment
+## 18. Phase 7: free enrollment
 
 ### Goal
 
@@ -1693,7 +1779,7 @@ Prove the first complete learning access workflow before payment work.
 
 A Student can enroll once in a free Course and open authorized published Lessons.
 
-## 18. Phase 8: lesson access and progress
+## 19. Phase 8: lesson access and progress
 
 ### Goal
 
@@ -1721,7 +1807,7 @@ Persist Lesson activity and calculate progress from records.
 
 A Student can complete Lessons and see database-backed progress.
 
-## 19. Phase 9: quizzes
+## 20. Phase 9: quizzes
 
 ### Goal
 
@@ -1752,7 +1838,7 @@ Deliver safe Questions and enforce server-side grading.
 
 A Student can complete a Quiz and receive a correct server-calculated result.
 
-## 20. Phase 10: completion and certificates
+## 21. Phase 10: completion and certificates
 
 ### Goal
 
@@ -1780,7 +1866,7 @@ Verify Course completion and issue one certificate.
 
 An eligible Student receives one printable certificate with safe authenticated access.
 
-## 21. Phase 11: payment architecture
+## 22. Phase 11: payment architecture
 
 ### Goal
 
@@ -1809,7 +1895,7 @@ Finalize payment behavior before calling PayMongo.
 
 Payment state transitions are fully specified and testable without live credentials.
 
-## 22. Phase 12: PayMongo integration
+## 23. Phase 12: PayMongo integration
 
 ### Goal
 
@@ -1835,7 +1921,7 @@ Run the approved webhook scenarios from `plan.md` and `architecture.md`.
 
 A real test-mode payment activates one paid Enrollment once, and repeated delivery causes no duplicate.
 
-## 23. Phase 13: dashboards and reports
+## 24. Phase 13: dashboards and reports
 
 ### Goal
 
@@ -1862,7 +1948,7 @@ Add role-specific pages using real authorized data.
 
 All dashboards work with real authorized data and approved empty states.
 
-## 24. Phase 14: quality and accessibility
+## 25. Phase 14: quality and accessibility
 
 ### Goal
 
@@ -1907,7 +1993,7 @@ php artisan route:list
 
 Every acceptance criterion in `plan.md` passes with recorded evidence.
 
-## 25. Phase 15: deployment and defense
+## 26. Phase 15: deployment and defense
 
 ### Goal
 
@@ -1943,7 +2029,7 @@ Deploy a tested release and prepare the SIA1 presentation.
 
 The deployed application works, the team can explain the architecture, and critical workflows remain testable.
 
-## 26. Commands after scaffolding
+## 27. Commands after scaffolding
 
 Use the commands generated by the selected Laravel starter kit.
 
@@ -1963,7 +2049,7 @@ npm run build
 
 Do not run `migrate:fresh` against a shared or production database.
 
-## 27. Definition of ready
+## 28. Definition of ready
 
 A task is ready when:
 
@@ -1975,7 +2061,7 @@ A task is ready when:
 - Documentation impact is known
 - No unresolved product decision remains
 
-## 28. Definition of done
+## 29. Definition of done
 
 A task is done when:
 
@@ -1989,8 +2075,8 @@ A task is done when:
 - No unrelated file changed
 - The team can explain the change
 
-## 29. Current next action
+## 30. Current next action
 
-The current next action is Phase 5D Learning Material metadata authoring.
+The current next action is Phase 5E Course publishing.
 
-Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Course outline UI, Phase 5B curriculum authoring, and Phase 5C content editing are complete and human-approved. Do not add public catalog, enrollment, payment, upload, download, delete, or publish behavior.
+Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Course outline UI, Phase 5B curriculum authoring, Phase 5C content editing, and Phase 5D material authoring are complete and human-approved. Do not add public catalog, enrollment, payment, upload, download, delete, or archive behavior.

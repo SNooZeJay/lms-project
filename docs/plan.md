@@ -366,6 +366,30 @@ Phase 5D rules:
 - Text and code materials must carry their content.
 - Phase 5D does not add upload, download, delete, archive, publish, enrollment, or payment behavior.
 
+### Phase 5E Course publishing
+
+Phase 5E adds the publish and unpublish actions that the public catalog depends on.
+
+Phase 5E includes:
+
+- Publish Course action and control
+- Unpublish Course action and control
+- `CoursePolicy` publish and unpublish abilities
+- Server-owned `published_at`
+
+Phase 5E rules:
+
+- Only the owning Instructor can publish or unpublish.
+- Only a `draft` Course can be published, and only a `published` Course can be unpublished.
+- A Course needs at least one Module and at least one Lesson before it can be published.
+- Publishing also moves the owned Module and Lesson content to `published`.
+- Unpublishing returns that content to `draft` and keeps the first publish time for audit.
+- `status` and `published_at` are never accepted from a request.
+- The `archived` state stays unused in this phase.
+- Phase 5E does not add a public catalog page, archive, delete, reorder, upload, download, enrollment, or payment behavior.
+
+Deferred decision: locking the price of a published Course. That rule belongs to the enrollment phase, where a Student buys a specific price.
+
 ### Deferred: delete and archive
 
 Delete is deliberately not part of Phase 5C.

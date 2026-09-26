@@ -288,6 +288,15 @@ Phase 5C keeps owner, parent, position, status, currency, and slugs server-owned
 
 Phase 5D accepts only `text`, `code`, `video_link`, and `external_link` materials. It does not add an upload field, a download route, delete, archive, publish, enrollment, or payment routes.
 
+### Phase 5E publishing routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| POST | `/instructor/courses/{course}/publish` | Publish an owned draft Course | Instructor role and CoursePolicy |
+| POST | `/instructor/courses/{course}/unpublish` | Return an owned published Course to draft | Instructor role and CoursePolicy |
+
+Phase 5E sends a POST with no trusted body fields. It does not add a public catalog route, archive, delete, reorder, upload, download, enrollment, or payment route.
+
 ### Student routes
 
 
@@ -765,6 +774,44 @@ flowchart TD
 - Updated owned Course outline
 - Empty storage metadata
 - No public content, upload, download, delete, enrollment, or payment behavior
+
+### Phase 5E publishing flow
+
+```mermaid
+flowchart TD
+    O[Open an owned Course outline] --> P[Select Publish or Unpublish]
+    P --> C[CoursePolicy checks Course ownership]
+    C --> S{Is the status valid for this action?}
+    S -->|No| E[Return a safe error and keep the status]
+    S -->|Yes for publish| M[Require at least one Module and one Lesson]
+    M -->|Missing| E
+    M -->|Ready| T[Update Course and content status in one transaction]
+    T --> B[Redirect to the owned Course outline]
+```
+
+### Phase 5E Input, Process, and Output
+
+**Input**
+
+- Owned Course ID
+- No other trusted field
+
+**Process**
+
+- Run CoursePolicy publish or unpublish for the acting Instructor
+- Reject publish unless the Course is `draft`
+- Reject unpublish unless the Course is `published`
+- Reject publish when the Course has no Module or no Lesson
+- Update Course, Module, and Lesson status inside one database transaction
+- Set `published_at` on the server when publishing and keep it on unpublish
+- Ignore any injected `status`, `published_at`, or `instructor_id` value
+- Redirect to the owned Course outline
+
+**Output**
+
+- A published or draft Course with matching Module and Lesson status
+- A server-owned `published_at` value
+- No public page, archive, delete, enrollment, or payment behavior
 
 ## 8. Authorization
 

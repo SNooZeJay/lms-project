@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, and Phase 5C content editing are human-approved. Phase 5D Learning Material metadata authoring is implemented and awaiting browser review.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, and Phase 5D Learning Material metadata authoring are human-approved. Phase 5E Course publishing is implemented and awaiting browser review.
 
 The repository currently contains:
 
@@ -184,20 +184,21 @@ npm audit
 npm run build
 ```
 
-## Phase 5D checkpoint
+## Phase 5E checkpoint
 
-Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, and Phase 5C content editing are human-approved. The Phase 5D slice adds:
+Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A Instructor Course Outline UI, Phase 5B curriculum authoring, Phase 5C content editing, and Phase 5D Learning Material metadata authoring are human-approved. The Phase 5E slice adds:
 
-- Instructor-owned Learning Material metadata forms on each Lesson
-- Text, code, video link, and external link materials only
-- Rejection of image, PDF, and document types until uploads exist
-- Server-owned parent, uploader, position, and storage metadata
-- `LearningMaterialPolicy` checks on every material action
-- No upload field, download route, delete, publish, enrollment, or payment behavior
+- Instructor-owned publish and unpublish actions
+- `draft` to `published` and `published` to `draft` transitions only
+- A requirement for at least one Module and one Lesson before publishing
+- Module and Lesson content that follows the Course status in one transaction
+- A server-owned `published_at` value
+- Publish and unpublish controls on the Course list and outline
+- No archive, delete, catalog, enrollment, payment, or upload behavior
 
-Delete is deferred on purpose. A later phase will use status-based archiving so student progress and payment history stay intact.
+Delete and archiving stay deferred on purpose. A later phase will use status-based archiving so student progress and payment history stay intact.
 
-The Phase 5D browser review checkpoint is open.
+The Phase 5E browser review checkpoint is open.
 
 The local Administrator is provisioned with:
 
