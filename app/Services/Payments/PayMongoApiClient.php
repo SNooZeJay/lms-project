@@ -82,7 +82,7 @@ class PayMongoApiClient implements PayMongoClient
         $secret = $this->webhookSecret();
 
         if ($secret === '') {
-            $this->reportMismatch('no secret is configured', null, null, $rawBody);
+            $this->reportMismatch($rawBody, 'no secret is configured', []);
 
             return false;
         }
@@ -90,41 +90,54 @@ class PayMongoApiClient implements PayMongoClient
         $signature = trim($this->header($headers, 'paymongo-signature'), " \t\n\r\0\x0B");
 
         if ($signature === '') {
-            $this->reportMismatch('the Paymongo-Signature header was absent or empty', null, null, $rawBody);
+            $this->reportMismatch($rawBody, 'the Paymongo-Signature header was absent or empty', []);
 
             return false;
         }
 
-        $computed = hash_hmac('sha256', $rawBody, $secret);
+        // The same HMAC in the encodings a signature could plausibly arrive in.
+        // Accepting more than one encoding is not a loosening: each of them
+        // still requires the secret, so a forgery stays just as impossible.
+        $candidates = [
+            'hex' => hash_hmac('sha256', $rawBody, $secret),
+            'base64' => base64_encode(hash_hmac('sha256', $rawBody, $secret, true)),
+        ];
 
-        if (! hash_equals($computed, $signature)) {
-            $this->reportMismatch('the signature did not match', $signature, $computed, $rawBody);
-
-            return false;
+        foreach ($candidates as $candidate) {
+            if (hash_equals($candidate, $signature)) {
+                return true;
+            }
         }
 
-        return true;
+        $this->reportMismatch($rawBody, 'the signature did not match', [
+            'received' => $signature,
+            ...$candidates,
+        ]);
+
+        return false;
     }
 
     /**
      * Explain a failed verification in the log, because a webhook that silently
      * rejects every delivery cannot be diagnosed from the database alone.
      *
-     * Only a short prefix of each digest is written. A digest prefix cannot be
+     * Only short prefixes of the digests are written. A digest prefix cannot be
      * used to forge anything without the secret, and the first few characters
-     * are all that is needed to tell the causes apart.
+     * are all that is needed to tell the causes apart. The body digest is
+     * included so a body altered in transit can be spotted, which is one of the
+     * causes the provider documents.
      */
-    private function reportMismatch(
-        string $reason,
-        ?string $received,
-        ?string $computed,
-        string $rawBody,
-    ): void {
+    private function reportMismatch(string $rawBody, string $reason, array $candidates): void
+    {
+        $short = static fn (?string $value): ?string => $value === null ? null : substr($value, 0, 16);
+
         Log::warning('PayMongo signature verification failed', [
             'reason' => $reason,
-            'received_prefix' => $received === null ? null : substr($received, 0, 12),
-            'computed_prefix' => $computed === null ? null : substr($computed, 0, 12),
+            'received_prefix' => isset($candidates['received']) ? $short($candidates['received']) : null,
+            'hex_prefix' => isset($candidates['hex']) ? $short($candidates['hex']) : null,
+            'base64_prefix' => isset($candidates['base64']) ? $short($candidates['base64']) : null,
             'body_bytes' => strlen($rawBody),
+            'body_sha256_prefix' => substr(hash('sha256', $rawBody), 0, 16),
             'secret_bytes' => strlen($this->webhookSecret()),
         ]);
     }
