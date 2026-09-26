@@ -256,6 +256,15 @@ Role routes use `auth`, `account.active`, `verified`, `password.change`, and `ro
 
 Phase 5A does not expose the later Course edit, publish, curriculum action, upload, or download routes.
 
+### Phase 5B curriculum authoring routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| POST | `/instructor/courses/{course}/modules` | Add a draft Module | Instructor role and ModulePolicy |
+| POST | `/instructor/courses/{course}/modules/{module}/lessons` | Add a draft Lesson | Instructor role and LessonPolicy |
+
+Phase 5B assigns positions, status, parent IDs, and Lesson slugs on the server. It does not add public content, upload, download, enrollment, or payment routes.
+
 ### Student routes
 
 
@@ -613,6 +622,46 @@ Phase 5A never exposes draft Course data to guests or other Instructors. Public 
 - Read-only Course outline with Module, Lesson, and Material metadata
 - No public Course access
 - No enrollment, payment, upload, or curriculum mutation
+
+### Phase 5B curriculum authoring flow
+
+```mermaid
+flowchart TD
+    O[Open owned Course outline] --> M[Submit Module form]
+    M --> MP[ModulePolicy checks Course ownership]
+    MP --> MV[Validate Module fields]
+    MV --> MD[Assign next position and draft status]
+    MD --> MS[Save Module in a transaction]
+    MS --> L[Submit Lesson form]
+    L --> LP[LessonPolicy checks Module ownership]
+    LP --> LV[Validate Lesson fields]
+    LV --> LS[Assign position, status, and unique slug]
+    LS --> LT[Save Lesson in a transaction]
+    LT --> R[Redirect to owned Course outline]
+```
+
+### Phase 5B Input, Process, and Output
+
+**Input**
+
+- Owned Course or Module ID
+- Module title and description
+- Lesson title, summary, content text, required flag, and estimated minutes
+
+**Process**
+
+- Run ModulePolicy or LessonPolicy
+- Validate the Form Request
+- Reject parent, position, status, and slug fields from the request
+- Assign the next position inside the server
+- Generate a unique Lesson slug inside the Module
+- Save private draft content in a database transaction
+
+**Output**
+
+- Ordered Module and Lesson records
+- Updated owned Course outline
+- No public content, upload, download, enrollment, or payment behavior
 
 ## 8. Authorization
 

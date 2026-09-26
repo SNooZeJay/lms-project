@@ -4,7 +4,7 @@ A beginner-friendly academic Learning Management System for a BSIT project in th
 
 ## Current status
 
-Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, and Phase 4B curriculum metadata are human-approved. Phase 5A Instructor Course Outline UI is implemented and awaiting browser review.
+Phase 1 of the Laravel foundation is complete. Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, and Phase 5A Instructor Course Outline UI are human-approved. Phase 5B Module and Lesson authoring is implemented and awaiting browser review.
 
 The repository currently contains:
 
@@ -184,18 +184,18 @@ npm audit
 npm run build
 ```
 
-## Phase 4B checkpoint
+## Phase 5B checkpoint
 
-Phase 2 authentication, profiles, Phase 3 roles and authorization, and Phase 4A Course foundation are human-approved. Phase 4B curriculum and material foundation is being specified. The planned slice includes:
+Phase 2 authentication, profiles, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, and Phase 5A Instructor Course Outline UI are human-approved. The Phase 5B slice adds:
 
-- Instructor-owned Course list
-- Create private draft Course form
-- Read-only Course outline with Module, Lesson, and Material metadata
-- `CoursePolicy` ownership checks
-- Server-generated unique slugs
-- No public catalog, enrollment, payment, upload, download, or curriculum authoring
+- Instructor-owned Module and Lesson creation on the Course outline
+- Server-assigned Module and Lesson order
+- Server-generated unique Lesson slugs
+- `ModulePolicy` and `LessonPolicy` ownership checks
+- Private draft content only
+- No public catalog, enrollment, payment, upload, download, edit, reorder, or publish behavior
 
-The Phase 5A browser review checkpoint is open.
+The Phase 5B browser review checkpoint is open.
 
 The local Administrator is provisioned with:
 

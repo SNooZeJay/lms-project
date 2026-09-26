@@ -10,6 +10,8 @@
             <div role="status" class="mt-6 border-l-4 border-accent bg-success-surface px-4 py-3 text-sm font-semibold text-success-text">{{ session('status') }}</div>
         @endif
 
+        <x-form-errors :errors="$errors" />
+
         <header class="mt-8 border-b border-line pb-8">
             <p class="font-mono text-sm font-semibold text-primary-text">Course outline</p>
             <div class="mt-3 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -29,7 +31,7 @@
                     </div>
                 </dl>
             </div>
-            <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">This Phase 5A outline is read-only. Module, Lesson, and material authoring controls will be added in a later approved slice.</p>
+            <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">You can add draft Modules and Lessons here. Editing, reordering, uploads, and public publishing will be added in later approved slices.</p>
         </header>
 
         @forelse ($course->modules as $module)
@@ -74,12 +76,68 @@
                 @empty
                     <p class="px-5 py-5 text-sm text-ink-muted">No Lessons are recorded in this Module yet.</p>
                 @endforelse
+
+                @php
+                    $lessonFailed = old('form_context') === 'lesson:'.$module->id;
+                @endphp
+                <details class="border-t border-line bg-surface-muted px-5 py-4"{!! $lessonFailed ? ' open' : '' !!}>
+                    <summary class="cursor-pointer text-sm font-semibold text-primary-text">Add lesson</summary>
+                    <form method="POST" action="{{ route('instructor.courses.modules.lessons.store', [$course, $module]) }}" class="mt-4 space-y-4">
+                        @csrf
+                        <input type="hidden" name="form_context" value="lesson:{{ $module->id }}">
+                        <div>
+                            <label for="lesson-title-{{ $module->id }}" class="block text-sm font-semibold text-ink">Lesson title</label>
+                            <input id="lesson-title-{{ $module->id }}" name="title" type="text" required maxlength="160" value="{{ $lessonFailed ? old('title') : '' }}" class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                        </div>
+                        <div>
+                            <label for="lesson-summary-{{ $module->id }}" class="block text-sm font-semibold text-ink">Summary</label>
+                            <textarea id="lesson-summary-{{ $module->id }}" name="summary" rows="3" maxlength="5000" class="mt-2 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">{{ $lessonFailed ? old('summary') : '' }}</textarea>
+                        </div>
+                        <div>
+                            <label for="lesson-content-{{ $module->id }}" class="block text-sm font-semibold text-ink">Lesson content</label>
+                            <textarea id="lesson-content-{{ $module->id }}" name="content_text" rows="4" maxlength="100000" class="mt-2 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">{{ $lessonFailed ? old('content_text') : '' }}</textarea>
+                        </div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="lesson-minutes-{{ $module->id }}" class="block text-sm font-semibold text-ink">Estimated minutes</label>
+                                <input id="lesson-minutes-{{ $module->id }}" name="estimated_minutes" type="number" min="1" step="1" value="{{ $lessonFailed ? old('estimated_minutes') : '' }}" class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                            </div>
+                            <label class="flex min-h-11 items-center gap-3 self-end rounded-md border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink">
+                                <input type="hidden" name="is_required" value="0">
+                                <input name="is_required" value="1" type="checkbox" @checked($lessonFailed ? (bool) old('is_required', true) : true) class="h-4 w-4 rounded border-line text-primary focus:ring-focus">
+                                Required lesson
+                            </label>
+                        </div>
+                        <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Add private lesson</button>
+                    </form>
+                </details>
             </section>
         @empty
             <section class="mt-10 border-t border-line py-16 text-center" aria-labelledby="empty-outline-heading">
                 <h2 id="empty-outline-heading" class="text-lg font-semibold text-ink">No Modules yet</h2>
-                <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-muted">This Course is a private draft. Module authoring will be added in the next approved UI slice.</p>
+                <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-muted">This Course is a private draft. Add the first Module to begin its outline.</p>
             </section>
         @endforelse
+
+        @php
+            $moduleFailed = old('form_context') === 'module';
+        @endphp
+        <section class="mt-8 border-t border-line pt-8" aria-labelledby="add-module-heading">
+            <h2 id="add-module-heading" class="text-lg font-semibold text-ink">Add module</h2>
+            <p class="mt-2 text-sm leading-6 text-ink-muted">New Modules are private drafts. Their order is assigned by the server.</p>
+            <form method="POST" action="{{ route('instructor.courses.modules.store', $course) }}" class="mt-5 space-y-4">
+                @csrf
+                <input type="hidden" name="form_context" value="module">
+                <div>
+                    <label for="module-title" class="block text-sm font-semibold text-ink">Module title</label>
+                    <input id="module-title" name="title" type="text" required maxlength="160" value="{{ $moduleFailed ? old('title') : '' }}" class="mt-2 min-h-11 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">
+                </div>
+                <div>
+                    <label for="module-description" class="block text-sm font-semibold text-ink">Module description</label>
+                    <textarea id="module-description" name="description" rows="3" maxlength="5000" class="mt-2 w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:border-primary focus:outline-none focus:ring-3 focus:ring-focus">{{ $moduleFailed ? old('description') : '' }}</textarea>
+                </div>
+                <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Add private module</button>
+            </form>
+        </section>
     </div>
 @endsection

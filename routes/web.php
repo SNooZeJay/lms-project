@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Instructor\CourseController;
+use App\Http\Controllers\Instructor\CurriculumController;
 use App\Http\Controllers\Role\AdministratorController;
 use App\Http\Controllers\Role\InstructorController;
 use App\Http\Controllers\Role\StudentController;
@@ -32,6 +33,8 @@ Route::middleware([...$authenticated, 'role:instructor'])->group(function (): vo
     Route::get('/instructor/courses/new', [CourseController::class, 'create'])->name('instructor.courses.create');
     Route::post('/instructor/courses', [CourseController::class, 'store'])->name('instructor.courses.store');
     Route::get('/instructor/courses/{course}', [CourseController::class, 'show'])->name('instructor.courses.show');
+    Route::post('/instructor/courses/{course}/modules', [CurriculumController::class, 'storeModule'])->name('instructor.courses.modules.store');
+    Route::post('/instructor/courses/{course}/modules/{module}/lessons', [CurriculumController::class, 'storeLesson'])->name('instructor.courses.modules.lessons.store');
 });
 
 Route::middleware([...$authenticated, 'role:administrator'])->group(function (): void {

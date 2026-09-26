@@ -420,6 +420,17 @@ Phase 5A is the first Course browser experience:
 - Draft content stays inside the Instructor workspace
 - No public enrollment, payment, upload, or download controls appear
 
+### Phase 5B curriculum authoring
+
+Phase 5B adds two safe Instructor mutations to the Course outline:
+
+- **Add module** uses a clear title and description form
+- **Add lesson** uses title, summary, content, required state, and estimated minutes
+- New records show as `Draft`
+- Server ordering is shown as Module and Lesson positions
+- Forms are usable on desktop and mobile
+- No upload, download, public, or payment controls appear
+
 ### Course catalog
 
 - Search by course title

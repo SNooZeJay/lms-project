@@ -22,15 +22,18 @@ The current project includes:
 - Administrator user search and role/status controls
 - Read-only role and account-status activity records
 - Course database foundation with Instructor ownership and safe defaults
+- Instructor Course list, create form, and Course outline
+- Instructor Module and Lesson authoring with server-assigned order
 
 The following features are not built yet:
 
-- Course catalog and management UI
+- Public course catalog
 - Enrollment
+- Editing, reordering, or publishing curriculum content
+- Learning Material authoring and file uploads
 - Full role-specific business dashboards
 - Quizzes
 - Certificates
-- File uploads
 - PayMongo checkout
 
 This is normal. The project is being built one approved phase at a time.
@@ -395,11 +398,32 @@ To review the Instructor pages:
 9. Submit the form.
 10. Review the private draft Course outline.
 
-The outline page is read-only in Phase 5A. It can display existing Modules, Lessons, and Learning Material metadata, but it does not add authoring controls yet.
+The outline page now lets you add Modules and Lessons. There is no edit, reorder, upload, or publish control yet.
 
 There is still no public course catalog, enrollment, payment, upload, or download workflow.
 
-## 9. Create a Student account
+## 9. Review the Instructor curriculum authoring
+
+Sign in as the Instructor and open one of your Courses.
+
+1. Open `/instructor/courses`.
+2. Select a Course you own.
+3. Scroll to **Add module**.
+4. Enter a title such as `Module One` and an optional description.
+5. Select **Add private module**.
+6. Confirm the new Module appears as `Module 1` with the status `Draft`.
+7. Expand **Add lesson** inside that Module.
+8. Enter a title, summary, lesson content, and estimated minutes.
+9. Leave **Required lesson** checked to make the Lesson required.
+10. Select **Add private lesson**.
+11. Confirm the new Lesson appears as `Lesson 1` with the status `Draft`.
+12. Add a second Module and a second Lesson and confirm the order keeps increasing.
+13. Add two Lessons with the same title and confirm both are saved.
+14. Submit an empty title and confirm the page shows an error and keeps your typed text.
+
+Every Module and Lesson starts as a private draft. Order, status, and Lesson slugs are always set by the server.
+
+## 10. Create a Student account
 
 Use a separate browser or private window if you want to keep the Administrator session.
 
@@ -412,7 +436,7 @@ Use a separate browser or private window if you want to keep the Administrator s
 
 The registration form has no role selector. Public registration cannot create an Administrator.
 
-## 10. Find email verification and reset links
+## 11. Find email verification and reset links
 
 The local development environment uses Laravel's log mailer.
 
@@ -434,7 +458,7 @@ Copy the local link into the browser.
 
 The log is local. Do not upload or share `storage/logs/laravel.log` because it can contain private links and account details.
 
-## 11. Run the frontend development server
+## 12. Run the frontend development server
 
 Use this when you are changing CSS or JavaScript.
 
@@ -459,7 +483,7 @@ For normal work, you can stop Vite with `Ctrl + C`. You can also build the final
 npm run build
 ```
 
-## 12. Run the automated checks
+## 13. Run the automated checks
 
 Run these commands from the project folder.
 
@@ -512,7 +536,7 @@ This shows all registered URLs and their controller or action.
 php artisan optimize:clear
 ```
 
-## 13. Useful commands
+## 14. Useful commands
 
 | Command | What it does |
 |---|---|
@@ -527,7 +551,7 @@ php artisan optimize:clear
 | `npm run dev` | Starts the Vite development server |
 | `npm run build` | Builds frontend assets |
 
-## 14. Troubleshooting
+## 15. Troubleshooting
 
 ### `composer` is not recognized
 
@@ -649,7 +673,7 @@ php artisan owner:bootstrap --show-password
 
 If you no longer need the local Administrator, ask before removing the protected file or changing the account.
 
-## 15. Project folder guide
+## 16. Project folder guide
 
 These are the folders you will use most often:
 
@@ -671,7 +695,7 @@ Do not edit files in `vendor/`, `node_modules/`, or `public/build/` by hand. The
 
 `FOR_UI/adminator (FOR USER DASHBOARD)` is a read-only visual reference. It is not the application source code.
 
-## 16. Security rules
+## 17. Security rules
 
 Keep these rules in mind:
 
@@ -683,7 +707,7 @@ Keep these rules in mind:
 - Keep `MAIL_MAILER=log` for local demonstrations.
 - Do not use a real payment secret until the payment architecture phase is approved.
 
-## 17. Recommended beginner order
+## 18. Recommended beginner order
 
 When you are learning the project, use this order:
 
@@ -695,7 +719,9 @@ When you are learning the project, use this order:
 6. Register a Student account.
 7. Read `docs/plan.md` for requirements.
 8. Read `docs/architecture.md` for the technical design.
-9. Read the relevant test before changing a feature.
-10. Run `php artisan test` before and after your change.
+9. Review the Instructor Course pages as an Instructor.
+10. Add one Module and one Lesson to your own Course.
+11. Read the relevant test before changing a feature.
+12. Run `php artisan test` before and after your change.
 
 You do not need to understand the whole Laravel framework before running the application. Start with the commands in this tutorial, then inspect one small feature at a time.

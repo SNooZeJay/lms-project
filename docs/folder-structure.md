@@ -60,6 +60,9 @@ lms-project/
 │   │   │   └── ReissueCertificate.php
 │   │   ├── Courses/
 │   │   │   ├── CreateCourse.php
+│   │   │   ├── Curriculum/
+│   │   │   │   ├── CreateLesson.php
+│   │   │   │   └── CreateModule.php
 │   │   │   ├── PublishCourse.php
 │   │   │   └── UnpublishCourse.php
 │   │   ├── Enrollment/
@@ -117,6 +120,8 @@ lms-project/
 │   │   │   │   └── UserController.php
 │   │   │   ├── Auth/
 │   │   │   ├── Instructor/
+│   │   │   │   ├── CourseController.php
+│   │   │   │   └── CurriculumController.php
 │   │   │   ├── Public/
 │   │   │   ├── Role/
 │   │   │   │   ├── AdministratorController.php
@@ -134,7 +139,9 @@ lms-project/
 │   │   │   │   └── UpdateUserRoleRequest.php
 │   │   │   ├── Auth/
 │   │   │   ├── Courses/
-│   │   │   │   └── CreateCourseRequest.php
+│   │   │   │   ├── CreateCourseRequest.php
+│   │   │   │   ├── CreateLessonRequest.php
+│   │   │   │   └── CreateModuleRequest.php
 │   │   │   ├── Enrollment/
 │   │   │   ├── Learning/
 │   │   │   ├── Payments/
@@ -172,6 +179,8 @@ lms-project/
 │   │   ├── ActivityLogPolicy.php
 │   │   ├── UserPolicy.php
 │   │   ├── CoursePolicy.php
+│   │   ├── LessonPolicy.php
+│   │   ├── ModulePolicy.php
 │   │   ├── EnrollmentPolicy.php
 │   │   ├── LearningMaterialPolicy.php
 │   │   ├── PaymentPolicy.php
@@ -279,6 +288,7 @@ lms-project/
 │   │   ├── Phase4A/
 │   │   ├── Phase4B/
 │   │   ├── Phase5A/
+│   │   ├── Phase5B/
 │   │   ├── Role/
 │   │   ├── Student/
 │   │   └── Webhooks/

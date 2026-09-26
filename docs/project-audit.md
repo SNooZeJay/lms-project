@@ -6,7 +6,7 @@ Audit date: September 25, 2026
 
 This document describes the repository as it exists now.
 
-The Laravel foundation, Phase 2 authentication/profile slice, Phase 3 roles and authorization slice, Phase 4A Course foundation, and Phase 4B curriculum metadata are human-approved. Phase 5A Instructor Course Outline UI is implemented and awaiting human review. Later LMS business modules remain unbuilt.
+The Laravel foundation, Phase 2 authentication/profile slice, Phase 3 roles and authorization slice, Phase 4A Course foundation, Phase 4B curriculum metadata, and Phase 5A Instructor Course Outline UI are human-approved. Phase 5B Module and Lesson authoring is implemented and awaiting human browser review. Later LMS business modules remain unbuilt.
 
 ## 2. Current repository state
 
@@ -14,7 +14,7 @@ The repository is an implementation-stage IT Learning Hub for a BSIT Academic LM
 
 It contains the Laravel 13 foundation, documentation, project support files, and a compiled static dashboard reference.
 
-The foundation is runnable. The product display name is now `IT Learning Hub`. Phase 2 contains the Fortify package, User and Profile records, authentication screens, verified email access, own-profile editing, the forced temporary-password gate, the local Administrator owner, and the completed automated/browser evidence checkpoint. Phase 3 now contains ActivityLog records, role/status Actions, Policies, active-account middleware, role pages, and Administrator user management. Phase 4A now contains the Course table, enums, model, Instructor relationship, factory, and constraint tests. The application does not yet contain the catalog UI, enrollment, learning materials, progress, quizzes, certificates, private uploads, or PayMongo.
+The foundation is runnable. The product display name is now `IT Learning Hub`. Phase 2 contains the Fortify package, User and Profile records, authentication screens, verified email access, own-profile editing, the forced temporary-password gate, the local Administrator owner, and the completed automated/browser evidence checkpoint. Phase 3 now contains ActivityLog records, role/status Actions, Policies, active-account middleware, role pages, and Administrator user management. Phase 4A now contains the Course table, enums, model, Instructor relationship, factory, and constraint tests. Phase 4B now contains the Module, Lesson, and Learning Material tables, enums, models, factories, and constraint tests. Phase 5A now contains the Instructor Course list, create form, and read-only outline. Phase 5B now contains Instructor Module and Lesson authoring on the outline page. The application does not yet contain the catalog UI, enrollment, learning material uploads, progress, quizzes, certificates, private uploads, or PayMongo.
 
 ## 3. Root contents
 
@@ -33,7 +33,7 @@ The foundation is runnable. The product display name is now `IT Learning Hub`. P
 | `resources/` | Blade layouts, authentication/account/role/admin views, Tailwind CSS, and theme script | Application source |
 | `routes/` | Public, authentication, account, role, admin, and health route configuration | Application source |
 | `storage/` | Private local storage skeleton | Local runtime files are ignored |
-| `tests/` | Authentication, account, role, admin, owner-command, database, and UI feature tests | Application source |
+| `tests/` | Authentication, account, role, admin, owner-command, database, Phase 5A, and Phase 5B UI feature tests | Application source |
 | `vendor/` | Installed Composer dependencies | Generated and ignored |
 | `node_modules/` | Installed npm dependencies | Generated and ignored |
 | `AGENTS.md` | OpenCode project instructions | Persistent coding context |
@@ -183,7 +183,18 @@ Phase 3 and Phase 4A code are human-approved. Phase 4B curriculum and material m
 - Reject privileged fields
 - No public catalog, enrollment, payment, upload, download, or curriculum mutation
 
-Phase 5A code is implemented and awaiting human review.
+Phase 5A code is human-approved. Phase 5B curriculum authoring is approved and starting.
+
+### Approved Phase 5B specification
+
+- Add Instructor-owned Module and Lesson creation forms
+- Assign Module and Lesson positions on the server
+- Generate unique Lesson slugs inside a Module
+- Create draft curriculum content only
+- Enforce ModulePolicy and LessonPolicy ownership
+- No public catalog, enrollment, payment, upload, or download behavior
+
+Phase 5B Module and Lesson authoring is implemented and awaiting human browser review.
 
 ### Local environment check
 
@@ -204,7 +215,7 @@ Checked on September 25, 2026:
 | Credential storage | DPAPI-encrypted file under `C:\Users\Administrator\.secrets\lms-mysql.json` | Ready |
 | XAMPP database | MariaDB 10.4.32 remains on port 3306 | Preserved and not used by the LMS |
 
-Phase 1 environment prerequisites, the Laravel foundation, and the human-approved Phase 2, Phase 3, and Phase 4A slices are ready. Phase 4B curriculum and material metadata is implemented, and Phase 5A is starting.
+Phase 1 environment prerequisites, the Laravel foundation, and the human-approved Phase 2, Phase 3, Phase 4A, Phase 4B, and Phase 5A slices are ready. Phase 5B Module and Lesson authoring is implemented and awaiting browser review.
 
 ## 5. Documentation state
 
@@ -395,7 +406,7 @@ Phase 1, Phase 2, Phase 3, and Phase 4A quality checks exist:
 - Local MySQL migrations
 - Blade, route, and configuration cache checks
 
-The first full foundation run passed 7 tests and 26 assertions. After the Fortify dependency and identity slice, the suite passed 9 tests and 45 assertions. The completed Phase 2 authentication and profile slice passes 28 tests and 141 assertions, including a real Windows DPAPI round trip. The Phase 3 role and authorization slice passed 41 tests and 195 assertions. The Phase 4A Course foundation slice passed 55 tests and 235 assertions. The Phase 4B curriculum and material foundation slice passed 80 tests and 308 assertions. The Phase 5A Instructor Course Outline UI slice passes 93 tests and 359 assertions. The first dependency pass found a missing PHP Fileinfo extension, which was enabled and retested. The Administrator user list now marks unverified accounts and explains that role changes unlock after email verification; the server-side rejection remains enforced. The shared authenticated header now exposes a visible Sign out form; the missing Administrator logout control was reproduced and fixed. A later cached-config run exposed a test database selection defect, which was fixed and retested. A first-run Blade check exposed an unconditional Vite manifest dependency, which was fixed and retested. A local `.env` owner-name value needed quoting and was fixed before the Phase 2 tests passed. Fortify’s default unknown-email reset response initially exposed account state, so a safe generic response was added and retested. The password-change middleware initially allowed the GET route but not the POST route, and the fix was retested. The owner test initially reused the real local secret path, so it now uses a unique temporary path. Registration normalization initially assumed missing fields were present, so missing-field validation now returns safe errors. Edge fallback review confirmed responsive auth layout, theme persistence, and keyboard-safe controls. The Phase 3 Administrator table initially caused mobile page overflow; stacked mobile cards fixed it and the 390px browser check was rerun. The first Phase 4A factory test exposed an array value in a text column; the factory now joins sentences before insertion. The Phase 5A Course list initially used an unsupported nested `withCount` relation; the controller now uses a supported Module count and the browser page passes.
+The first full foundation run passed 7 tests and 26 assertions. After the Fortify dependency and identity slice, the suite passed 9 tests and 45 assertions. The completed Phase 2 authentication and profile slice passes 28 tests and 141 assertions, including a real Windows DPAPI round trip. The Phase 3 role and authorization slice passed 41 tests and 195 assertions. The Phase 4A Course foundation slice passed 55 tests and 235 assertions. The Phase 4B curriculum and material foundation slice passed 80 tests and 308 assertions. The Phase 5A Instructor Course Outline UI slice passed 93 tests and 359 assertions. The Phase 5B Module and Lesson authoring slice passes 104 tests and 406 assertions. A first Phase 5B run exposed a missing policy import that returned HTTP 500 instead of creating a Module, and the import was fixed and retested. A first Phase 5B form check also showed that a failed lesson form lost its typed text, so the failed form now keeps its input and reopens. The first dependency pass found a missing PHP Fileinfo extension, which was enabled and retested. The Administrator user list now marks unverified accounts and explains that role changes unlock after email verification; the server-side rejection remains enforced. The shared authenticated header now exposes a visible Sign out form; the missing Administrator logout control was reproduced and fixed. A later cached-config run exposed a test database selection defect, which was fixed and retested. A first-run Blade check exposed an unconditional Vite manifest dependency, which was fixed and retested. A local `.env` owner-name value needed quoting and was fixed before the Phase 2 tests passed. Fortify’s default unknown-email reset response initially exposed account state, so a safe generic response was added and retested. The password-change middleware initially allowed the GET route but not the POST route, and the fix was retested. The owner test initially reused the real local secret path, so it now uses a unique temporary path. Registration normalization initially assumed missing fields were present, so missing-field validation now returns safe errors. Edge fallback review confirmed responsive auth layout, theme persistence, and keyboard-safe controls. The Phase 3 Administrator table initially caused mobile page overflow; stacked mobile cards fixed it and the 390px browser check was rerun. The first Phase 4A factory test exposed an array value in a text column; the factory now joins sentences before insertion. The Phase 5A Course list initially used an unsupported nested `withCount` relation; the controller now uses a supported Module count and the browser page passes.
 
 CI and production deployment checks are not implemented yet.
 
@@ -451,14 +462,14 @@ Each deferred item has a safe planning default in `plan.md` and `architecture.md
 
 ## 14. Next approved milestone
 
-The next milestone is human review of the browser-ready Phase 5A Instructor Course Outline UI.
+The next milestone is human browser review of the implemented Phase 5B Module and Lesson authoring.
 
-Phase 5A automated, build, audit, and Edge browser evidence is recorded. The desktop browser connector was unavailable in this session, so Edge fallback checks are used.
+Phase 5B automated, build, and audit evidence is recorded. The desktop browser connector was unavailable in this session, so Edge fallback checks are used.
 
-Public catalog, enrollment, payments, uploads, and curriculum authoring remain separate approved boundaries.
+Learning Material authoring, public catalog, enrollment, payments, and uploads remain separate approved boundaries.
 
 ## 15. Audit conclusion
 
-The repository now has a runnable Laravel 13 foundation, human-approved Phase 2, Phase 3, Phase 4A, and Phase 4B slices, and an implemented Phase 5A Instructor Course Outline UI for IT Learning Hub.
+The repository now has a runnable Laravel 13 foundation, human-approved Phase 2, Phase 3, Phase 4A, Phase 4B, and Phase 5A slices, and a tested Phase 5B Module and Lesson authoring increment for IT Learning Hub.
 
-The safe next step is human browser review of Phase 5A. Public catalog and curriculum authoring remain later phases.
+The safe next step is human browser review of Phase 5B authoring. Public catalog and payment work remain later phases.
