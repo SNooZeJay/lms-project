@@ -58,7 +58,27 @@
             @elseif ($enrollmentState === 'guest')
                 <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted"><a href="{{ route('login') }}" class="font-semibold text-primary-text underline underline-offset-4 hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Sign in to enroll</a> and open Lesson content after enrollment.</p>
             @elseif ($enrollmentState === 'paid')
-                <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">Paid enrollment opens in a later release. Lesson content and materials stay locked until then.</p>
+                <div class="mt-6 flex flex-col gap-3 border-l-4 border-accent bg-accent-surface px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold leading-6 text-accent-text">This course is paid. Enroll to continue to payment.</p>
+                        <p class="mt-1 text-sm leading-6 text-ink-muted">Lesson content and materials stay locked until a payment is confirmed.</p>
+                    </div>
+                    <form method="POST" action="{{ route('student.enrollments.store', $course) }}">
+                        @csrf
+                        <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Enroll to pay</button>
+                    </form>
+                </div>
+            @elseif ($enrollmentState === 'awaiting_payment')
+                <div class="mt-6 flex flex-col gap-3 border-l-4 border-accent bg-accent-surface px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold leading-6 text-accent-text">Waiting for payment confirmation.</p>
+                        <p class="mt-1 text-sm leading-6 text-ink-muted">Open the payment page to finish. Access starts as soon as the payment is confirmed.</p>
+                    </div>
+                    <form method="POST" action="{{ route('student.payments.checkout', $course) }}">
+                        @csrf
+                        <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Continue payment</button>
+                    </form>
+                </div>
             @elseif ($enrollmentState === 'inactive')
                 <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">This enrollment does not grant access yet. Contact an administrator for help.</p>
             @else

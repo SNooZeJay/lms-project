@@ -154,7 +154,14 @@ class EnrollmentController extends Controller
 
         Gate::authorize('create', [Enrollment::class, $course]);
 
-        $enrollStudent->handle($request->user(), $course);
+        $enrollment = $enrollStudent->handle($request->user(), $course);
+
+        // A paid enrollment starts life as pending_payment and grants nothing.
+        // Telling the Student they are enrolled would be false, and the courses
+        // list offers no way to pay, so the checkout continues the flow.
+        if ($enrollment->status === EnrollmentStatus::PendingPayment) {
+            return redirect()->route('student.payments.checkout', [$course]);
+        }
 
         return redirect()
             ->route('student.courses.index')

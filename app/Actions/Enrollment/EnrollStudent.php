@@ -21,16 +21,10 @@ class EnrollStudent
 
         abort_unless($course->status === CourseStatus::Published, 404);
 
-        if ($course->course_type !== CourseType::Free) {
-            throw ValidationException::withMessages([
-                'course' => 'Paid enrollment opens in a later release.',
-            ]);
-        }
-
         $existing = $this->findExisting($actor, $course);
 
         if ($existing !== null) {
-            $this->ensureItGrantsAccess($existing);
+            $this->reuseExisting($existing, $course);
 
             return $existing;
         }
@@ -47,6 +41,37 @@ class EnrollStudent
     }
 
     /**
+     * Decide what an existing enrollment means when the Student enrolls again.
+     *
+     * A free course must already grant access, otherwise something is wrong and
+     * the Student is told to contact an administrator.
+     *
+     * A paid course is different. An enrollment on pending_payment means the
+     * Student already started a payment, so it is reused and the checkout can
+     * be tried again. A cancelled one means the payment was refunded, so it
+     * returns to pending_payment and the course may be bought again.
+     *
+     * @throws ValidationException
+     */
+    private function reuseExisting(Enrollment $enrollment, Course $course): void
+    {
+        if ($course->course_type === CourseType::Free) {
+            $this->ensureItGrantsAccess($enrollment);
+
+            return;
+        }
+
+        if ($enrollment->status === EnrollmentStatus::Cancelled) {
+            $enrollment->forceFill([
+                'status' => EnrollmentStatus::PendingPayment,
+                'cancelled_at' => null,
+                'activated_at' => null,
+            ]);
+            $enrollment->save();
+        }
+    }
+
+    /**
      * @throws ValidationException
      */
     private function ensureItGrantsAccess(Enrollment $enrollment): void
@@ -60,14 +85,19 @@ class EnrollStudent
 
     private function createEnrollment(User $actor, Course $course): Enrollment
     {
+        // A paid course does not grant access on enrollment. It waits for a
+        // verified payment event, which is the only thing allowed to activate
+        // it. A free course has nothing to wait for.
+        $isFree = $course->course_type === CourseType::Free;
+
         try {
-            return DB::transaction(function () use ($actor, $course): Enrollment {
+            return DB::transaction(function () use ($actor, $course, $isFree): Enrollment {
                 $enrollment = new Enrollment;
                 $enrollment->forceFill([
                     'student_id' => $actor->id,
                     'course_id' => $course->id,
-                    'status' => EnrollmentStatus::Active,
-                    'activated_at' => now(),
+                    'status' => $isFree ? EnrollmentStatus::Active : EnrollmentStatus::PendingPayment,
+                    'activated_at' => $isFree ? now() : null,
                 ]);
                 $enrollment->save();
 
@@ -81,7 +111,7 @@ class EnrollStudent
                 throw $exception;
             }
 
-            $this->ensureItGrantsAccess($existing);
+            $this->reuseExisting($existing, $course);
 
             return $existing;
         }

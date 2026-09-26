@@ -89,21 +89,22 @@ class CourseCatalogController extends Controller
             return 'other_role';
         }
 
-        if ($course->course_type !== CourseType::Free) {
-            return 'paid';
-        }
-
+        // The enrollment is read before the course type is considered. A
+        // Student who already paid must see that, whatever the course costs,
+        // so a paid course never hides a real purchase behind a pay button.
         $enrollment = Enrollment::query()
             ->where('student_id', $viewer->id)
             ->where('course_id', $course->id)
             ->first();
 
-        if ($enrollment === null) {
-            return 'can_enroll';
+        if ($enrollment !== null) {
+            return match ($enrollment->status) {
+                EnrollmentStatus::Active, EnrollmentStatus::Completed => 'enrolled',
+                EnrollmentStatus::PendingPayment => 'awaiting_payment',
+                default => 'inactive',
+            };
         }
 
-        return in_array($enrollment->status, [EnrollmentStatus::Active, EnrollmentStatus::Completed], true)
-            ? 'enrolled'
-            : 'inactive';
+        return $course->course_type === CourseType::Free ? 'can_enroll' : 'paid';
     }
 }

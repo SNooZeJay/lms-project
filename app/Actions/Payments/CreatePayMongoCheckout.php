@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Payment;
 use App\Models\User;
+use App\Services\Payments\CheckoutSession;
 use App\Support\CoursePrice;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Gate;
@@ -24,7 +25,7 @@ class CreatePayMongoCheckout
         private readonly PayMongoClient $client,
     ) {}
 
-    public function handle(User $actor, Enrollment $enrollment): Payment
+    public function handle(User $actor, Enrollment $enrollment): CheckoutSession
     {
         Gate::forUser($actor)->authorize('pay', $enrollment);
 
@@ -37,7 +38,10 @@ class CreatePayMongoCheckout
         ]);
         $payment->save();
 
-        return $payment;
+        // The address is handed back rather than stored. The Student is sent to
+        // it straight away, and a later attempt asks the provider for a new
+        // one, so there is nothing worth keeping.
+        return CheckoutSession::fromClientArray($payment, $checkout);
     }
 
     /**

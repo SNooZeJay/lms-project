@@ -217,6 +217,7 @@ lms-project/
 │   │   │   └── CourseCompletionChecker.php
 │   │   ├── Payments/
 │   │   │   ├── PayMongoApiClient.php
+│   │   │   ├── CheckoutSession.php
 │   │   │   └── PayMongoEventEnvelope.php
 │   │   ├── Quizzes/
 │   │   │   └── QuizGrader.php

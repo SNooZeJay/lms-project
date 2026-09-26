@@ -27,11 +27,12 @@ class PaymentController extends Controller
 
         Gate::authorize('pay', $enrollment);
 
-        $payment = $createCheckout->handle($request->user(), $enrollment);
+        $checkout = $createCheckout->handle($request->user(), $enrollment);
 
-        return redirect()
-            ->route('student.payments.return', [$course])
-            ->with('status', 'Checkout created. Confirm the amount before you pay.');
+        // The Student has to reach the provider page to pay. Sending them back
+        // to the waiting page instead would leave the checkout created and the
+        // payment impossible.
+        return redirect()->away($checkout->redirectUrl);
     }
 
     /**

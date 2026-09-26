@@ -380,10 +380,12 @@ class PaymentArchitectureTest extends TestCase
     {
         [$student, $enrollment, $course] = $this->pendingEnrollment(125000);
 
-        $payment = app(CreatePayMongoCheckout::class)->handle($student, $enrollment);
+        $checkout = app(CreatePayMongoCheckout::class)->handle($student, $enrollment);
+        $payment = $checkout->payment;
 
         $this->assertSame(PaymentStatus::Pending, $payment->status);
         $this->assertNotNull($payment->provider_checkout_id);
+        $this->assertStringStartsWith('https://', $checkout->redirectUrl);
     }
 
     /**

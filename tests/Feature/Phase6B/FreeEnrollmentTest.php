@@ -65,7 +65,7 @@ class FreeEnrollmentTest extends TestCase
         $this->assertSame(0, Enrollment::query()->count());
     }
 
-    public function test_paid_course_shows_a_message_and_creates_nothing(): void
+    public function test_paid_course_creates_a_pending_enrollment_that_grants_no_access(): void
     {
         $student = $this->makeStudent();
         $course = $this->makeFreeCourse([
@@ -74,13 +74,21 @@ class FreeEnrollmentTest extends TestCase
             'price_minor' => 25000,
         ]);
 
+        // A paid enrollment continues into the checkout, because the Student
+        // cannot pay from the courses list and must not be told they are
+        // enrolled when they are not.
         $this->actingAs($student)
             ->from(route('courses.show', $course))
             ->post("/student/courses/{$course->id}/enroll")
-            ->assertRedirect(route('courses.show', $course))
-            ->assertSessionHasErrors('course');
+            ->assertRedirect(route('student.payments.checkout', $course))
+            ->assertSessionHasNoErrors();
+        // Enrolling records the intent to pay. It must not grant access, which
+        // only a verified payment event may do.
+        $enrollment = Enrollment::query()->firstOrFail();
 
-        $this->assertSame(0, Enrollment::query()->count());
+        $this->assertSame(EnrollmentStatus::PendingPayment, $enrollment->status);
+        $this->assertFalse($enrollment->grantsAccess());
+        $this->assertNull($enrollment->activated_at);
     }
 
     public function test_injected_server_fields_are_ignored(): void
@@ -233,7 +241,7 @@ class FreeEnrollmentTest extends TestCase
             ->assertDontSee('Enroll free', false);
     }
 
-    public function test_paid_course_shows_no_enroll_button(): void
+    public function test_paid_course_shows_no_free_enroll_button(): void
     {
         $student = $this->makeStudent();
         $course = $this->makeFreeCourse([
@@ -242,10 +250,11 @@ class FreeEnrollmentTest extends TestCase
             'price_minor' => 25000,
         ]);
 
+        // A paid course must never offer the free control, which would grant
+        // access without a payment.
         $this->actingAs($student)
             ->get("/courses/{$course->slug}")
             ->assertOk()
-            ->assertSee('Paid enrollment opens in a later release')
             ->assertDontSee('Enroll free', false);
     }
 
