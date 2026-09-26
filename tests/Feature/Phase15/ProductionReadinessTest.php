@@ -115,6 +115,8 @@ class ProductionReadinessTest extends TestCase
         ];
 
         $allowedPlaceholder = static function (string $value): bool {
+            // A trailing comment is documentation, not a value.
+            $value = trim(explode('#', $value, 2)[0]);
             $value = trim($value, "\"' ");
 
             if ($value === '' || $value === 'null' || str_contains($value, '${')) {
@@ -123,7 +125,7 @@ class ProductionReadinessTest extends TestCase
 
             // Values that describe themselves are documentation, not secrets.
             $words = [
-                'replace', 'placeholder', 'example', 'your', 'change',
+                'replace', 'placeholder', 'example', 'your', 'change', 'live',
                 'not-a-real', 'notareal', 'sample', 'dummy', 'todo', 'xxxx',
             ];
 
@@ -188,6 +190,63 @@ class ProductionReadinessTest extends TestCase
         $this->assertStringContainsString('Security checklist', $defense);
         $this->assertStringContainsString('Architecture tradeoffs', $defense);
         $this->assertStringContainsString('Honest limitations', $defense);
+    }
+
+    public function test_the_folder_structure_document_lists_every_app_file(): void
+    {
+        $tree = File::get(base_path('docs/folder-structure.md'));
+
+        $missing = [];
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(app_path())
+        );
+
+        foreach ($iterator as $file) {
+            if (! $file->isFile() || $file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $name = $file->getFilename();
+
+            if (! str_contains($tree, $name)) {
+                $missing[] = $file->getPathname();
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $missing,
+            'These app/ files are missing from docs/folder-structure.md: '.implode(', ', $missing)
+        );
+    }
+
+    public function test_the_folder_structure_document_names_no_file_that_does_not_exist(): void
+    {
+        $tree = File::get(base_path('docs/folder-structure.md'));
+        $real = [];
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(app_path())
+        );
+
+        foreach ($iterator as $file) {
+            if ($file->isFile()) {
+                $real[$file->getFilename()] = true;
+            }
+        }
+
+        preg_match_all('/([A-Za-z0-9_]+\.php)\s*$/', $tree, $matches);
+
+        $phantom = array_values(array_unique(array_filter(
+            $matches[1],
+            fn (string $name): bool => ! isset($real[$name])
+        )));
+
+        $this->assertSame(
+            [],
+            $phantom,
+            'docs/folder-structure.md names files that do not exist: '.implode(', ', $phantom)
+        );
     }
 
     public function test_the_roadmap_marks_phase_fifteen_as_the_last_phase(): void

@@ -47,50 +47,53 @@ lms-project/
 │   ├── Actions/
 │   │   ├── Account/
 │   │   │   └── ChangePassword.php
-│   │   ├── Fortify/
-│   │   │   ├── CreateNewUser.php
-│   │   │   ├── PasswordValidationRules.php
-│   │   │   └── ResetUserPassword.php
 │   │   ├── Authentication/
 │   │   │   ├── AssignUserRole.php
 │   │   │   └── UpdateAccountStatus.php
 │   │   ├── Certificates/
-│   │   │   ├── IssueCertificate.php
-│   │   │   ├── RevokeCertificate.php
-│   │   │   └── ReissueCertificate.php
+│   │   │   └── ListStudentCertificates.php
+│   │   ├── Completion/
+│   │   │   ├── CompleteCourse.php
+│   │   │   ├── ReissueCertificate.php
+│   │   │   └── RevokeCertificate.php
 │   │   ├── Courses/
 │   │   │   ├── CreateCourse.php
-│   │   │   ├── Curriculum/
+│   │   │   ├── PublishCourse.php
+│   │   │   ├── UnpublishCourse.php
+│   │   │   ├── UpdateCourse.php
+│   │   │   ├── ArchiveContent.php
+│   │   │   └── Curriculum/
 │   │   │   │   ├── CreateLearningMaterial.php
 │   │   │   │   ├── CreateLesson.php
 │   │   │   │   ├── CreateModule.php
 │   │   │   │   ├── UpdateLearningMaterial.php
 │   │   │   │   ├── UpdateLesson.php
-│   │   │   │   └── UpdateModule.php
-│   │   │   ├── PublishCourse.php
-│   │   │   ├── UnpublishCourse.php
-│   │   │   └── UpdateCourse.php
+│   │   │   │   ├── UpdateModule.php
+│   │   │   │   └── ReorderCurriculum.php
 │   │   ├── Enrollment/
-│   │   │   ├── EnrollStudent.php
-│   │   │   ├── ActivatePaidEnrollment.php
-│   │   │   └── CancelEnrollment.php
+│   │   │   └── EnrollStudent.php
+│   │   ├── Fortify/
+│   │   │   ├── CreateNewUser.php
+│   │   │   ├── PasswordValidationRules.php
+│   │   │   └── ResetUserPassword.php
 │   │   ├── Learning/
 │   │   │   ├── MarkLessonComplete.php
-│   │   │   ├── RecordLessonActivity.php
-│   │   │   └── CompleteCourse.php
+│   │   │   └── RecordLessonActivity.php
 │   │   ├── Payments/
 │   │   │   ├── CreatePayMongoCheckout.php
-│   │   │   ├── ProcessPayMongoEvent.php
-│   │   │   └── RefundPayment.php
+│   │   │   └── ProcessPayMongoEvent.php
 │   │   └── Quizzes/
-│   │       ├── StartQuizAttempt.php
-│   │       ├── SubmitQuizAttempt.php
-│   │       └── GradeQuizAttempt.php
+│   │   │   ├── CreateQuizQuestion.php
+│   │   │   ├── ManageQuiz.php
+│   │   │   ├── StartQuizAttempt.php
+│   │   │   └── SubmitQuizAttempt.php
 │   ├── Console/
 │   │   └── Commands/
-│   │       └── BootstrapOwner.php
+│   │   │   ├── BootstrapOwner.php
+│   │   │   └── CheckProductionReadiness.php
 │   ├── Contracts/
-│   │   └── LocalSecretStore.php
+│   │   ├── LocalSecretStore.php
+│   │   └── PayMongoClient.php
 │   ├── Enums/
 │   │   ├── ActivityEventType.php
 │   │   ├── UserRole.php
@@ -104,40 +107,44 @@ lms-project/
 │   │   ├── LessonProgressStatus.php
 │   │   ├── PaymentStatus.php
 │   │   ├── QuizAttemptStatus.php
-│   │   └── CertificateStatus.php
-│   ├── Events/
-│   │   ├── EnrollmentActivated.php
-│   │   ├── PaymentPaid.php
-│   │   ├── QuizPassed.php
-│   │   ├── CourseCompleted.php
-│   │   ├── CertificateIssued.php
-│   │   └── RoleChanged.php
+│   │   ├── CertificateStatus.php
+│   │   ├── PaymentEventStatus.php
+│   │   ├── QuestionType.php
+│   │   └── QuizStatus.php
 │   ├── Http/
-│   │   ├── Middleware/
-│   │   │   ├── RequirePasswordChange.php
-│   │   │   ├── EnsureAccountIsActive.php
-│   │   │   └── EnsureUserHasRole.php
 │   │   ├── Controllers/
 │   │   │   ├── Account/
 │   │   │   │   ├── PasswordController.php
 │   │   │   │   └── ProfileController.php
 │   │   │   ├── Admin/
 │   │   │   │   ├── ActivityLogController.php
-│   │   │   │   └── UserController.php
-│   │   │   ├── Auth/
-│   │   │   ├── Instructor/
-│   │   │   │   ├── CourseController.php
-│   │   │   │   └── CurriculumController.php
+│   │   │   │   ├── UserController.php
+│   │   │   │   ├── CertificateController.php
+│   │   │   │   └── ReportController.php
 │   │   │   ├── Catalog/
 │   │   │   │   └── CourseCatalogController.php
+│   │   │   ├── Controller.php
+│   │   │   ├── HomeController.php
+│   │   │   ├── Instructor/
+│   │   │   │   ├── CourseController.php
+│   │   │   │   ├── CurriculumController.php
+│   │   │   │   └── QuizController.php
+│   │   │   ├── MaterialDownloadController.php
 │   │   │   ├── Role/
 │   │   │   │   ├── AdministratorController.php
 │   │   │   │   ├── InstructorController.php
 │   │   │   │   └── StudentController.php
 │   │   │   ├── Student/
-│   │   │   │   └── EnrollmentController.php
-│   │   │   └── Webhook/
-│   │   │       └── PayMongoWebhookController.php
+│   │   │   │   ├── EnrollmentController.php
+│   │   │   │   ├── CertificateController.php
+│   │   │   │   ├── PaymentController.php
+│   │   │   │   └── QuizController.php
+│   │   │   └── Webhooks/
+│   │   │   │   └── PayMongoWebhookController.php
+│   │   ├── Middleware/
+│   │   │   ├── RequirePasswordChange.php
+│   │   │   ├── EnsureAccountIsActive.php
+│   │   │   └── EnsureUserHasRole.php
 │   │   ├── Requests/
 │   │   │   ├── Account/
 │   │   │   │   ├── ChangePasswordRequest.php
@@ -145,11 +152,11 @@ lms-project/
 │   │   │   ├── Admin/
 │   │   │   │   ├── UpdateAccountStatusRequest.php
 │   │   │   │   └── UpdateUserRoleRequest.php
-│   │   │   ├── Auth/
 │   │   │   ├── Catalog/
+│   │   │   │   ├── CourseCatalogRequest.php
 │   │   │   │   └── CourseCatalogRequest.php
-│   │   │   ├── Catalog/
-│   │   │   │   └── CourseCatalogRequest.php
+│   │   │   ├── Certificates/
+│   │   │   │   └── RevokeCertificateRequest.php
 │   │   │   ├── Courses/
 │   │   │   │   ├── CreateCourseRequest.php
 │   │   │   │   ├── CreateLearningMaterialRequest.php
@@ -158,20 +165,17 @@ lms-project/
 │   │   │   │   ├── UpdateCourseRequest.php
 │   │   │   │   ├── UpdateLearningMaterialRequest.php
 │   │   │   │   ├── UpdateLessonRequest.php
-│   │   │   │   └── UpdateModuleRequest.php
-│   │   │   ├── Enrollment/
-│   │   │   ├── Learning/
-│   │   │   ├── Payments/
+│   │   │   │   ├── UpdateModuleRequest.php
+│   │   │   │   ├── ReorderLessonsRequest.php
+│   │   │   │   └── ReorderModulesRequest.php
 │   │   │   └── Quizzes/
-│   │   ├── Responses/
+│   │   │   │   ├── StoreQuizQuestionRequest.php
+│   │   │   │   ├── StoreQuizRequest.php
+│   │   │   │   ├── SubmitQuizAttemptRequest.php
+│   │   │   │   └── UpdateQuizRequest.php
+│   │   └── Responses/
 │   │   │   ├── RoleBasedLoginResponse.php
 │   │   │   └── SafePasswordResetLinkResponse.php
-│   ├── Jobs/
-│   │   ├── SendPaymentReceipt.php
-│   │   └── RemoveOrphanedMaterial.php
-│   ├── Listeners/
-│   │   ├── SendEnrollmentReceipt.php
-│   │   └── RecordRoleChangeActivity.php
 │   ├── Models/
 │   │   ├── User.php
 │   │   ├── Profile.php
@@ -190,8 +194,7 @@ lms-project/
 │   │   ├── QuizAnswer.php
 │   │   ├── Certificate.php
 │   │   ├── CourseRequirement.php
-│   │   ├── ActivityLog.php
-│   │   └── SystemSetting.php
+│   │   └── ActivityLog.php
 │   ├── Policies/
 │   │   ├── ActivityLogPolicy.php
 │   │   ├── UserPolicy.php
@@ -200,35 +203,34 @@ lms-project/
 │   │   ├── ModulePolicy.php
 │   │   ├── EnrollmentPolicy.php
 │   │   ├── LearningMaterialPolicy.php
-│   │   ├── PaymentPolicy.php
 │   │   ├── QuizPolicy.php
-│   │   └── CertificatePolicy.php
+│   │   ├── CertificatePolicy.php
+│   │   └── QuizAttemptPolicy.php
+│   ├── Providers/
+│   │   ├── AppServiceProvider.php
+│   │   └── FortifyServiceProvider.php
 │   ├── Services/
+│   │   ├── ProgressCalculator.php
 │   │   ├── Certificates/
 │   │   │   └── CertificateCodeGenerator.php
+│   │   ├── Learning/
+│   │   │   └── CourseCompletionChecker.php
 │   │   ├── Payments/
-│   │   │   └── PayMongoClient.php
-│   │   ├── ProgressCalculator.php
+│   │   │   └── PayMongoApiClient.php
 │   │   ├── Quizzes/
 │   │   │   └── QuizGrader.php
+│   │   ├── Reporting/
+│   │   │   └── OperationsReport.php
 │   │   └── Storage/
-│   │       └── LearningMaterialStorage.php
-│   ├── Support/
+│   │   │   └── LearningMaterialStorage.php
+│   └── Support/
 │   │   ├── CoursePrice.php
 │   │   ├── RoleBasedDestination.php
 │   │   ├── StudentCourseAccess.php
-│   │   └── WindowsDpapiSecretStore.php
-│   ├── View/Components/
-│   │   ├── Alert.php
-│   │   ├── Button.php
-│   │   ├── EmptyState.php
-│   │   ├── FormField.php
-│   │   ├── Pagination.php
-│   │   ├── ProgressBar.php
-│   │   └── StatusBadge.php
-│   └── Providers/
-│       ├── AppServiceProvider.php
-│       └── FortifyServiceProvider.php
+│   │   ├── WindowsDpapiSecretStore.php
+│   │   ├── ContinueLearning.php
+│   │   ├── MaterialFileRules.php
+│   │   └── StudentQuizAccess.php
 ├── bootstrap/
 │   ├── app.php
 │   └── providers.php
@@ -338,7 +340,9 @@ lms-project/
 │   ├── technology-choice.md
 │   ├── glossary.md
 │   ├── development-roadmap.md
-│   └── project-audit.md
+│   ├── project-audit.md
+│   ├── deployment.md
+│   └── defense.md
 ├── FOR_UI/
 │   └── adminator (FOR USER DASHBOARD)/
 ├── .agents/
@@ -358,7 +362,8 @@ lms-project/
 └── phpunit.xml
 ```
 
-The tree shows important examples. It does not require every listed file to exist immediately.
+The `app/` subtree lists every file that exists today. The rest of the tree shows the
+important files in each area, so a file may be created before it is listed here.
 
 Create folders only when approved work needs them.
 
