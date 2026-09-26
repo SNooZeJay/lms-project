@@ -532,10 +532,25 @@ the test suite binds a fake.
 It must be provable without credentials, offline, on every run.
 
 **Cost.** A fake can pass while a real provider contract breaks. That is not a
-theory. A real test-mode call found a request type bug the fake could not see,
-on a day when the fake suite was already green. That is why the runbook ends
-with a mandatory manual test-mode payment, and why the pre-flight command
-refuses to pass while the webhook secret is missing.
+theory here, it is the documented history of this integration. A fully green
+suite sat behind six defects, none of which the fake could see:
+
+| Defect | What the fake reported |
+|---|---|
+| Signature compared the wrong bytes and the wrong header field | Pass. Every real delivery was rejected. |
+| A payment-level event correlated on the wrong field | Pass. Failure events silently went unmatched. |
+| The endpoint was not exempt from CSRF | Pass. The suite skips CSRF, so real deliveries got `419`. |
+| A paid enrollment never reached the checkout | Pass. The state machine was never entered. |
+| The layout dropped the script stack | Pass. The return page could not update itself. |
+| An https `APP_URL` produced http links | Pass. Redirects were silently downgraded. |
+
+The signature defect is the important one. It is a complete failure of the money
+path, and it passed every automated check because the fake was written to agree
+with the implementation instead of with the provider. The lesson generalises: a
+mock proves your own logic, never your understanding of someone else's contract.
+
+That is why the runbook ends with a mandatory manual test-mode payment, and why
+the pre-flight command refuses to pass while the webhook secret is missing.
 
 ### Blades only, no frontend framework
 
@@ -554,17 +569,21 @@ authorize.
 
 Saying these out loud is stronger than being asked about them.
 
-- **The PayMongo webhook path is not verified against the real provider.** The
-  checkout path is: a real test-mode call returned a real `checkout_id` and
-  `checkout_url`, which proved the credential, the endpoint, the amount, and
-  the response parsing. The webhook path still needs
-  `PAYMONGO_WEBHOOK_SECRET`, which is not configured. The state machine around
-  it is fully tested with a fake provider, and the pre-flight command fails
-  with a plain explanation until the secret is set, so this gap cannot be
-  silent.
-- **A fake provider passed while the real provider would have failed.** The
-  live call found a request type bug that no fake could see. This is the
-  strongest argument for the rule "a real call is a release gate".
+- **The PayMongo webhook path is verified against the real provider.** A GCash
+  test payment of ₱100 was placed through the hosted checkout, the provider
+  delivered a signed event, and the enrollment activated from the webhook rather
+  than from the browser returning. QR Ph and PayMaya were walked the same way on
+  both outcomes, along with a retry after a failure, a replayed delivery, and a
+  forged signature. The paid course was then carried through to a certificate.
+- **The provider account holder's name appears on the hosted checkout page.** It
+  is rendered by the provider from the account profile and cannot be changed
+  through the API, which was confirmed by sending branding and merchant name
+  overrides to the live test API: all returned `200` and stored nothing. The one
+  merchant-controlled field, the description, now carries the product name. A
+  support request is open.
+- **A fake provider passed while the real provider would have failed.** This is
+  the strongest argument for the rule "a real call is a release gate", and it is
+  listed in full under the fake client decision above.
 - **There is no quiz timer.** A Student may leave an attempt open
   indefinitely. This is a scope decision, not an oversight.
 - **The progress percentage can move after an unpublish.** Documented above
@@ -586,10 +605,17 @@ Saying these out loud is stronger than being asked about them.
 3. Take a quiz. Show the result page and the revealed answer key.
 4. Claim the certificate. Point at the code and the sentence saying it is not
    a public document.
-5. Sign in as an Instructor. Show the outline: publish, reorder, archive, and
+5. Pay for a course. This is the strongest thing to show, so do not skip it.
+   The checkout runs on the provider's test mode and moves no real money, and
+   every step is repeatable. Show the unpaid card offering **Pay** instead of a
+   dead link, then run the GCash test page, choose **Authorize Test Payment**,
+   and let the webhook land. The return page confirms on its own. Open the
+   course, complete the lesson, and claim the certificate, so the panel sees
+   money become access and access become a certificate in one pass.
+6. Sign in as an Instructor. Show the outline: publish, reorder, archive, and
    the quiz authoring with its exactly-one-correct-answer rule.
-6. Sign in as an Administrator. Show the report, then revoke a certificate and
+7. Sign in as an Administrator. Show the report, then revoke a certificate and
    reissue it.
-7. Show the proof: the test count, the two race-condition tests, and the
+8. Show the proof: the test count, the two race-condition tests, and the
    webhook replay test.
-8. Close with the limitations. That is what makes the rest believable.
+9. Close with the limitations. That is what makes the rest believable.

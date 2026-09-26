@@ -308,19 +308,30 @@ rumour.
 https://your-domain.example/webhooks/paymongo
 ```
 
-5. Subscribe to one event. In the dashboard, under **Checkout Session**, tick
-   the small box next to `checkout_session.payment.paid`.
+5. Subscribe to three events. In the dashboard, under **Checkout Session** and
+   **Payment**, tick the small box next to each of these:
+
+```text
+checkout_session.payment.paid
+payment.paid
+payment.failed
+```
 
    The dashboard shows two checkboxes per group. The large one beside the group
    name subscribes to every event in that group. The small one under it
-   subscribes to that single event. Tick the small one.
+   subscribes to that single event. Tick the small ones listed above.
 
-   Do not tick the **Payment** group. Those events belong to the Payment Intents
-   API, which this application does not use, and they carry no checkout session
-   id, so they cannot be matched to a Payment row. Every other group on that
-   page is a different product: QR and QR Ph are direct payments, Payout and
-   Transfer move money out, and Subscription and Workflow are recurring and
-   automation features.
+   All three are needed, and the reason is that the provider does not send the
+   same event for every outcome. A checkout session that is paid produces
+   `checkout_session.payment.paid`. A payment that fails or expires at the
+   payment level produces `payment.failed`, which carries the session id only in
+   `external_reference_number`, not in `reference_number`. Subscribing to the
+   success event alone leaves a failed payment looking like a pending one, and
+   the student waits forever.
+
+   Every other group on that page is a different product: QR and QR Ph are
+   direct payments, Payout and Transfer move money out, and Subscription and
+   Workflow are recurring and automation features.
 
 6. Place one real test payment and confirm the enrollment becomes `active`.
 
@@ -328,10 +339,29 @@ Step 6 is the only way to prove the credentials and the provider contract. The
 automated suite proves the state machine with a fake provider, so only a real
 payment proves the secrets.
 
-The signing secret is not the API secret key. It is shown only on the endpoint
-page, under Developers → Webhooks → your endpoint, and each endpoint has its own.
-The API deliberately does not return it, so it cannot be recovered from a
-credential and must be copied from that page.
+The signing secret is not the API secret key. It belongs to one endpoint, and
+the same key is used for every webhook the account sends. It is shown on the
+endpoint page under Developers → Webhooks, and it is also returned by
+`GET /v1/webhooks`. Because it is readable from a credential, it must be treated
+as a secret: never paste it into a chat, a commit, a log, or a screenshot.
+
+### Testing QR Ph
+
+The QR Ph **Simulate Payment** control on the provider's page opens a second
+browser tab. That is the provider's test scaffold, not a redirect and not a
+defect in this application. The real Student flow never leaves the checkout tab:
+it updates itself to *QRPh Payment Received!* and then returns to the merchant
+after roughly fifteen seconds.
+
+If the second tab appears, the payment still settles through the webhook. Do not
+navigate away from the checkout tab to watch it, because leaving that page is
+what loses the result.
+
+On a **failed** payment the provider's page shows no *Return to Merchant* link,
+so a Student can be left sitting there. The webhook still settles the record
+correctly and the Student can retry from *My courses*. Nothing in this
+application can add that link, because the page belongs to the provider.
+
 
 ### The signature header
 

@@ -2,7 +2,7 @@
 
 ## 1. Audit status
 
-Audit date: September 26, 2026
+Audit date: September 27, 2026
 
 This document describes the repository as it exists now.
 
@@ -10,9 +10,16 @@ V1 is built. Every phase in `development-roadmap.md` from the Laravel foundation
 through Phase 15 is implemented, tested, and committed. The approved feature
 scope in `plan.md` is complete.
 
-Two things remain outside the repository, and both are human steps rather than
-code: placing the release on a hosting account, and confirming one real
-test-mode payment with live PayMongo credentials.
+The PayMongo integration has been confirmed against the live test API, and the
+whole paid path has been walked in a browser: a ₱100 GCash test payment settled,
+the enrollment activated, the lesson was completed, and a certificate was
+issued. One real payment with live credentials is therefore no longer
+outstanding.
+
+What remains outside the repository is hosting, which is not blocking, and a
+provider account display name, which a support request is handling. There is no
+open implementation task.
+
 
 ## 2. Current repository state
 
@@ -652,16 +659,22 @@ Each deferred item has a safe planning default in `plan.md` and `architecture.md
 
 V1 is complete. Every phase through Phase 15 is built, tested, and committed.
 
-The remaining work is not a coding phase. It is two human steps:
+The remaining work is not a coding phase. It is hosting, which is not blocking
+and is not scheduled.
 
-1. Place the release on a hosting account and run
-   `php artisan lms:check-production` on the server.
-2. Configure live PayMongo credentials and confirm one real test-mode payment
-   activates one enrollment.
+The payment step that used to sit here is done. A ₱100 GCash test payment was
+placed through the hosted checkout, the webhook settled it, the enrollment
+activated, the lesson was completed, and a certificate was issued. The whole
+chain was also walked against the live test API for QR Ph and PayMaya, on both
+the success and the failure outcome, plus a retry, a replay, and a forged
+signature.
 
-Both steps are written up in `docs/deployment.md`. The automated suite proves
-the payment state machine with a fake provider, so a real payment is the only
-thing that can prove the credentials and the provider contract.
+`php artisan lms:check-production` is written for a deployed server. On a
+development machine it reports nine failures, all of them environment settings
+that are correct to leave off locally: `APP_ENV`, `APP_DEBUG`, route cache, config
+cache, compiled views, secure session cookie, trusted proxies, payments switched
+off, and error page contents. It is not expected to pass until the application is
+deployed.
 
 The defense evidence is assembled in `docs/defense.md`.
 
@@ -674,10 +687,11 @@ archive, private files, enrollment, lesson reading and progress, quizzes with
 server-side grading, completion and certificates, payments with a verified
 idempotent webhook, role dashboards, and reports.
 
-The evidence is recorded rather than asserted: 464 tests, a clean style check,
-clean dependency audits, zero browser defects, and a production pre-flight
-command that fails loudly.
+The evidence is recorded rather than asserted: 560 tests, a clean style check,
+clean dependency audits, zero open browser defects, a paid course walked from
+payment to certificate, and a production pre-flight command that fails loudly.
 
 The honest gaps are written down in `docs/defense.md` rather than hidden. The
-largest is that no real payment has been made, because that needs credentials
-this repository must never contain.
+largest is that the hosted checkout page shows the provider account holder's name
+in its corner. It cannot be changed through the API, which was verified against
+the live test API, and a support request is open.

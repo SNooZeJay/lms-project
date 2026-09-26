@@ -2880,6 +2880,41 @@ A task is done when:
 
 ## 34. Current next action
 
-The current next action is a connected browser review of Phase 6E, then Phase 7 curriculum reorder, archive, and private uploads.
+All fifteen phases are implemented, tested, and connected-browser reviewed. The
+PayMongo integration is verified against the live test API. The paid course to
+certificate chain is verified end to end in a browser with a real test payment.
 
-Environment preflight, the Laravel foundation, Phase 2 identity and authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A through Phase 5F, Phase 6A enrollment foundation, Phase 6B free enrollment, and Phase 6C lesson access are complete and human-approved. Do not add quiz, payment, upload, download, delete, or archive behavior.
+There is no open implementation task. What remains is project work, not code:
+
+- **Defense preparation.** Section 30 lists the deliverables. Diagrams, the
+  authorization matrix, and the security checklist are the gaps.
+- **Hosting.** Not started and not blocking. The application is proven on a
+  tunnel. `docs/deployment.md` is the runbook for a real host when one is needed.
+- **Provider account display name.** The hosted checkout page shows the account
+  holder's name. It cannot be changed through the API and a support request is
+  open. The one merchant-controlled field, the description, now carries the
+  product name.
+
+### Verified against the live provider
+
+Recorded because a green test suite did not catch any of these. Each was a real
+defect found by running the integration, not by reading it.
+
+| Defect | Effect if unfixed |
+|---|---|
+| Signature compared the wrong bytes and the wrong header field | Every delivery rejected, no payment ever settled |
+| Payment-level events correlated on `reference_number` only | Failed and duplicate events silently unmatched |
+| Endpoint not exempt from CSRF | 419 to every delivery; invisible to the suite, which skips CSRF |
+| Paid enrollment never entered checkout | Dead end after paying |
+| Layout dropped `@stack('scripts')` | Return page could not update itself |
+| `APP_URL` over https generated http links | Redirects downgraded under a tunnel |
+
+### Local checks that fail by design
+
+`php artisan lms:check-production` reports nine failures on a development
+machine: `APP_ENV`, `APP_DEBUG`, route cache, config cache, compiled views,
+secure session cookie, trusted proxies, payments switched off, and error page
+contents. Every one is an environment setting that is correct to leave off
+locally. None is a code defect, and the command is not expected to pass until
+the application is deployed.
+

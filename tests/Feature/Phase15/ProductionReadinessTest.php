@@ -227,11 +227,17 @@ class ProductionReadinessTest extends TestCase
             ->assertExitCode(1);
     }
 
-    public function test_the_defense_document_records_the_live_payment_gap(): void
+    public function test_the_defense_document_records_the_live_payment_verification(): void
     {
         $defense = File::get(base_path('docs/defense.md'));
 
-        $this->assertStringContainsString('webhook path is not verified', $defense);
+        // This used to assert the gap was still declared. A real test-mode
+        // payment has since settled an enrollment and issued a certificate, so
+        // the document now has to claim the verification instead. A test that
+        // quietly kept asking for the old sentence would have been a false
+        // record rather than a guard.
+        $this->assertStringContainsString('webhook path is verified against the real provider', $defense);
+        $this->assertStringNotContainsString('webhook path is not verified', $defense);
         $this->assertStringContainsString('Authorization matrix', $defense);
         $this->assertStringContainsString('Security checklist', $defense);
         $this->assertStringContainsString('Architecture tradeoffs', $defense);
