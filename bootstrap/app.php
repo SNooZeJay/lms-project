@@ -24,10 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => EnsureUserHasRole::class,
         ]);
 
-        // Order matters. Debug output is confined first, so a failure anywhere
-        // later in the stack already renders without it. The cookie flag has to
-        // be set before the session starts, and the headers are added last so
-        // they survive a response that replaces the body.
+        // Order matters. The two prepended middleware both have to run before
+        // anything later can fail or before the session starts, which is what
+        // makes the debug page and the cookie flag correct for this request
+        // rather than only for requests that succeed. SecurityHeaders is
+        // appended so its headers survive a response that replaces the body.
         $middleware->prepend(ConfineDebugOutput::class);
         $middleware->prepend(SecureSessionCookies::class);
         $middleware->append(SecurityHeaders::class);
