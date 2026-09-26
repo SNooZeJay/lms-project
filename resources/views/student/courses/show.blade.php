@@ -33,6 +33,16 @@
                 </div>
             </dl>
 
+            <div class="mt-5 border-l-4 {{ $showProgress ? 'border-accent bg-success-surface' : 'border-line bg-surface-muted' }} px-4 py-3">
+                @if ($showProgress)
+                    <p class="text-sm font-semibold text-ink">Progress: {{ $progress['percentage'] }}%</p>
+                    <p class="mt-1 text-sm text-ink-muted">{{ $progress['completed'] }} of {{ $progress['total'] }} required published lessons completed.</p>
+                @else
+                    <p class="text-sm font-semibold text-ink">Progress is hidden</p>
+                    <p class="mt-1 text-sm leading-6 text-ink-muted">This course is not published, so the percentage is hidden. Your completed lessons are kept.</p>
+                @endif
+            </div>
+
             @if ($course->status !== \App\Enums\CourseStatus::Published)
                 <p class="mt-6 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">This course is not published right now. Your enrollment is kept, and published lessons stay available.</p>
             @endif
@@ -65,6 +75,9 @@
                                         @endif
                                     </div>
                                     <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-muted">
+                                        @if ($completedLessonIds->has($lesson->id))
+                                            <span class="rounded-full bg-success-surface px-2.5 py-1 text-success-text">Completed</span>
+                                        @endif
                                         <span class="rounded-full bg-surface-muted px-2.5 py-1">{{ $lesson->is_required ? 'Required' : 'Optional' }}</span>
                                         @if ($lesson->estimated_minutes)
                                             <span class="rounded-full bg-surface-muted px-2.5 py-1">{{ $lesson->estimated_minutes }} min</span>
@@ -80,6 +93,6 @@
             @endforelse
         </section>
 
-        <p class="mt-10 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">Progress tracking is not built yet, so nothing is marked complete.</p>
+        <p class="mt-10 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">Mark a lesson complete to update your progress. Quizzes and certificates are not built yet.</p>
     </div>
 @endsection

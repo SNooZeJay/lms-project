@@ -276,7 +276,6 @@ class StudentLessonAccessTest extends TestCase
 
     public function test_phase_six_c_adds_no_progress_quiz_payment_or_download_routes(): void
     {
-        $this->assertFalse(Route::has('student.lessons.complete'));
         $this->assertFalse(Route::has('student.progress.index'));
         $this->assertFalse(Route::has('student.payments.checkout'));
         $this->assertFalse(Route::has('student.materials.download'));

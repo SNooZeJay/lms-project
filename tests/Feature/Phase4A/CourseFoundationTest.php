@@ -179,7 +179,6 @@ class CourseFoundationTest extends TestCase
     public function test_phase_four_a_does_not_add_course_business_routes(): void
     {
         $this->assertFalse(Route::has('student.progress.index'));
-        $this->assertFalse(Route::has('student.lessons.complete'));
         $this->assertFalse(Route::has('instructor.courses.students'));
     }
 

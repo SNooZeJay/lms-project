@@ -2342,7 +2342,7 @@ Let a Student mark a Lesson complete and see a real completion percentage.
 
 ### Status
 
-Waiting for Phase 6D. Progress calculation must come from records only.
+Built, tested, and reviewed in a real browser.
 
 ### Confirmed scope
 
@@ -2376,6 +2376,35 @@ Waiting for Phase 6D. Progress calculation must come from records only.
 - A browser-supplied percentage changes nothing
 - An unpublished Course hides the percentage and keeps the records
 - Another Student cannot see or change this progress
+
+### Built files
+
+| File | Purpose |
+|---|---|
+| `app/Services/ProgressCalculator.php` | The only place a percentage is produced |
+| `app/Actions/Learning/RecordLessonActivity.php` | Upserts a progress row on Lesson open |
+| `app/Actions/Learning/MarkLessonComplete.php` | Sets `completed` and `completed_at` once |
+| `app/Policies/LessonPolicy.php` | New `completeForStudent` ability |
+| `app/Http/Controllers/Student/EnrollmentController.php` | `showLesson` records activity, new `completeLesson` |
+| `routes/web.php` | `POST /student/courses/{course}/lessons/{lesson}/complete` |
+| `resources/views/student/lessons/show.blade.php` | Status message, Completed badge, `Mark as complete` |
+| `resources/views/student/courses/show.blade.php` | Progress panel and Completed markers |
+| `resources/views/student/courses/index.blade.php` | Percentage or `Hidden` per enrollment |
+| `tests/Feature/Phase6E/LessonProgressTest.php` | 20 tests, 73 assertions |
+
+### Evidence
+
+- `php artisan test` gives 253 passed and 987 assertions.
+- `./vendor/bin/pint --test` gives PASS on 153 files.
+- `npm run build` succeeds.
+- `composer audit` and `npm audit` report no advisories.
+- `php artisan route:list --name=student` shows exactly 6 student routes and only one new POST route.
+- A Blade `@use` directive miscompiled to `<?php use \; ?>`, so the view receives a `visible` flag from the controller instead of importing an enum in Blade.
+- A scripted walkthrough of 71 checks passes with 0 failures. It covers the percentage rule, idempotent completion, optional and draft Lessons, `403` for an unenrolled Student and for an Instructor, `404` for a cross-course Lesson, guest redirects, and the unpublished Course path.
+- Headless Edge over the DevTools protocol measured five pages at 390, 768, and 1440 pixels. No page overflows at any width, and every control on the Lesson page is at least 44 pixels tall.
+- The connected desktop browser confirmed the full flow by typing and clicking: sign in, read `0%`, open a Lesson, select **Mark as complete**, and see the `Completed` badge with a date. The console was empty and no request failed on any page.
+- The review found three defects, all stale copy. The footer, the home page, and the Student dashboard still described progress as missing. All three are corrected, and a test now fails if any page claims progress is missing.
+- A draft Lesson returns `403` rather than `404`. This matches the existing rule that a denied resource is forbidden and only a wrong-course Lesson is missing.
 
 ### Exit condition
 
@@ -2702,6 +2731,6 @@ A task is done when:
 
 ## 34. Current next action
 
-The current next action is human confirmation of the Phase 6D lesson progress schema, then Phase 6E progress interface.
+The current next action is a connected browser review of Phase 6E, then Phase 7 curriculum reorder, archive, and private uploads.
 
 Environment preflight, the Laravel foundation, Phase 2 identity and authentication, Phase 3 roles and authorization, Phase 4A Course foundation, Phase 4B curriculum metadata, Phase 5A through Phase 5F, Phase 6A enrollment foundation, Phase 6B free enrollment, and Phase 6C lesson access are complete and human-approved. Do not add quiz, payment, upload, download, delete, or archive behavior.

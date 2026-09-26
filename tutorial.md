@@ -565,7 +565,7 @@ Use the Student account that is already enrolled in a published free course.
 13. Ask the Instructor to publish again and confirm the public page returns.
 14. Check the course and lesson pages at 390px width.
 
-Progress tracking is not built yet, so nothing is marked complete.
+Progress tracking is not built yet, so nothing is marked complete. That is the next section.
 
 ## 17. Review the lesson progress record
 
@@ -885,7 +885,38 @@ When you are learning the project, use this order:
 16. Enroll in a published free course as a Student and check `/student/courses`.
 17. Open an enrolled lesson and read its content and materials.
 18. Run `php artisan migrate:status` and confirm the lesson progress migration ran.
-19. Read the relevant test before changing a feature.
-20. Run `php artisan test` before and after your change.
+19. Mark a Lesson complete and watch the percentage change.
+20. Read the relevant test before changing a feature.
+21. Run `php artisan test` before and after your change.
 
 You do not need to understand the whole Laravel framework before running the application. Start with the commands in this tutorial, then inspect one small feature at a time.
+
+## 27. Review the lesson progress interface
+
+Use the Student account that is already enrolled in a published free course. You need at least two Lessons for the percentages to be interesting.
+
+1. Open `/student/courses`. Confirm the card shows a **Progress** value such as `0%`.
+2. Note the percentage. Write it down.
+3. Open the course. Confirm the course page shows **Progress: 0%** and a line such as `0 of 2 required published lessons completed`.
+4. Confirm the outline lists the Lessons with `Required` or `Optional`, and no `Completed` badge yet.
+5. Open the first Lesson.
+6. Confirm the page has a **Your progress** heading and a **Mark as complete** button.
+7. Reload the Lesson page. Confirm the button is still there. Opening a Lesson never completes it.
+8. Select **Mark as complete**.
+9. Confirm you return to the same Lesson and a green message says `Lesson marked as complete.`
+10. Confirm the **Completed** badge shows the completion date and the **Mark as complete** button is gone.
+11. Select **Mark as complete** again from a direct form post. Confirm nothing breaks and the original completion date stays.
+12. Open the course page. Confirm the percentage increased and the finished Lesson now has a `Completed` badge.
+13. Complete the second required Lesson. Confirm the percentage reaches `100%`.
+14. Confirm **My courses** shows the same percentage.
+15. Copy a lesson address and its `complete` address. Sign out and open each one. Confirm you are asked to sign in.
+16. Sign in as a different Student with no enrollment. Open the lesson. Confirm a `403` page.
+17. Sign out. Sign in as the Instructor. Open the same lesson address. Confirm a `403` page.
+18. Sign in as the Student again, then ask the Instructor to unpublish the course.
+19. Confirm the course page says **Progress is hidden** and explains that completed lessons are kept.
+20. Confirm **My courses** shows `Hidden` in the Progress row.
+21. Ask the Instructor to publish again. Confirm the percentage returns without losing any completion.
+22. Open the `lesson_progress` table in your database tool. Confirm one row per Lesson you opened, with the correct `status`, `started_at`, `completed_at`, and `last_viewed_at`.
+23. Check the course page and the Lesson page at 390px width. Confirm nothing is cut off.
+
+The percentage is only a count. It comes from the `lesson_progress` table, so it never comes from the browser.

@@ -113,7 +113,7 @@
             <div>
                 <h2 id="not-ready-heading" class="text-lg font-semibold text-ink">Not available yet</h2>
                 <p class="mt-2 max-w-2xl leading-7 text-ink-muted">
-                    Role management, courses, enrollment, quizzes, certificates, uploads, and PayMongo remain outside the current authentication slice.
+                    Role management, courses, enrollment, lesson reading, and lesson progress are live. Quizzes, certificates, uploads, and PayMongo remain outside the current slice.
                 </p>
             </div>
             <p class="inline-flex w-fit items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-sm font-semibold text-ink-muted">

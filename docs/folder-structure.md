@@ -206,11 +206,9 @@ lms-project/
 │   ├── Services/
 │   │   ├── Certificates/
 │   │   │   └── CertificateCodeGenerator.php
-│   │   ├── Learning/
-│   │   │   ├── ProgressCalculator.php
-│   │   │   └── CourseCompletionChecker.php
 │   │   ├── Payments/
 │   │   │   └── PayMongoClient.php
+│   │   ├── ProgressCalculator.php
 │   │   ├── Quizzes/
 │   │   │   └── QuizGrader.php
 │   │   └── Storage/

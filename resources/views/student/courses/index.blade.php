@@ -48,7 +48,17 @@
                                 <dt class="text-ink-muted">Enrolled</dt>
                                 <dd class="mt-1 font-medium text-ink">{{ $enrollment->activated_at?->format('M j, Y') ?? 'Pending' }}</dd>
                             </div>
-                            <div class="col-span-2">
+                            <div>
+                                <dt class="text-ink-muted">Progress</dt>
+                                <dd class="mt-1 font-semibold text-ink">
+                                    @if ($progressByEnrollment[$enrollment->id]['visible'])
+                                        {{ $progressByEnrollment[$enrollment->id]['percentage'] }}%
+                                    @else
+                                        Hidden
+                                    @endif
+                                </dd>
+                            </div>
+                            <div>
                                 <dt class="text-ink-muted">Instructor</dt>
                                 <dd class="mt-1 font-medium text-ink">{{ $course?->instructor?->name ?? 'IT Learning Hub' }}</dd>
                             </div>

@@ -73,7 +73,7 @@
         <footer class="border-t border-line bg-surface">
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-ink-muted sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
                 <p>IT Learning Hub</p>
-                <p>Free course enrollment and lesson reading are live. Progress, quizzes, uploads, and payments are not enabled yet.</p>
+                <p>Free course enrollment, lesson reading, and lesson progress are live. Quizzes, certificates, uploads, and payments are not enabled yet.</p>
             </div>
         </footer>
     </div>

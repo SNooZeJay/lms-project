@@ -297,9 +297,81 @@ Phase 5D accepts only `text`, `code`, `video_link`, and `external_link` material
 
 Phase 5E sends a POST with no trusted body fields. It does not add a public catalog route, archive, delete, reorder, upload, download, enrollment, or payment route.
 
+### Phase 6E progress flow
+
+```mermaid
+flowchart TD
+    O[Student opens an enrolled Lesson] --> P[LessonPolicy viewForStudent]
+    P -->|Denied| F[Return 403]
+    P -->|Allowed| A[RecordLessonActivity upserts the progress row]
+    A --> S[Show content, Completed badge, and Mark as complete]
+    S --> C[Student selects Mark as complete]
+    C --> Q[LessonPolicy completeForStudent]
+    Q -->|Denied| F
+    Q -->|Allowed| M[MarkLessonComplete writes completed and completed_at]
+    M --> B[Redirect back to the Lesson]
+    B --> G[ProgressCalculator recomputes the percentage from records]
+```
+
+### Phase 6E Input, Process, and Output
+
+**Input**
+
+- Student session with the student role
+- Enrolled Course ID
+- Lesson ID inside that Course
+- No trusted body field on the complete request
+
+**Process**
+
+- Apply `auth`, `account.active`, `verified`, `password.change`, and `role:student` middleware
+- Return `404` when the Lesson does not belong to the Course in the URL
+- Run LessonPolicy `viewForStudent` and `completeForStudent`
+- Find the Student granting enrollment for the Course
+- Upsert the progress row on view, setting `last_viewed_at`, and set `in_progress` with `started_at` only when the row is new
+- Never downgrade a completed row
+- On complete, set `completed` and `completed_at` on the server
+- Keep the original `completed_at` when completing twice
+- Compute the percentage only from records, using required published Lessons
+- Hide the percentage while the Course is unpublished and keep the records
+
+**Output**
+
+- A progress record per enrollment and Lesson
+- A Completed badge and a percentage that come from records
+- No Continue Learning, quiz, certificate, or payment behavior
+
 ### Phase 6D lesson progress foundation
 
-Phase 6D adds no route. It creates the `lesson_progress` table, the `LessonProgressStatus` enum, the `LessonProgress` model, and the Enrollment, Lesson, and User progress relationships. The progress interface is Phase 6E.
+Phase 6D adds no route. It creates the `lesson_progress` table, the `LessonProgressStatus` enum, the `LessonProgress` model, and the Enrollment, Lesson, and User progress relationships.
+
+### Phase 6E progress routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| POST | `/student/courses/{course}/lessons/{lesson}/complete` | Mark a Lesson complete | Authenticated student group and LessonPolicy `completeForStudent` |
+
+`GET /student/courses/{course}/lessons/{lesson}` also records lesson activity as a side effect. Recording activity never completes a Lesson and never downgrades a completed record.
+
+The complete request carries no trusted fields. `student_id`, `enrollment_id`, `status`, `completed_at`, and every percentage are written by Actions or read from records.
+
+### Progress calculation
+
+`App\Services\ProgressCalculator` is the only place a percentage is produced:
+
+```text
+percentage = completed required published Lessons / total required published Lessons
+```
+
+Rules:
+
+- Only Lessons in published Modules count, so a draft Module cannot inflate or deflate progress.
+- Optional Lessons never count.
+- A total of zero returns `0%`. There is no division by zero.
+- The result is rounded to the nearest whole percent.
+- While a Course is not published, the percentage is hidden and the records are kept. This is Option A.
+
+Phase 6E adds no Continue Learning, quiz, certificate, or payment route.
 
 ### Phase 6A enrollment foundation
 

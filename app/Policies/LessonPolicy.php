@@ -24,6 +24,14 @@ class LessonPolicy
             && StudentCourseAccess::allows($actor, $lesson->module->course);
     }
 
+    /**
+     * Marking a Lesson complete needs the same access as reading it.
+     */
+    public function completeForStudent(User $actor, Lesson $lesson): bool
+    {
+        return $this->viewForStudent($actor, $lesson);
+    }
+
     public function create(User $actor, Module $module): bool
     {
         return $this->ownsCourse($actor, $module->course);

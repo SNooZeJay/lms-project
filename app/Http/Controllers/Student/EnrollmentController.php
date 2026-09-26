@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Student;
 
 use App\Actions\Enrollment\EnrollStudent;
+use App\Actions\Learning\MarkLessonComplete;
+use App\Actions\Learning\RecordLessonActivity;
 use App\Enums\ContentStatus;
 use App\Enums\CourseStatus;
+use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
+use App\Services\ProgressCalculator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,6 +20,8 @@ use Illuminate\Support\Facades\Gate;
 
 class EnrollmentController extends Controller
 {
+    public function __construct(private readonly ProgressCalculator $progress) {}
+
     public function index(Request $request): View
     {
         Gate::authorize('viewAny', Enrollment::class);
@@ -27,8 +33,17 @@ class EnrollmentController extends Controller
             ->latest('id')
             ->paginate(15);
 
+        $progressByEnrollment = [];
+
+        foreach ($enrollments as $enrollment) {
+            $progressByEnrollment[$enrollment->id] = $this->progress->forEnrollment($enrollment) + [
+                'visible' => $enrollment->course !== null && $this->progress->isVisibleFor($enrollment->course),
+            ];
+        }
+
         return view('student.courses.index', [
             'enrollments' => $enrollments,
+            'progressByEnrollment' => $progressByEnrollment,
         ]);
     }
 
@@ -46,16 +61,24 @@ class EnrollmentController extends Controller
                 ->orderBy('lessons.position'),
         ]);
 
+        $enrollment = $this->grantingEnrollment($request, $course);
+
         return view('student.courses.show', [
             'course' => $course,
+            'progress' => $this->progress->forEnrollment($enrollment),
+            'showProgress' => $this->progress->isVisibleFor($course),
+            'completedLessonIds' => $this->progress->completedLessonIds($enrollment),
         ]);
     }
 
-    public function showLesson(Request $request, Course $course, Lesson $lesson): View
+    public function showLesson(Request $request, Course $course, Lesson $lesson, RecordLessonActivity $recordActivity): View
     {
         abort_unless($lesson->module->course_id === $course->id, 404);
 
         Gate::authorize('viewForStudent', $lesson);
+
+        $enrollment = $this->grantingEnrollment($request, $course);
+        $progress = $recordActivity->handle($request->user(), $enrollment, $lesson);
 
         $lesson->load([
             'module',
@@ -65,7 +88,26 @@ class EnrollmentController extends Controller
         return view('student.lessons.show', [
             'course' => $course,
             'lesson' => $lesson,
+            'progress' => $progress,
         ]);
+    }
+
+    public function completeLesson(
+        Request $request,
+        Course $course,
+        Lesson $lesson,
+        MarkLessonComplete $markLessonComplete,
+    ): RedirectResponse {
+        abort_unless($lesson->module->course_id === $course->id, 404);
+
+        Gate::authorize('completeForStudent', $lesson);
+
+        $enrollment = $this->grantingEnrollment($request, $course);
+        $markLessonComplete->handle($request->user(), $enrollment, $lesson);
+
+        return redirect()
+            ->route('student.lessons.show', [$course, $lesson])
+            ->with('status', 'Lesson marked as complete.');
     }
 
     public function store(Request $request, Course $course, EnrollStudent $enrollStudent): RedirectResponse
@@ -80,5 +122,14 @@ class EnrollmentController extends Controller
         return redirect()
             ->route('student.courses.index')
             ->with('status', 'You are enrolled. Open the course to read its published lessons.');
+    }
+
+    private function grantingEnrollment(Request $request, Course $course): Enrollment
+    {
+        return Enrollment::query()
+            ->where('student_id', $request->user()->id)
+            ->where('course_id', $course->id)
+            ->whereIn('status', [EnrollmentStatus::Active, EnrollmentStatus::Completed])
+            ->firstOrFail();
     }
 }

@@ -33,6 +33,7 @@ Route::middleware([...$authenticated, 'role:student'])->group(function (): void 
     Route::get('/student/courses', [EnrollmentController::class, 'index'])->name('student.courses.index');
     Route::get('/student/courses/{course}', [EnrollmentController::class, 'show'])->name('student.courses.show');
     Route::get('/student/courses/{course}/lessons/{lesson}', [EnrollmentController::class, 'showLesson'])->name('student.lessons.show');
+    Route::post('/student/courses/{course}/lessons/{lesson}/complete', [EnrollmentController::class, 'completeLesson'])->name('student.lessons.complete');
     Route::post('/student/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('student.enrollments.store');
 });
 

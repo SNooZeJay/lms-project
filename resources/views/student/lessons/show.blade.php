@@ -6,6 +6,10 @@
     <div class="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
         <a href="{{ route('student.courses.show', $course) }}" class="inline-flex min-h-11 items-center text-sm font-semibold text-primary-text hover:text-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">← Back to {{ $course->title }}</a>
 
+        @if (session('status'))
+            <div role="status" class="mt-6 border-l-4 border-accent bg-success-surface px-4 py-3 text-sm font-semibold text-success-text">{{ session('status') }}</div>
+        @endif
+
         <header class="mt-8 border-b border-line pb-8">
             <p class="font-mono text-sm font-semibold text-primary-text">{{ $course->title }} · {{ $lesson->module->title }}</p>
             <h1 class="mt-3 text-3xl font-[650] tracking-tight text-ink">{{ $lesson->title }}</h1>
@@ -75,6 +79,23 @@
             @endif
         </section>
 
-        <p class="mt-12 border-l-4 border-line bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-muted">Progress tracking is not built yet, so this lesson is not marked complete.</p>
+        <section class="mt-12" aria-labelledby="lesson-progress-heading">
+            <h2 id="lesson-progress-heading" class="text-xl font-semibold text-ink">Your progress</h2>
+
+            @if ($progress->isCompleted())
+                <p class="mt-4 inline-flex items-center gap-2 rounded-md border border-success-text bg-success-surface px-4 py-3 text-sm font-semibold text-success-text">
+                    <span aria-hidden="true">✓</span>
+                    Completed
+                    @if ($progress->completed_at)
+                        <span class="font-normal">on {{ $progress->completed_at->format('M j, Y') }}</span>
+                    @endif
+                </p>
+            @else
+                <form method="POST" action="{{ route('student.lessons.complete', [$course, $lesson]) }}" class="mt-4">
+                    @csrf
+                    <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Mark as complete</button>
+                </form>
+            @endif
+        </section>
     </div>
 @endsection

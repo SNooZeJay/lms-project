@@ -19,7 +19,7 @@
             </section>
             <section class="border-t-4 border-accent bg-surface-muted p-6" aria-labelledby="student-next-heading">
                 <h2 id="student-next-heading" class="text-lg font-semibold text-ink">Available now</h2>
-                <p class="mt-3 leading-7 text-ink-muted">Your profile, published course catalog, and free course enrollment are available.</p>
+                <p class="mt-3 leading-7 text-ink-muted">Your profile, the published course catalog, free course enrollment, lesson reading, and lesson progress are available.</p>
                 <div class="mt-6 flex flex-col gap-3 sm:flex-row">
                     <a href="{{ route('student.courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">My courses</a>
                     <a href="{{ route('courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Browse catalog</a>

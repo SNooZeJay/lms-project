@@ -496,6 +496,18 @@ Phase 6C completes the Student reading flow:
 - An unpublished course explains that the enrollment is kept
 - No `Mark as complete` control appears
 
+### Phase 6E lesson progress
+
+Phase 6E adds progress that is always visible and always honest:
+
+- The Lesson page shows a `Mark as complete` button, or a `Completed` badge once done
+- Completing a Lesson returns to the same Lesson with a short confirmation
+- The Student course page shows `Required`, `Optional`, and `Completed` markers per Lesson
+- The Student course page and `My courses` show one completion percentage per course
+- A percentage of `0%` is shown when no required published Lessons exist, never an empty box
+- While a Course is unpublished, the percentage is hidden and a note explains why
+- No percentage is ever accepted from the browser
+
 ### Course catalog
 
 - Search by course title
