@@ -39,6 +39,10 @@ class ProcessPayMongoEvent
     private const PAID_EVENTS = [
         'checkout_session.payment.paid',
         'checkout.session.payment.paid',
+        // A payment level event carries the same correlation key, so it can
+        // settle on its own. It is redundant with the checkout session event
+        // and settling twice is a no-op.
+        'payment.paid',
     ];
 
     private const FAILED_EVENTS = [
@@ -60,12 +64,21 @@ class ProcessPayMongoEvent
         array $headers,
         ?string $rawBody = null,
     ): PaymentEvent {
+        $existing = $this->findEvent($envelope->eventId);
+
+        // An event that was already settled keeps its recorded outcome. A later
+        // request that reuses the same id, forged or not, must not rewrite the
+        // history of what actually happened.
+        if ($existing !== null && $existing->processing_status === PaymentEventStatus::Processed) {
+            return $existing;
+        }
+
         $verified = $this->client->verifySignature(
             $rawBody ?? (string) json_encode($payload),
             $headers,
         );
 
-        $event = $this->record($envelope, $payload, $verified);
+        $event = $existing ?? $this->record($envelope, $payload, $verified);
 
         if (! $verified) {
             $this->mark($event, PaymentEventStatus::Ignored, 'Signature verification failed.');
@@ -120,12 +133,20 @@ class ProcessPayMongoEvent
     /**
      * @param  array<string, mixed>  $payload
      */
+    private function findEvent(string $providerEventId): ?PaymentEvent
+    {
+        return PaymentEvent::query()
+            ->where('provider', 'paymongo')
+            ->where('provider_event_id', $providerEventId)
+            ->first();
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
     private function record(PayMongoEventEnvelope $envelope, array $payload, bool $verified): PaymentEvent
     {
-        $existing = PaymentEvent::query()
-            ->where('provider', 'paymongo')
-            ->where('provider_event_id', $envelope->eventId)
-            ->first();
+        $existing = $this->findEvent($envelope->eventId);
 
         if ($existing !== null) {
             return $existing;
@@ -256,11 +277,15 @@ class ProcessPayMongoEvent
 
     /**
      * The enrollment stays pending_payment, so the Student can retry.
+     *
+     * The provider payment id is recorded even though nothing was charged,
+     * because reconciliation needs to know which provider attempt failed.
      */
     private function markFailed(PaymentEvent $event, Payment $payment, PayMongoEventEnvelope $envelope): void
     {
         $payment->forceFill([
             'status' => PaymentStatus::Failed,
+            'provider_payment_id' => $envelope->providerPaymentId ?? $payment->provider_payment_id,
             'failure_code' => $envelope->failureCode ?? 'failed',
             'failure_message' => $envelope->failureMessage
                 ?? 'The provider reported a failed payment.',

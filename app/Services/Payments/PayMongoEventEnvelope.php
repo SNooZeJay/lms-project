@@ -35,10 +35,17 @@ final class PayMongoEventEnvelope
     /**
      * The value passed as reference_number when the session was created. This
      * is the correlation key this application relies on.
+     *
+     * A checkout session event carries it as reference_number. A payment level
+     * event carries the same value as external_reference_number instead, so both
+     * positions are read. Without the second, every payment.failed event looks
+     * unmatched and a declined payment is never reflected anywhere.
      */
     private const REFERENCE_PATHS = [
         'data.attributes.data.attributes.reference_number',
         'data.data.attributes.reference_number',
+        'data.attributes.data.attributes.external_reference_number',
+        'data.data.attributes.external_reference_number',
     ];
 
     /**
