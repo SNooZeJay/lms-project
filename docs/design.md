@@ -407,6 +407,19 @@ Phase 4B has no curriculum page yet. The data rules guide later Instructor and S
 
 Do not add course outline cards, drag-and-drop ordering, file upload controls, or download buttons before the curriculum actions and authorization are approved.
 
+### Phase 5A Instructor Course Outline UI
+
+Phase 5A is the first Course browser experience:
+
+- Course list uses a calm table or stacked mobile cards
+- Primary action is **Create course**
+- Course status is shown as text, not color alone
+- Course price is formatted from integer minor units and `PHP`
+- Course outline shows ordered Modules, Lessons, and Learning Material metadata
+- Empty states explain the next safe action
+- Draft content stays inside the Instructor workspace
+- No public enrollment, payment, upload, or download controls appear
+
 ### Course catalog
 
 - Search by course title

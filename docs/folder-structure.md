@@ -134,6 +134,7 @@ lms-project/
 │   │   │   │   └── UpdateUserRoleRequest.php
 │   │   │   ├── Auth/
 │   │   │   ├── Courses/
+│   │   │   │   └── CreateCourseRequest.php
 │   │   │   ├── Enrollment/
 │   │   │   ├── Learning/
 │   │   │   ├── Payments/
@@ -245,6 +246,7 @@ lms-project/
 │       ├── dashboard/
 │       ├── errors/
 │       ├── instructor/
+│       │   └── courses/
 │       ├── layouts/
 │       ├── learning/
 │       ├── payments/
@@ -276,6 +278,7 @@ lms-project/
 │   │   ├── Instructor/
 │   │   ├── Phase4A/
 │   │   ├── Phase4B/
+│   │   ├── Phase5A/
 │   │   ├── Role/
 │   │   ├── Student/
 │   │   └── Webhooks/

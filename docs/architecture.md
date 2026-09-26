@@ -245,6 +245,17 @@ Every protected mutation repeats authorization inside the server workflow. Middl
 
 Role routes use `auth`, `account.active`, `verified`, `password.change`, and `role` middleware. Controllers and Actions repeat authorization inside the server workflow.
 
+### Phase 5A Instructor Course Outline routes
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| GET | `/instructor/courses` | List owned Courses | Instructor role and CoursePolicy |
+| GET | `/instructor/courses/new` | Create Course form | Instructor role and CoursePolicy |
+| POST | `/instructor/courses` | Create a private draft Course | Instructor role and CoursePolicy |
+| GET | `/instructor/courses/{course}` | Read-only owned Course outline | Instructor role and CoursePolicy |
+
+Phase 5A does not expose the later Course edit, publish, curriculum action, upload, or download routes.
+
 ### Student routes
 
 
@@ -559,6 +570,50 @@ Phase 4B validates database relationships and metadata only. Role authorization,
 - No upload or private download behavior
 - No enrollment or payment record
 
+### Phase 5A Instructor Course Outline flow
+
+```mermaid
+flowchart TD
+    I[Instructor opens Course list] --> P[CoursePolicy checks active Instructor]
+    P --> L[Load owned Courses]
+    L --> O[Open owned Course outline]
+    O --> R[Load Modules, Lessons, and Material metadata]
+    N[Instructor submits new Course] --> V[Validate approved fields]
+    V --> S[Generate unique server slug]
+    S --> D[Create private draft Course in a transaction]
+    D --> L
+```
+
+Phase 5A never exposes draft Course data to guests or other Instructors. Public catalog, enrollment, payments, uploads, and curriculum mutations remain later phases.
+
+### Phase 5A Input, Process, and Output
+
+**Input**
+
+- Instructor session
+- Course title and safe metadata
+- Level and Course type
+- Price in integer minor units
+
+**Process**
+
+- Authenticate and verify the active Instructor
+- Run CoursePolicy authorization
+- Validate the CreateCourse Form Request
+- Reject privileged fields
+- Validate free/paid price consistency
+- Generate a unique slug on the server
+- Create a private draft Course in one transaction
+- Redirect to the owned Course outline
+
+**Output**
+
+- Owned Course list
+- Private draft Course
+- Read-only Course outline with Module, Lesson, and Material metadata
+- No public Course access
+- No enrollment, payment, upload, or curriculum mutation
+
 ## 8. Authorization
 
 Authorization answers what the user may do.
@@ -595,7 +650,8 @@ Examples:
 - Student can view only own Enrollment.
 - Student can download material only with access-granting Enrollment.
 - Instructor can update only an owned Course.
-- Administrator can manage all Courses.
+- Instructor can view only an owned Course in Phase 5A.
+- Administrator can manage all Courses in a later administration slice.
 - Administrator cannot activate a paid Enrollment without verified payment evidence.
 - User cannot change own role through a profile form.
 

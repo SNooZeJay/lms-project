@@ -278,6 +278,29 @@ Phase 4B rules:
 - Material type-specific content, URL allowlisting, uploads, and private downloads are later phases.
 - Phase 4B does not create curriculum routes, upload handlers, enrollment, payment, or sample seeders.
 
+### Phase 5A Instructor Course Outline UI
+
+Phase 5A adds the first browser-reviewable Course screens for Instructors.
+
+Phase 5A includes:
+
+- Instructor Course list
+- Create Course form
+- Instructor-owned Course outline page
+- `CoursePolicy` ownership checks
+- Course status, level, type, and PHP price display
+- Module, Lesson, and Learning Material metadata display
+- Clear empty states
+
+Phase 5A rules:
+
+- Only an active Instructor can reach the Course screens.
+- An Instructor can view only their own Courses.
+- A Course is created as a private draft.
+- Slug, currency, status, publication time, thumbnail path, and Instructor are server-owned.
+- The outline page is read-only in this slice.
+- Phase 5A does not add public catalog pages, enrollment, payments, uploads, or curriculum authoring actions.
+
 ## 6. Enrollment
 
 Enrollment is the canonical record for Student access to a Course.

@@ -4,7 +4,7 @@
 
 This roadmap turns the approved LMS plan into small, testable steps.
 
-Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, and Phase 4A are human-approved. Phase 4B curriculum and material foundation is now being specified. No later business phase has started.
+Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, and Phase 4B are human-approved. Phase 5A Instructor Course Outline UI is in progress. No later business phase has started.
 
 Do not skip directly to payment processing or dashboard polish.
 
@@ -1192,13 +1192,93 @@ A clean test database can migrate from zero and create valid Module, Lesson, and
 ### Phase 4B checkpoint
 
 - [x] Module, Lesson, and Learning Material foundations pass automated checks
-- [ ] Human review confirms the Phase 4B curriculum data slice
+- [x] Human review confirms the Phase 4B curriculum and material metadata slice
 
 ## 10. Phase 4C: enrollment and progress foundation
 
 Create Enrollment and LessonProgress tables after the curriculum foundation passes.
 
-## 11. Phase 5: course catalog
+## 11. Phase 5A: Instructor Course Outline UI
+
+### Goal
+
+Create the first browser-reviewable Instructor Course screens without adding public catalog, enrollment, payment, or upload behavior.
+
+### Status
+
+Approved on September 26, 2026. Implementation starts with CoursePolicy, Form Requests, routes, and failing feature tests.
+
+### Confirmed scope
+
+- Instructor Course list
+- Create Course form
+- Read-only owned Course outline
+- Course status, level, type, and PHP price display
+- Module, Lesson, and Learning Material metadata display
+- Clear empty states
+- Active Instructor and ownership checks
+- No public catalog, enrollment, payment, upload, or curriculum mutation
+
+### Input, Process, and Output
+
+**Input**
+
+- Active Instructor session
+- Course title, description, objectives, category, level, type, and integer minor-unit price
+
+**Process**
+
+- Run CoursePolicy authorization
+- Validate approved fields and reject privileged fields
+- Validate free/paid price consistency
+- Generate a unique server-side slug
+- Create a private draft Course in one transaction
+- Redirect to the owned Course outline
+
+**Output**
+
+- Owned Course list
+- Private draft Course
+- Read-only Course outline with Module, Lesson, and Material metadata
+- No public access, enrollment, payment, upload, or curriculum mutation
+
+### Task list
+
+- [x] Task 1: Update Phase 5A requirements, routes, policy, flow, and design documents
+- [x] Task 2: Add failing CoursePolicy and Course page tests
+- [x] Task 3: Add CreateCourse Form Request and Action
+- [x] Task 4: Add Instructor Course controllers and routes
+- [x] Task 5: Add accessible Course list, create, and outline Blade views
+- [x] Task 6: Run browser, test, build, audit, and security gates
+
+### Phase 5A security tests
+
+- A Student cannot open Instructor Course routes.
+- An Instructor cannot open another Instructor's Course.
+- A suspended Instructor cannot open Course routes.
+- Privileged Course fields are rejected or ignored.
+- Slugs are generated and unique on the server.
+- New Courses are private drafts.
+- No public Course route exists.
+- No payment, enrollment, upload, or download route exists.
+
+### Phase 5A implementation evidence
+
+- Added CoursePolicy, CreateCourseRequest, CreateCourse action, Instructor Course controller, routes, and views.
+- Added owned Course list, create form, and read-only outline pages.
+- New Courses are private drafts with server-generated unique slugs.
+- Privileged fields are prohibited and ownership is enforced on the server.
+- Added 91 automated tests with 352 assertions.
+- Pint, PHP syntax checks, Vite build, Composer validation/audit, npm audit, caches, and local migrations pass.
+- Edge browser review passed at desktop and 390px: no page overflow, visible controls are 44px, course creation works, mobile cards display correctly, and no upload/public/payment controls appear.
+- No public catalog, enrollment, payment, upload, download, or curriculum authoring behavior was added.
+
+### Phase 5A checkpoint
+
+- [x] Automated tests, build, audits, and browser review pass
+- [ ] Human review confirms the Instructor Course Outline UI
+
+## 12. Phase 5B: course catalog
 
 ### Goal
 
@@ -1228,7 +1308,7 @@ Publish safe public Course metadata.
 
 An Instructor can create and publish a Course, and a guest can view safe public details.
 
-## 12. Phase 6: curriculum and materials
+## 13. Phase 6: curriculum and materials
 
 ### Goal
 
@@ -1258,7 +1338,7 @@ Manage ordered Modules, Lessons, and protected Learning Materials.
 
 An Instructor can build a complete Course outline with authorized material access.
 
-## 13. Phase 7: free enrollment
+## 14. Phase 7: free enrollment
 
 ### Goal
 
@@ -1286,7 +1366,7 @@ Prove the first complete learning access workflow before payment work.
 
 A Student can enroll once in a free Course and open authorized published Lessons.
 
-## 14. Phase 8: lesson access and progress
+## 15. Phase 8: lesson access and progress
 
 ### Goal
 
@@ -1314,7 +1394,7 @@ Persist Lesson activity and calculate progress from records.
 
 A Student can complete Lessons and see database-backed progress.
 
-## 15. Phase 9: quizzes
+## 16. Phase 9: quizzes
 
 ### Goal
 
@@ -1345,7 +1425,7 @@ Deliver safe Questions and enforce server-side grading.
 
 A Student can complete a Quiz and receive a correct server-calculated result.
 
-## 16. Phase 10: completion and certificates
+## 17. Phase 10: completion and certificates
 
 ### Goal
 
@@ -1373,7 +1453,7 @@ Verify Course completion and issue one certificate.
 
 An eligible Student receives one printable certificate with safe authenticated access.
 
-## 17. Phase 11: payment architecture
+## 18. Phase 11: payment architecture
 
 ### Goal
 
@@ -1402,7 +1482,7 @@ Finalize payment behavior before calling PayMongo.
 
 Payment state transitions are fully specified and testable without live credentials.
 
-## 18. Phase 12: PayMongo integration
+## 19. Phase 12: PayMongo integration
 
 ### Goal
 
@@ -1428,7 +1508,7 @@ Run the approved webhook scenarios from `plan.md` and `architecture.md`.
 
 A real test-mode payment activates one paid Enrollment once, and repeated delivery causes no duplicate.
 
-## 19. Phase 13: dashboards and reports
+## 20. Phase 13: dashboards and reports
 
 ### Goal
 
@@ -1455,7 +1535,7 @@ Add role-specific pages using real authorized data.
 
 All dashboards work with real authorized data and approved empty states.
 
-## 20. Phase 14: quality and accessibility
+## 21. Phase 14: quality and accessibility
 
 ### Goal
 
@@ -1500,7 +1580,7 @@ php artisan route:list
 
 Every acceptance criterion in `plan.md` passes with recorded evidence.
 
-## 21. Phase 15: deployment and defense
+## 22. Phase 15: deployment and defense
 
 ### Goal
 
@@ -1536,7 +1616,7 @@ Deploy a tested release and prepare the SIA1 presentation.
 
 The deployed application works, the team can explain the architecture, and critical workflows remain testable.
 
-## 22. Commands after scaffolding
+## 23. Commands after scaffolding
 
 Use the commands generated by the selected Laravel starter kit.
 
@@ -1556,7 +1636,7 @@ npm run build
 
 Do not run `migrate:fresh` against a shared or production database.
 
-## 23. Definition of ready
+## 24. Definition of ready
 
 A task is ready when:
 
@@ -1568,7 +1648,7 @@ A task is ready when:
 - Documentation impact is known
 - No unresolved product decision remains
 
-## 24. Definition of done
+## 25. Definition of done
 
 A task is done when:
 
@@ -1582,8 +1662,8 @@ A task is done when:
 - No unrelated file changed
 - The team can explain the change
 
-## 25. Current next action
+## 26. Current next action
 
-The current next action is human review of the completed Phase 4B curriculum and material foundation.
+The current next action is Phase 5A Instructor Course Outline UI implementation.
 
-Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, the human-approved Phase 4A Course foundation, and Phase 4B Module, Lesson, and Learning Material data are complete. Do not begin Phase 4C until the Phase 4B checkpoint is approved.
+Environment preflight, the Laravel foundation, Phase 2 identity/authentication, Phase 3 roles and authorization, the human-approved Phase 4A Course foundation, and Phase 4B curriculum metadata are complete. Do not add public catalog, enrollment, payment, upload, or curriculum mutation behavior.

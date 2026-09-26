@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Contracts\LocalSecretStore;
 use App\Models\ActivityLog;
+use App\Models\Course;
 use App\Models\User;
 use App\Policies\ActivityLogPolicy;
+use App\Policies\CoursePolicy;
 use App\Policies\UserPolicy;
 use App\Support\WindowsDpapiSecretStore;
 use Illuminate\Support\Facades\Gate;
@@ -28,5 +30,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(ActivityLog::class, ActivityLogPolicy::class);
+        Gate::policy(Course::class, CoursePolicy::class);
     }
 }

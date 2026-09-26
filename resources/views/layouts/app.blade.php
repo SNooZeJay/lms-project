@@ -62,7 +62,7 @@
         <footer class="border-t border-line bg-surface">
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-ink-muted sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
                 <p>IT Learning Hub</p>
-                <p>Phase 2 authentication foundation. Course and payment workflows are not enabled.</p>
+                <p>Phase 5A Instructor Course Outline UI. Public catalog, enrollment, and payments are not enabled.</p>
             </div>
         </footer>
     </div>

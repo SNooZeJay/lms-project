@@ -366,9 +366,40 @@ Role-based pages are also available:
 
 Each page shows the current signed-in role and account status. Pages for other roles return a safe `403` response.
 
-Phase 4A currently adds the Course database foundation only. Phase 4B adds Module, Lesson, and Learning Material database records. There is still no `/courses` or curriculum page, so do not expect a catalog, outline, uploads, or sample courses in the browser.
+Phase 4A currently adds the Course database foundation only. Phase 4B adds Module, Lesson, and Learning Material database records. Phase 5A adds Instructor Course pages for browser review. There is still no public `/courses` catalog, enrollment, payment, upload, or curriculum authoring page.
 
-## 8. Create a Student account
+## 8. Review the Instructor Course UI
+
+Start the local server:
+
+```powershell
+php artisan serve
+```
+
+Open:
+
+```text
+http://127.0.0.1:8000
+```
+
+To review the Instructor pages:
+
+1. Sign in as the Administrator.
+2. Open `/admin/users`.
+3. Promote a test Student account to Instructor.
+4. Sign out and sign in as that Instructor.
+5. Open `/instructor/courses`.
+6. Select **Create course**.
+7. Enter a title such as `Browser Review Course`.
+8. Keep the type as `Free` and the price as `0`.
+9. Submit the form.
+10. Review the private draft Course outline.
+
+The outline page is read-only in Phase 5A. It can display existing Modules, Lessons, and Learning Material metadata, but it does not add authoring controls yet.
+
+There is still no public course catalog, enrollment, payment, upload, or download workflow.
+
+## 9. Create a Student account
 
 Use a separate browser or private window if you want to keep the Administrator session.
 
@@ -381,7 +412,7 @@ Use a separate browser or private window if you want to keep the Administrator s
 
 The registration form has no role selector. Public registration cannot create an Administrator.
 
-## 9. Find email verification and reset links
+## 10. Find email verification and reset links
 
 The local development environment uses Laravel's log mailer.
 
@@ -403,7 +434,7 @@ Copy the local link into the browser.
 
 The log is local. Do not upload or share `storage/logs/laravel.log` because it can contain private links and account details.
 
-## 10. Run the frontend development server
+## 11. Run the frontend development server
 
 Use this when you are changing CSS or JavaScript.
 
@@ -428,7 +459,7 @@ For normal work, you can stop Vite with `Ctrl + C`. You can also build the final
 npm run build
 ```
 
-## 11. Run the automated checks
+## 12. Run the automated checks
 
 Run these commands from the project folder.
 
@@ -481,7 +512,7 @@ This shows all registered URLs and their controller or action.
 php artisan optimize:clear
 ```
 
-## 12. Useful commands
+## 13. Useful commands
 
 | Command | What it does |
 |---|---|
@@ -496,7 +527,7 @@ php artisan optimize:clear
 | `npm run dev` | Starts the Vite development server |
 | `npm run build` | Builds frontend assets |
 
-## 13. Troubleshooting
+## 14. Troubleshooting
 
 ### `composer` is not recognized
 
@@ -618,7 +649,7 @@ php artisan owner:bootstrap --show-password
 
 If you no longer need the local Administrator, ask before removing the protected file or changing the account.
 
-## 14. Project folder guide
+## 15. Project folder guide
 
 These are the folders you will use most often:
 
@@ -640,7 +671,7 @@ Do not edit files in `vendor/`, `node_modules/`, or `public/build/` by hand. The
 
 `FOR_UI/adminator (FOR USER DASHBOARD)` is a read-only visual reference. It is not the application source code.
 
-## 15. Security rules
+## 16. Security rules
 
 Keep these rules in mind:
 
@@ -652,7 +683,7 @@ Keep these rules in mind:
 - Keep `MAIL_MAILER=log` for local demonstrations.
 - Do not use a real payment secret until the payment architecture phase is approved.
 
-## 16. Recommended beginner order
+## 17. Recommended beginner order
 
 When you are learning the project, use this order:
 

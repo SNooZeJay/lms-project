@@ -19,8 +19,11 @@
             </section>
             <section class="border-t-4 border-accent bg-surface-muted p-6" aria-labelledby="instructor-next-heading">
                 <h2 id="instructor-next-heading" class="text-lg font-semibold text-ink">Available now</h2>
-                <p class="mt-3 leading-7 text-ink-muted">Your profile and account security tools are available.</p>
-                <a href="{{ route('account.profile') }}" class="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open profile</a>
+                <p class="mt-3 leading-7 text-ink-muted">Your profile and Instructor course workspace are available.</p>
+                <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    <a href="{{ route('instructor.courses.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open course workspace</a>
+                    <a href="{{ route('account.profile') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus">Open profile</a>
+                </div>
             </section>
         </div>
     </div>

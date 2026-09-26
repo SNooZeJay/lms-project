@@ -60,7 +60,7 @@ Use these documents as evidence:
 
 ## Project status
 
-Phase 1 Laravel foundation, Phase 2 authentication/profile, Phase 3 roles and authorization, and Phase 4A Course foundation are human-approved. Phase 4B curriculum and material metadata is implemented and awaiting human review for IT Learning Hub.
+Phase 1 Laravel foundation, Phase 2 authentication/profile, Phase 3 roles and authorization, Phase 4A Course foundation, and Phase 4B curriculum metadata are human-approved. Phase 5A Instructor Course Outline UI is implemented and awaiting browser review for IT Learning Hub.
 
 The approved target stack is Laravel 13, PHP 8.3 to 8.5, Blade, Tailwind CSS, MySQL, Laravel authentication and authorization, Laravel Storage, PayMongo, Composer, and Git.
 
