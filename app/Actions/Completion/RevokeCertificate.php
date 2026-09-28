@@ -3,6 +3,7 @@
 namespace App\Actions\Completion;
 
 use App\Enums\CertificateStatus;
+use App\Events\CertificateRevoked;
 use App\Models\Certificate;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -37,6 +38,14 @@ class RevokeCertificate
                 'active_slot' => null,
             ]);
             $certificate->save();
+
+            /*
+             | The action above refuses a certificate that is already revoked, so
+             | this is a real transition rather than a repeated request. The
+             | student who earned it is the one who hears about it: a withdrawal
+             | they learn about from a third party is worse than useless.
+             */
+            CertificateRevoked::dispatch($certificate);
 
             return $certificate;
         });

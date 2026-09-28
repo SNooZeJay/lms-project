@@ -42,7 +42,8 @@ class SecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), geolocation=(), microphone=()');
         $response->headers->set('Content-Security-Policy', $this->policy());
-        $response->headers->remove('X-Powered-By');
+
+        $this->removePhpSignature($response);
 
         if ($request->isSecure() || PublicHttps::isEnabled()) {
             $response->headers->set(
@@ -52,6 +53,31 @@ class SecurityHeaders
         }
 
         return $response;
+    }
+
+    /**
+     * Stop the exact PHP version from being published.
+     *
+     * Removing the header from the response object is not enough on its own.
+     * X-Powered-By is written by the PHP SAPI itself, before the framework has
+     * built a response, so the header is already in the output and removing it
+     * from the Symfony Response only stops the application echoing a second
+     * copy. The call to header_remove() is what actually clears the entry PHP
+     * recorded, and it is safe to attempt because nothing has been flushed yet.
+     *
+     * Knowing the version narrows an attacker's search to the advisories that
+     * affect that release, so this is treated as a real disclosure rather than
+     * cosmetic. The durable fix is expose_php=Off in php.ini, which
+     * CheckProductionReadiness reports as a server setting so it is not
+     * forgotten at deployment.
+     */
+    private function removePhpSignature(Response $response): void
+    {
+        $response->headers->remove('X-Powered-By');
+
+        if (! headers_sent()) {
+            header_remove('X-Powered-By');
+        }
     }
 
     private function policy(): string

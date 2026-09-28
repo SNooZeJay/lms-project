@@ -32,6 +32,21 @@ class CoursePolicy
     }
 
     /**
+     * Who is learning on this Course, and how far along they are.
+     *
+     * Stated separately from `view` so the rule is written down in one place
+     * rather than inferred. It is the same rule, because a learner roster is a
+     * Course's own information: only the Instructor who owns the Course may see
+     * it, and an Administrator does not gain it by being an Administrator.
+     * Administration is not teaching, which is the same line `ConversationPolicy`
+     * draws for course messages.
+     */
+    public function viewStudents(User $actor, Course $course): bool
+    {
+        return $this->view($actor, $course);
+    }
+
+    /**
      * Student course reading is decided by enrollment, not by publication.
      */
     public function viewCourseForStudent(User $actor, Course $course): bool

@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Courses\CreateCourseRequest;
 use App\Http\Requests\Courses\UpdateCourseRequest;
 use App\Models\Course;
+use App\Services\Reporting\OperationsReport;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -63,6 +64,28 @@ class CourseController extends Controller
 
         return view('instructor.courses.show', [
             'course' => $course,
+        ]);
+    }
+
+    /**
+     * Who is learning on this Course, and how far along each of them is.
+     *
+     * The Instructor dashboard can only name the handful of learners who are
+     * furthest behind, because a panel has room for a panel's worth. This is
+     * where the whole cohort is, which is the question a dashboard cannot hold.
+     *
+     * The policy is asked for `viewStudents` rather than `view`, even though the
+     * two answer the same today. The rule is then written in one place, and a
+     * later change to who may open a Course does not silently change who may
+     * read its roster.
+     */
+    public function students(Request $request, Course $course, OperationsReport $report): View
+    {
+        Gate::authorize('viewStudents', $course);
+
+        return view('instructor.courses.students', [
+            'course' => $course,
+            'learners' => $report->courseStudentRows($course),
         ]);
     }
 

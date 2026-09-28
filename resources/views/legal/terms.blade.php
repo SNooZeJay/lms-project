@@ -14,8 +14,8 @@
             <section>
                 <h2 class="text-base font-semibold text-ink">What this site is</h2>
                 <p class="mt-2">
-                    IT Learning Hub is an academic project built for a BSIT course. It is
-                    run for coursework and demonstration, not as a commercial service. There
+                    IT Learning Hub is an Information Technology learning platform run
+                    for teaching and demonstration, not as a commercial service. There
                     is no support desk and no service level agreement.
                 </p>
             </section>

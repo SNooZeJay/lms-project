@@ -5,12 +5,6 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-breadcrumbs :items="[
-            ['label' => 'My courses', 'href' => route('instructor.courses.index')],
-            ['label' => $course->title, 'href' => route('instructor.courses.show', $course)],
-            ['label' => 'Edit lesson'],
-        ]" class="mb-6" />
-
         <x-page-header
             eyebrow="Course outline"
             :title="'Edit lesson '.$lesson->position"
@@ -20,7 +14,7 @@
         <section class="card-muted mt-8 p-5" aria-labelledby="lesson-facts-heading">
             <h2 id="lesson-facts-heading" class="text-sm font-semibold text-ink">Fixed for this lesson</h2>
 
-            <dl class="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+            <dl class="mt-4 grid grid-cols-1 gap-4 text-sm min-[360px]:grid-cols-2 sm:grid-cols-4">
                 <div>
                     <dt class="meta-label">Position</dt>
                     <dd class="meta-value tabular-nums">{{ $lesson->position }}</dd>

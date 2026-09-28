@@ -36,14 +36,22 @@ class DashboardAndReportTest extends TestCase
         $this->completeLesson($course, $lesson, $student);
         $this->completeLesson($course, $this->anotherLesson($course, 2), $student);
 
+        // The tile labels were rebalanced when the student dashboard gained its
+        // progress chart and agenda: "Courses enrolled" became the sum of "in
+        // progress" and "completed", and "Quizzes pending" replaced "Quizzes
+        // passed" because a learner can act on it. The counts themselves are
+        // still pinned, in DashboardAnalyticsTest.
         $this->actingAs($student)
             ->get(route('student.dashboard'))
             ->assertOk()
-            ->assertSee('Courses enrolled')
+            ->assertSee('Overall progress')
+            ->assertSee('Courses in progress')
+            ->assertSee('Courses completed')
             ->assertSee('Lessons completed')
-            ->assertSee('Quizzes passed')
+            ->assertSee('Quizzes pending')
             ->assertSee('Certificates earned')
-            ->assertSee('3')
+            ->assertSee('Your progress')
+            ->assertSee('Recent activity')
             ->assertSee('2');
     }
 
@@ -86,8 +94,11 @@ class DashboardAndReportTest extends TestCase
             ->assertSee($course->title)
             ->assertDontSee($strangerCourse->title)
             ->assertSee('Courses')
-            ->assertSee('Students enrolled')
-            ->assertSee('Quizzes');
+            // "Active students" and "Completion rate" replaced "Students enrolled"
+            // and "Quizzes" on the instructor tiles. The scoped-count guarantee
+            // this test exists for is unchanged and still asserted above.
+            ->assertSee('Active students')
+            ->assertSee('Completion rate');
     }
 
     public function test_instructor_dashboard_shows_an_empty_state_with_no_courses(): void
@@ -117,10 +128,21 @@ class DashboardAndReportTest extends TestCase
             ->assertOk()
             ->assertSee('Users')
             ->assertSee('Courses')
-            ->assertSee('Enrollments')
-            ->assertSee('Certificates earned')
+            // The administrator tiles were consolidated from eight to six. The
+            // totals that lost their own tile are still on the page, carried in
+            // the hint of the tile they belong with, so "Instructors" and the
+            // enrollment total are still asserted below.
+            ->assertSee('Enrollments in progress')
+            ->assertSee('Certificates issued')
             ->assertSee('Students')
-            ->assertSee('Instructors')
+            // The figure with its noun, not the bare word 'instructors'.
+            //
+            // The tile hint used to be two fixed strings joined together, so a single
+            // Instructor read '1 instructors'. Asserting the plural word therefore passed
+            // only while the page was wrong, and fixing the plural would have failed this
+            // assertion for correcting a bug. One Instructor is now asserted as
+            // '1 instructor', which is the statement actually wanted here.
+            ->assertSee('1 instructor')
             // Three accounts exist: the administrator, the student, and the instructor.
             ->assertSee('3')
             // One course and one enrollment exist.
@@ -251,7 +273,7 @@ class DashboardAndReportTest extends TestCase
         $this->actingAs($administrator)
             ->get(route('administrator.dashboard'))
             ->assertOk()
-            ->assertSee('Certificates earned', false);
+            ->assertSee('Certificates issued', false);
     }
 
     public function test_quiz_count_only_includes_passed_attempts(): void
@@ -274,7 +296,11 @@ class DashboardAndReportTest extends TestCase
         $this->actingAs($student)
             ->get(route('student.dashboard'))
             ->assertOk()
-            ->assertSee('Quizzes passed');
+            // "Quizzes pending" replaced "Quizzes passed" on the tile. A failed
+            // attempt leaves the quiz outstanding, so the count a learner can
+            // act on is the one that belongs on the page.
+            ->assertSee('Quizzes pending')
+            ->assertSee('1');
 
         QuizAttempt::factory()->for($quiz, 'quiz')->passed()->create([
             'enrollment_id' => $enrollment->id,

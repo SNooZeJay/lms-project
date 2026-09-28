@@ -252,6 +252,43 @@ class ProcessPayMongoEvent
                 return;
             }
 
+            // What the provider collected has to be what was owed, before a
+            // course is unlocked.
+            //
+            // The signature already proves the event came from the provider, so
+            // this is not about an outsider. It is about a provider reporting a
+            // different figure than the one this application charged: a
+            // misconfigured checkout, a partially applied refund, or a promotion
+            // applied on the provider side that nobody told this application
+            // about. Without the check, a course priced at 125,000 settles and
+            // unlocks on a delivery of 1,000.
+            //
+            // Only a figure the provider actually sent is compared. A payload
+            // with no amount is not treated as zero, because that would refuse
+            // every event shape this reader does not recognise.
+            if ($envelope->amountMinor !== null && $envelope->amountMinor !== $locked->amount_minor) {
+                $this->mark(
+                    $event,
+                    PaymentEventStatus::Ignored,
+                    'The settled amount does not match the amount owed, so the payment was not applied.'
+                );
+
+                return;
+            }
+
+            if (
+                $envelope->currency !== null
+                && strtoupper($envelope->currency) !== strtoupper((string) $locked->currency)
+            ) {
+                $this->mark(
+                    $event,
+                    PaymentEventStatus::Ignored,
+                    'The settled currency does not match the currency charged, so the payment was not applied.'
+                );
+
+                return;
+            }
+
             $locked->forceFill([
                 'status' => PaymentStatus::Paid,
                 'provider_payment_id' => $envelope->providerPaymentId ?? $locked->provider_payment_id,

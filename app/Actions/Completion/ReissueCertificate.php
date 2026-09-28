@@ -3,6 +3,7 @@
 namespace App\Actions\Completion;
 
 use App\Enums\CertificateStatus;
+use App\Events\CertificateReissued;
 use App\Models\Certificate;
 use App\Models\User;
 use App\Services\Certificates\CertificateCodeGenerator;
@@ -72,6 +73,16 @@ class ReissueCertificate
 
                 return $existing;
             }
+
+            /*
+             | Only on the path that created the replacement.
+             |
+             | The catch block above hands back one that already exists, and a
+             | student told twice that their replacement certificate is ready is
+             | the noise this system exists to avoid. The dedup key names the
+             | original, so the unique index refuses a repeat as well.
+             */
+            CertificateReissued::dispatch($revoked, $replacement);
 
             return $replacement;
         });

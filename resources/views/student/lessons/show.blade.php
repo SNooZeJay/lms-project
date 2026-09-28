@@ -5,12 +5,6 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-breadcrumbs :items="[
-            ['label' => 'My courses', 'href' => route('student.courses.index')],
-            ['label' => $course->title, 'href' => route('student.courses.show', $course)],
-            ['label' => $lesson->title],
-        ]" class="mb-6" />
-
         @if (session('status'))
             <x-note tone="success" class="mb-6">{{ session('status') }}</x-note>
         @endif

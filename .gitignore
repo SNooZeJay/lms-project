@@ -1,10 +1,44 @@
 *.log
 .DS_Store
+
+# Every environment file, by name pattern rather than by enumeration.
+#
+# The earlier list named .env, .env.production, .env.testing, .env.backup, and
+# .env.*.local, which left .env.local, .env.development, .env.staging and
+# .env.test free to be committed. Each of those is a file somebody created to
+# hold real credentials for one environment, so the pattern is closed by default
+# and the safe templates are re-admitted underneath it.
 .env
-.env.*.local
-.env.backup
-.env.production
-.env.testing
+.env.*
+.env*
+
+# Only example files carry no secrets, and a template that is not committed is
+# not a template. These two negations must stay below the patterns above,
+# because a later rule cannot re-admit a file an earlier rule excluded.
+!.env.example
+!.env*.example
+
+# Private keys, certificates, and credential files.
+#
+# A repository that handles webhook signing secrets and a payment provider key
+# will eventually have somebody paste a certificate or a downloaded key file
+# into the project directory. Ignoring the category is cheaper than remembering
+# to ignore each extension, and the public half of a key pair has no business
+# being committed either.
+*.pem
+*.key
+*.p12
+*.pfx
+*.ppk
+*.crt
+*.cer
+*.der
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+credentials.*
+secrets.*
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -24,3 +58,16 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Reference material that is not part of this product.
+#
+# /references holds screenshots of another institution's quiz platform, supplied
+# as design inspiration. They are somebody else's interface, they are not ours,
+# and committing them puts a third party's UI in this repository where a later
+# reader cannot tell it apart from a design decision we made.
+#
+# /FOR_UI holds the reference dashboard AGENTS.md protects. It is 3 MB of
+# somebody else's markup, kept beside the project to look at and deliberately
+# never imported from.
+/references
+/FOR_UI

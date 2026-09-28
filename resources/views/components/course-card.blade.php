@@ -20,10 +20,32 @@
     what it covers, who teaches it, how much of it there is, and whether it costs
     anything. Nothing is shown that a student cannot act on.
 
+    The whole card is clickable through a stretched link on the title, which is
+    the pattern the reference design uses. That pattern only works when the card
+    is the positioning context the overlay resolves against, and it must be the
+    *nearest* one: a `relative` anywhere inside the card silently truncates the
+    overlay to that element instead, and the card stops being clickable where a
+    person would actually press it. Nothing between the card and the title link
+    may therefore be positioned. The button is raised above the overlay by the
+    relative wrapper of its own, so it stays its own control.
+
     The price is read from the course record and formatted from integer minor
     units, so it can never disagree with what checkout would charge.
 --}}
-<li class="card flex h-full flex-col p-5">
+<li {{ $attributes->merge(['class' => 'card relative flex h-full flex-col p-5']) }}>
+    {{--
+        Deliberately not a positioning context.
+
+        The stretched link on the title resolves against the nearest positioned
+        ancestor. This row used to be `relative` as well as the card, so it was the
+        nearer one and the overlay stopped at the title and the price badge,
+        covering 316 by 26 of a 358 by 314 card. Measured in a browser, every
+        other part of the card activated nothing, so tapping a course card
+        anywhere but its first row did nothing at all.
+
+        Only the card establishes the context, so the overlay covers the card. The
+        badge needs no positioning of its own to sit in the row.
+    --}}
     <div class="flex items-start justify-between gap-3">
         <h3 class="text-base leading-snug font-semibold text-ink">
             <a
@@ -85,7 +107,9 @@
     </dl>
 
     @unless ($compact)
-        <div class="mt-5 pt-1">
+        {{-- Relative, so the button sits above the stretched title link and stays a
+             control of its own rather than part of the title's hit area. --}}
+        <div class="relative mt-5 pt-1">
             <x-btn :href="route('courses.show', $course)" variant="secondary" size="sm">
                 View course
             </x-btn>

@@ -3,6 +3,7 @@
 namespace App\Actions\Quizzes;
 
 use App\Enums\QuizAttemptStatus;
+use App\Events\QuizGraded;
 use App\Models\Quiz;
 use App\Models\QuizAnswer;
 use App\Models\QuizAttempt;
@@ -94,6 +95,17 @@ class SubmitQuizAttempt
                 'passed' => $result['passed'],
             ]);
             $locked->save();
+
+            /*
+             | Only on the path that graded it.
+             |
+             | The early return above is the double submit: the row was already
+             | submitted, and re-announcing it would produce a second set of
+             | notices for one set of answers. The lock is the primary guard,
+             | exactly as the plan says, and the dedup key on the attempt is the
+             | backstop rather than the main defence.
+             */
+            QuizGraded::dispatch($quiz, $locked);
 
             return $locked;
         });

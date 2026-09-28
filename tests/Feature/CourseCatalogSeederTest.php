@@ -244,4 +244,77 @@ class CourseCatalogSeederTest extends TestCase
 
         $this->assertSame($before, $after, 'Re-running the seeder created duplicates.');
     }
+
+    /**
+     * The seeder must not hand itself an Administrator.
+     *
+     * It binds the catalog to one address, and when an account already sits at
+     * that address it used to set the role to Instructor without asking. An
+     * address that belongs to somebody more important than an Instructor is
+     * therefore one `db:seed` away from losing its role, and a person who loses
+     * it cannot sign in to the dashboard that would have told them.
+     *
+     * This is not hypothetical. Two of this project's own accounts exchanged
+     * addresses, which left the seeder's configured address pointing at the
+     * Administrator. Nothing would have complained until the demotion happened.
+     */
+    public function test_seeding_refuses_to_demote_an_administrator(): void
+    {
+        // setUp() has already seeded the catalog, so the address the seeder is
+        // really configured with is the one it just used. Reading it from the
+        // seeded rows rather than repeating the constant means this test keeps
+        // testing the real configuration if the constant ever changes.
+        $instructor = Course::query()->firstOrFail()->instructor;
+
+        $instructor->profile->forceFill(['role' => UserRole::Administrator])->save();
+
+        try {
+            Artisan::call('db:seed', ['--class' => CourseCatalogSeeder::class]);
+
+            $this->fail('The seeder overwrote the role of an account it did not create.');
+        } catch (\RuntimeException $refusal) {
+            // A refusal has to explain itself. "Something went wrong" from a
+            // seeder tells the person holding the keyboard nothing about which
+            // address to change.
+            $this->assertStringContainsString('INSTRUCTOR_EMAIL', $refusal->getMessage());
+            $this->assertStringContainsString('must not rewrite', $refusal->getMessage());
+        }
+
+        $this->assertSame(
+            UserRole::Administrator,
+            $instructor->fresh()->profile->role,
+            'The seeder changed the role of an account holding the configured address.'
+        );
+    }
+
+    /**
+     * The same address, held by a Student, is equally wrong to reshape.
+     *
+     * A Student is the one role whose access is deliberately the narrowest, so
+     * silently promoting one into teaching is the most damaging version of this
+     * mistake. Both directions are refused, for the same reason: the seeder
+     * creates a teaching account, and it has no business changing an existing
+     * one's role.
+     */
+    public function test_seeding_refuses_to_promote_a_student(): void
+    {
+        $instructor = Course::query()->firstOrFail()->instructor;
+
+        $instructor->profile->forceFill(['role' => UserRole::Student])->save();
+
+        try {
+            Artisan::call('db:seed', ['--class' => CourseCatalogSeeder::class]);
+
+            $this->fail('The seeder promoted a Student into teaching.');
+        } catch (\RuntimeException) {
+            // The refusal itself is what is being tested here. The other
+            // direction checks that it explains itself.
+        }
+
+        $this->assertSame(
+            UserRole::Student,
+            $instructor->fresh()->profile->role,
+            'The seeder promoted a Student into Instructor.'
+        );
+    }
 }

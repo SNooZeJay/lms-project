@@ -27,21 +27,48 @@
         <section class="mt-8" aria-labelledby="administrator-summary-heading">
             <h2 id="administrator-summary-heading" class="sr-only">System totals</h2>
 
-            <dl role="list" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {{-- Six tiles, down from eight, and nothing is lost: the figures that
+                 used to take a tile each are folded into the hint of the tile
+                 they belong with, so "8 courses" also says how many are live.
+                 A dashboard that shows ten numbers shows none of them clearly. --}}
+            <dl role="list" class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
                 <x-stat label="Users" :value="$stats['users']" tone="primary" hint="Every account"
                         :href="route('admin.users.index')">Manage users</x-stat>
-                <x-stat label="Students" :value="$stats['students']" tone="primary" />
-                <x-stat label="Instructors" :value="$stats['instructors']" tone="primary" />
-                <x-stat label="Courses" :value="$stats['courses']" tone="primary" />
-                <x-stat label="Enrollments" :value="$stats['enrollments']" tone="accent" hint="Every state" />
-                <x-stat label="Active enrollments" :value="$stats['active_enrollments']" tone="accent" />
-                <x-stat label="Certificates earned" :value="$stats['certificates']" tone="accent" hint="Issued and valid"
+                <x-stat label="Students" :value="$stats['students']" tone="primary"
+                        :hint="$stats['instructors'].' '.Str::plural('instructor', $stats['instructors'])
+                            .' · '.$stats['administrators'].' '.Str::plural('administrator', $stats['administrators'])" />
+                <x-stat label="Courses" :value="$stats['courses']" tone="primary"
+                        :hint="$stats['published_courses'].' published'" />
+                <x-stat label="Enrollments in progress" :value="$stats['active_enrollments']" tone="accent"
+                        :hint="'Of '.$stats['enrollments'].' in every state'" />
+                <x-stat label="Certificates issued" :value="$stats['certificates']" tone="accent" hint="Issued and valid"
                         :href="route('admin.certificates.index')">Manage certificates</x-stat>
                 <x-stat label="Paid payments" :value="$stats['paid_payments']" tone="accent" hint="Confirmed by the provider" />
             </dl>
         </section>
 
-        <div class="mt-8 grid gap-6 lg:grid-cols-2">
+        <div class="mt-8 grid items-start gap-6 lg:grid-cols-3">
+            {{-- The one chart. It answers "what is happening across the LMS",
+                 which eight separate totals cannot, and it is one grouped query
+                 rather than four counts. The labels are the words an
+                 Administrator would use, not the stored state names. --}}
+            <x-bar-chart
+                class="lg:col-span-2"
+                heading="Enrollments by state"
+                description="Every enrollment on the system, grouped by where it has reached."
+                :rows="$enrollmentRows"
+                empty="No enrollments have been created yet."
+            />
+
+            <x-activity-agenda
+                heading="Latest changes"
+                description="What has changed across the system."
+                :entries="$agenda"
+                empty="Nothing has happened on the system yet."
+            />
+        </div>
+
+        <div class="mt-8 grid items-start gap-6 lg:grid-cols-2">
             {{-- Recent students. --}}
             <section class="card" aria-labelledby="administrator-users-heading">
                 <div class="card-header">
@@ -169,13 +196,13 @@
             </section>
         </div>
 
-        {{-- Recent system activity. Read only, and it never shows a password, a
+        {{-- Account and role changes. Read only, and it never shows a password, a
              token, an IP address, or browser metadata. --}}
         <section class="mt-8" aria-labelledby="administrator-activity-heading">
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <h2 id="administrator-activity-heading" class="text-xl font-semibold text-ink">
-                        Recent system activity
+                        Account and role changes
                     </h2>
                     <p class="mt-1 text-sm leading-6 text-ink-muted">
                         Role and account status changes, newest first.

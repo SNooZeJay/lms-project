@@ -70,6 +70,14 @@
     --lms-primary-hover: #1e40af;
     --lms-primary-text: #1d4ed8;
     --lms-primary-quiet: #eff6ff;
+
+    /* The deep end of the authentication panel. A darker step of the same blue
+       ramp the primary comes from, so it is a shade of an existing core colour
+       rather than a new hue. It is a plain value on purpose: a color-mix() here
+       gets a fallback that collapses the panel back to flat primary on any
+       browser without color-mix, which is exactly the effect being asked for
+       silently disappearing. */
+    --lms-brand-deep: #1e3a8a;
     --lms-accent: #0f766e;
     --lms-accent-text: #0f766e;
     --lms-accent-quiet: #f0fdfa;
@@ -109,6 +117,10 @@
     --lms-primary-hover: #1d4ed8;
     --lms-primary-text: #93c5fd;
     --lms-primary-quiet: #172554;
+
+    /* The dark theme's primary is already a lighter blue, so the deep end steps
+       further down to keep a visible difference between the two ends. */
+    --lms-brand-deep: #172554;
     --lms-accent: #5eead4;
     --lms-accent-text: #5eead4;
     --lms-accent-quiet: #0b3b38;
@@ -322,16 +334,102 @@
      | in one column. On a phone the brand panel is dropped and the form takes
      | the full width, so the primary action is never pushed off screen.
      |
-     | The panel is a solid primary rather than a gradient. A gradient here
-     | would be decoration with no job, and it fights the accent colour that
-     | already means progress elsewhere in the product.
+     | The panel carries a slow ambient surface: a dark blue to blue base, one
+     | wide highlight drifting across it, and a single hairline arc floating on
+     | the same clock. The job is depth behind white text on a screen someone
+     | looks at while they sign in, so every value is low and every duration is
+     | long. Nothing pulses in brightness, nothing rotates, and the arc keeps its
+     | orientation, because a shape that turns reads as motion rather than as
+     | depth.
+     |
+     | Both layers are the same blue family and the same tempo, so they read as
+     | one surface instead of two effects competing. Only `transform` is
+     | animated, which the compositor can handle without repainting the panel on
+     | every frame.
+     |
+     | The deeper tone is derived from the primary token rather than added to the
+     | palette, so it stays in the brand hue and follows the theme: the dark
+     | theme's primary is a lighter blue, and the deep end moves with it.
      */
     .auth-shell {
         @apply grid min-h-screen lg:grid-cols-2;
     }
 
     .auth-aside {
-        @apply relative hidden flex-col justify-between overflow-hidden bg-primary px-10 py-12 text-white lg:flex xl:px-14;
+        @apply relative hidden flex-col justify-between overflow-hidden px-10 py-12 text-white lg:flex xl:px-14;
+
+        /* The flat colour is also the fallback if the gradient cannot be
+           resolved, so the panel is never left unpainted.
+
+           The light end sits at the top and the deep end at the bottom on
+           purpose. The largest text on the panel needs only a 3 to 1 ratio, so
+           it can sit over the lighter blue, while the small text at the foot of
+           the panel needs the full 4.5 to 1 and so has to sit over the deep end.
+           Running the gradient the other way put the lightest blue directly
+           behind the smallest text, which failed in the dark theme at 3.83 to 1. */
+        background-color: var(--color-primary);
+        background-image: linear-gradient(
+            to bottom,
+            var(--color-primary) 0%,
+            var(--lms-brand-deep) 82%
+        );
+    }
+
+    /* The drifting highlight. Oversized so its own edges never enter the panel,
+       and moved far enough to be felt rather than watched. */
+    .auth-aside::before {
+        content: '';
+        position: absolute;
+        inset: -30%;
+        z-index: 0;
+        pointer-events: none;
+        background: radial-gradient(
+            56% 46% at 34% 16%,
+            rgb(255 255 255 / 0.1),
+            rgb(255 255 255 / 0) 72%
+        );
+        animation: auth-aside-drift 68s ease-in-out infinite alternate;
+        will-change: transform;
+    }
+
+    /* One hairline arc. A circle far larger than the panel, so only a single
+       curve crosses it, and only a one pixel stroke at low opacity, so it reads
+       as a drawn line rather than a shape. */
+    .auth-aside::after {
+        content: '';
+        position: absolute;
+        top: 4%;
+        left: 44%;
+        z-index: 0;
+        width: 165%;
+        aspect-ratio: 1;
+        pointer-events: none;
+        border: 1px solid rgb(255 255 255 / 0.15);
+        border-radius: 50%;
+        animation: auth-aside-arc 44s ease-in-out infinite alternate;
+        will-change: transform;
+    }
+
+    @keyframes auth-aside-drift {
+        from {
+            transform: translate3d(0, 0, 0);
+        }
+
+        to {
+            transform: translate3d(3.5%, 2.5%, 0);
+        }
+    }
+
+    /* A one and a half percent breath over forty four seconds, with no rotation,
+       so the line keeps its orientation and never reads as a pulse. */
+    @keyframes auth-aside-arc {
+        from {
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        to {
+            transform: translate3d(-1.5%, 1.2%, 0) scale(1.015);
+        }
     }
 
     .auth-main {
@@ -352,18 +450,56 @@
     }
 
     /*
-     | An input with a leading icon. The icon sits behind the text, so the
+     | An input with a leading icon. The icon sits beside the text, so the
      | control keeps a real label, a real placeholder, and the same focus ring
      | as every other field. The padding is what keeps the text clear of it.
+     |
+     | One wrapper handles every field with a leading mark, so alignment is
+     | decided here once instead of being repeated per form.
+     */
+    /*
+     | An input with a leading icon. The icon sits beside the text, so the
+     | control keeps a real label, a real placeholder, and the same focus ring
+     | as every other field. The padding is what keeps the text clear of it.
+     |
+     | One wrapper handles every field with a leading mark, so alignment is
+     | decided here once instead of being repeated per form.
      */
     .input-icon {
-        @apply relative;
+        @apply relative mt-2;
+    }
+
+    /*
+     | Two things have to be undone before a mark can be centred on the field.
+     |
+     | The gap between a label and its control lives on the control, as an
+     | eight pixel top margin. Normally that margin collapses out through the
+     | wrapper. Here it cannot: the wrapper sits inside a flex column, which
+     | makes it a flex item, and a flex item establishes a block formatting
+     | context that holds its children's margins in. The wrapper grew to
+     | fifty two pixels around a forty four pixel field, with the field
+     | sitting eight pixels low. A mark at top: 50% then centred itself on the
+     | fifty two pixel wrapper, four pixels above the true centre of the field.
+     | The centring was correct and the box it measured was wrong.
+     |
+     | So the gap moves up to the wrapper, where it sits outside the box that
+     | top: 50% is measured against. The visible spacing does not change.
+     |
+     | The block display is the second half. An <input> is an inline level box,
+     | and left as one it sits on a text baseline, so the wrapper also picked
+     | up the descender space under the line. A block input has no line box,
+     | and the wrapper ends up exactly as tall as the field.
+     */
+    .input-icon > .field-control {
+        @apply mt-0 block;
     }
 
     .input-icon > .input-icon-mark {
-        @apply pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-subtle;
+        @apply pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 items-center text-ink-subtle;
     }
 
+    /* 12px of inset, then a 16px mark, then 16px of clear space before the
+       first character. Any wider mark and the padding has to grow with it. */
     .input-icon > .field-control {
         @apply pl-[2.75rem];
     }
@@ -380,6 +516,52 @@
     /* The field has to reserve room so the text never runs under the control. */
     .input-icon:has(> .input-icon-action) > .field-control {
         @apply pr-12;
+    }
+
+    /*
+     | Touch targets
+     |
+     | A thumb needs roughly 44 pixels to hit reliably, and the controls that
+     | were measured against a cursor are 36. These are scoped to a coarse
+     | pointer, so a mouse and a desktop layout are left exactly as they were and
+     | only touch devices get the larger targets.
+     |
+     | A link inside a sentence is deliberately excluded. WCAG 2.5.8 exempts a
+     | target whose position comes from the surrounding text, and giving every
+     | link in a paragraph 44 pixels of height would break the line rhythm and
+     | change how the copy reads. `.tap` is therefore opt-in, and goes on the
+     | controls that stand alone, which is where a mis-tap costs something: a
+     | back link, a reveal toggle, an account switch.
+     */
+    @media (pointer: coarse) {
+        .input-icon-action {
+            @apply size-11;
+        }
+
+        .tap {
+            @apply inline-flex min-h-11 items-center;
+        }
+    }
+
+    /*
+     | A link that stands alone on its own row, such as a chart row label.
+     |
+     | It needs two floors rather than one. WCAG 2.5.8 asks for 24 pixels on any
+     | pointer, and a thumb wants 44. Declaring both here, in one class, is the
+     | whole point: putting a minimum height utility on the same element as
+     | `.tap` does not work, because a utility outranks a component class
+     | whichever order they appear in the markup. The 24 pixel floor would then
+     | win on a phone and the touch target would silently be half the size it is
+     | supposed to be.
+     */
+    .row-target {
+        @apply flex min-h-6 items-center;
+    }
+
+    @media (pointer: coarse) {
+        .row-target {
+            @apply min-h-11;
+        }
     }
 
     /*
@@ -502,6 +684,92 @@
     .link-quiet {
         @apply font-semibold text-primary-text hover:text-primary;
     }
+
+    /*
+     | A placeholder in place of content that has not arrived.
+     |
+     | The rule this encodes is that a placeholder is shaped by the same tokens
+     | as the content it stands in for, never by a hand measured box. A hand
+     | drawn placeholder is right on the day it is written and wrong within one
+     | release, because the real card gains a line and the placeholder does not.
+     | The content then arrives into a different shape from the one that was
+     | promised, which is worse than showing nothing, because the person was
+     | given a layout to read.
+     |
+     | So the height comes from the type sizes already in use, the fill comes
+     | from the muted surface token, and nothing here has to be kept in step
+     | with a card. It is also not announced: a placeholder is not content, and
+     | reading a row of them aloud is noise rather than information.
+     |
+     | The pulse is two seconds, slow enough to read past. It stops entirely for
+     | anyone who has asked for reduced motion, because a pulsing block is
+     | exactly the repeated change that setting exists to stop.
+     */
+    .skeleton-line {
+        @apply h-4 rounded-sm bg-surface-muted;
+        animation: skeleton-pulse 2s ease-in-out infinite;
+    }
+
+    /* Consecutive lines are spaced the way consecutive lines of body text are,
+       so a paragraph placeholder is the height of the paragraph it replaces. */
+    .skeleton-line + .skeleton-line {
+        @apply mt-2;
+    }
+
+    @keyframes skeleton-pulse {
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.55;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .skeleton-line {
+            animation: none;
+        }
+    }
+
+    /*
+     | A link in the footer.
+     |
+     | The footer used to write `link-quiet text-ink-muted hover:text-ink` on each
+     | link. That stacks two colour utilities on one element, so which one wins
+     | is decided by their order in this file rather than by the order in the
+     | markup, which is not something a reader of the view can see. One class
+     | with one colour is the whole point.
+     |
+     | The underline appears on hover and on keyboard focus, never at rest, so a
+     | column of links reads as a list rather than as a wall of underlines. The
+     | focus ring is the same one every other control uses, so tabbing through
+     | the footer looks like tabbing through the rest of the page.
+     |
+     | The hover colour is a step towards full ink rather than towards the brand
+     | colour. A footer is the one place on the page where the brand colour
+     | would be loudest, because it is the largest block of links in view.
+     */
+    .footer-link {
+        @apply inline-block rounded-sm text-sm text-ink-muted underline decoration-transparent underline-offset-4 transition-colors hover:text-ink hover:decoration-current focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus focus-visible:decoration-current;
+    }
+
+    /*
+     | A thumb needs roughly 44 pixels to hit reliably, and a footer link is a
+     | standalone target: nothing around it repeats the action, so a mis-tap
+     | costs a full page load. Scoped to a coarse pointer, so a mouse and a
+     | desktop layout are left exactly as they were.
+     |
+     | The padding is vertical only. A footer link in a stacked list has to keep
+     | the rhythm of its neighbours, and the hit area grows by eating into the
+     | gap the list already has rather than by moving anything.
+     */
+    @media (pointer: coarse) {
+        .footer-link {
+            @apply flex min-h-11 items-center py-1;
+        }
+    }
 }
 
 @layer utilities {
@@ -574,6 +842,28 @@
     .progress-step-85  { --lms-progress: 85%; }
     .progress-step-90  { --lms-progress: 90%; }
     .progress-step-95  { --lms-progress: 95%; }
+    /*
+     | The fill of a bar chart row.
+     |
+     | The width is read from the custom property that the `progress-step-*`
+     | classes set, never from a `style` attribute. The content security policy
+     | is `style-src 'self'`, which forbids the `style` attribute outright, so an
+     | inline `width` was thrown away by the browser: the fill fell back to its
+     | natural width, and every bar in every chart drew at one hundred percent
+     | whatever its value. A chart of counts encoded nothing.
+     |
+     | The steps are the same five point ones the `<progress>` element uses, so
+     | the two kinds of bar on this system cannot disagree about what a step
+     | means, and the exact number is always printed beside the bar.
+     */
+    .bar-fill {
+        width: var(--lms-progress, 0%);
+        transition: width 500ms ease;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .bar-fill { transition: none; }
+    }
     .progress-step-100 { --lms-progress: 100%; }
 
     .progress-step-0::-webkit-progress-value   { width: 0%; }
@@ -631,5 +921,15 @@
         scroll-behavior: auto !important;
         transition-duration: 0.01ms !important;
         animation-duration: 0.01ms !important;
+    }
+
+    /* The blanket rule above leaves an infinite animation cycling every ten
+       thousandths of a second, which flickers instead of resting. These two are
+       switched off outright so the panel settles on the first frame of each
+       animation: the highlight centred, the arc at rest. The result is still a
+       finished surface, not a flattened one. */
+    .auth-aside::before,
+    .auth-aside::after {
+        animation: none !important;
     }
 }

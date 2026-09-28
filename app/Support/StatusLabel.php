@@ -7,6 +7,7 @@ use App\Enums\ContentStatus;
 use App\Enums\CourseStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\LessonProgressStatus;
+use App\Enums\NotificationType;
 use App\Enums\PaymentStatus;
 use App\Enums\QuizAttemptStatus;
 use App\Enums\QuizStatus;
@@ -68,6 +69,51 @@ class StatusLabel
             'suspended' => ['tone' => 'error', 'label' => 'Suspended'],
             'verified' => ['tone' => 'success', 'label' => 'Verified'],
             'unverified' => ['tone' => 'warning', 'label' => 'Email not verified'],
+
+            /*
+             | Notice kinds.
+             |
+             | The `type` on a notification was stored, filtered and never read.
+             | Both the topbar panel and the notification centre rendered a title
+             | and nothing else, so "Exam moved to Friday" and "Your certificate
+             | is ready" arrived as two unlabelled sentences to be sorted by
+             | reading them.
+             |
+             | The sentences say what happened rather than naming the column. A
+             | learner who did not pass is told "Quiz not passed" rather than
+             | "Quiz failed", and a retake is "Retake available" rather than
+             | "Retake required", because both are true and the second one reads
+             | as a reprimand.
+             |
+             | The tone follows what the reader can do about it, which is what
+             | the rest of this class does: a retake is a warning because there
+             | is an action waiting, a revoked certificate is an error because
+             | something they held has been taken away, and a lesson somebody
+             | started is neutral because nothing is being asked of them.
+             */
+            'course_enrollment' => ['tone' => 'info', 'label' => 'Enrollment'],
+            'course_content_published' => ['tone' => 'success', 'label' => 'New course content'],
+            'course_completed' => ['tone' => 'success', 'label' => 'Course completed'],
+
+            'lesson_started' => ['tone' => 'neutral', 'label' => 'Lesson started'],
+            'lesson_completed' => ['tone' => 'success', 'label' => 'Lesson completed'],
+
+            'quiz_started' => ['tone' => 'neutral', 'label' => 'Quiz started'],
+            'quiz_completed' => ['tone' => 'info', 'label' => 'Quiz submitted'],
+            'quiz_passed' => ['tone' => 'success', 'label' => 'Quiz passed'],
+            'quiz_failed' => ['tone' => 'error', 'label' => 'Quiz not passed'],
+            'retake_required' => ['tone' => 'warning', 'label' => 'Retake available'],
+
+            'certificate_available' => ['tone' => 'success', 'label' => 'Certificate available'],
+            'certificate_revoked' => ['tone' => 'error', 'label' => 'Certificate revoked'],
+            'certificate_reissued' => ['tone' => 'info', 'label' => 'Certificate reissued'],
+
+            'announcement' => ['tone' => 'info', 'label' => 'Announcement'],
+            'system_announcement' => ['tone' => 'info', 'label' => 'System announcement'],
+
+            'course_message' => ['tone' => 'info', 'label' => 'Course message'],
+            'support_message' => ['tone' => 'warning', 'label' => 'Support request sent'],
+            'support_reply' => ['tone' => 'success', 'label' => 'Support reply'],
 
             default => ['tone' => 'neutral', 'label' => self::words($value)],
         };
@@ -151,6 +197,12 @@ class StatusLabel
      * A test uses this list so a new enum cannot be added without deciding how
      * it reads in the interface.
      *
+     * `NotificationType` was missing from this list and every one of its values
+     * was falling through to the generic fallback, which is how a column that is
+     * written, filtered and counted turned out never to be read. The list is only
+     * as good as its contents, and a list nobody notices is missing an entry does
+     * not notice anything by itself.
+     *
      * @return list<class-string<BackedEnum>>
      */
     public static function coveredEnums(): array
@@ -165,6 +217,7 @@ class StatusLabel
             LessonProgressStatus::class,
             QuizAttemptStatus::class,
             UserAccountStatus::class,
+            NotificationType::class,
         ];
     }
 }

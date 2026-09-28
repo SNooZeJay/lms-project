@@ -16,6 +16,7 @@ use App\Models\Module;
 use App\Models\User;
 use App\Support\ContinueLearning;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class ContinueLearningTest extends TestCase
@@ -43,11 +44,15 @@ class ContinueLearningTest extends TestCase
         $this->recordProgress($student, $course, $first, now()->subDays(5), LessonProgressStatus::Completed);
         $this->recordProgress($student, $course, $second, now()->subHour());
 
-        $this->actingAs($student)
-            ->get(route('student.dashboard'))
-            ->assertOk()
-            ->assertSee($second->title)
-            ->assertDontSee($first->title);
+        $card = $this->continueLearningCard($this->actingAs($student)->get(route('student.dashboard'))->assertOk());
+
+        $this->assertNotNull($card, 'The Continue learning card was not rendered at all.');
+        $this->assertStringContainsString($second->title, $card);
+        $this->assertStringNotContainsString(
+            $first->title,
+            $card,
+            'The card offered the older finished lesson instead of the one opened an hour ago.'
+        );
     }
 
     public function test_a_student_with_no_history_sees_an_empty_state(): void
@@ -243,6 +248,71 @@ class ContinueLearningTest extends TestCase
             ->get(route('student.dashboard'))
             ->assertOk()
             ->assertSee($lesson->title);
+    }
+
+    /**
+     * @return array{0: User, 1: Course, 2: Module, 3: Lesson, 4: Lesson}
+    /**
+     * The card must not tell a learner two opposite things at once.
+     *
+     * The panel badged the lesson "Completed" and then offered a primary button
+     * reading "Resume this lesson", on the same card, at the same time. Both
+     * sentences were true and together they said nothing: a learner who has
+     * finished a lesson is not resuming it.
+     *
+     * The service is not at fault and was not changed. `ContinueLearning` returns
+     * the most recently opened lesson the learner can still open, and offering
+     * a finished lesson for reference is reasonable. What was wrong was the
+     * wording around it, so the wording is what is pinned here.
+     */
+    public function test_a_finished_lesson_is_offered_for_reference_and_not_as_something_to_resume(): void
+    {
+        [$student, $course, , $lesson] = $this->enrolledCourse();
+        $this->recordProgress($student, $course, $lesson, now()->subHour(), LessonProgressStatus::Completed);
+
+        $card = $this->continueLearningCard($this->actingAs($student)->get(route('student.dashboard'))->assertOk());
+
+        $this->assertNotNull($card);
+        $this->assertStringContainsString('Completed', $card);
+        $this->assertStringContainsString('Review this lesson', $card);
+        $this->assertStringNotContainsString('Resume this lesson', $card);
+    }
+
+    /** The unfinished case keeps the word "resume", because that is what it is. */
+    public function test_an_unfinished_lesson_is_still_offered_as_something_to_resume(): void
+    {
+        [$student, $course, , $lesson] = $this->enrolledCourse();
+        $this->recordProgress($student, $course, $lesson, now()->subHour());
+
+        $card = $this->continueLearningCard($this->actingAs($student)->get(route('student.dashboard'))->assertOk());
+
+        $this->assertNotNull($card);
+        $this->assertStringContainsString('Resume this lesson', $card);
+        $this->assertStringNotContainsString('Review this lesson', $card);
+    }
+
+    /**
+     * The Continue learning card on its own, with the rest of the page removed.
+     *
+     * The card used to be checked with a page-wide `assertSee`, on the grounds
+     * that a lesson title appears on the Student dashboard only when the card
+     * offers it. That stopped being true when the activity feed began listing
+     * finished lessons, which it should: a learner who finished a lesson sees it
+     * in their history whether or not the card is pointing at it.
+     *
+     * So the assertion is read from the card itself. Without this, a correct
+     * change to an unrelated panel would be reported as a failure here, and the
+     * fix would have been to delete a correct assertion.
+     */
+    private function continueLearningCard(TestResponse $response): ?string
+    {
+        $html = (string) $response->getContent();
+
+        if (! preg_match('~<section[^>]*aria-labelledby="continue-learning-heading".*?</section>~s', $html, $found)) {
+            return null;
+        }
+
+        return $found[0];
     }
 
     /**

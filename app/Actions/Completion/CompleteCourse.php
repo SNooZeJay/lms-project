@@ -4,6 +4,7 @@ namespace App\Actions\Completion;
 
 use App\Enums\CertificateStatus;
 use App\Enums\EnrollmentStatus;
+use App\Events\CourseCompleted;
 use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\CourseRequirement;
@@ -64,6 +65,21 @@ class CompleteCourse
             $enrollment->save();
 
             $certificate = $this->issue($actor, $enrollment, $requirements);
+
+            /*
+             | Only on the path that completed it.
+             |
+             | The early return above is somebody asking a second time for a
+             | course they already finished, and the certificate is already in
+             | their hands. Telling them again is the noise the specification
+             | rules out, and the report already says created: false for a caller
+             | that cares.
+             |
+             | The certificate id travels with the event rather than being looked
+             | up by a listener, so a listener cannot read it before the
+             | transaction that created it has committed.
+             */
+            CourseCompleted::dispatch($enrollment, $enrollment->course, $certificate->id);
 
             return ['enrollment' => $enrollment->refresh(), 'certificate' => $certificate, 'created' => true];
         });

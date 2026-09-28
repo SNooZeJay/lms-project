@@ -43,10 +43,6 @@ const updateThemeControls = (theme) => {
         button.setAttribute('aria-pressed', String(theme === 'dark'));
         button.setAttribute('aria-label', `Switch to ${nextTheme} theme`);
     });
-
-    document.querySelectorAll('[data-theme-label]').forEach((label) => {
-        label.textContent = nextTheme === 'dark' ? 'Dark' : 'Light';
-    });
 };
 
 const applyTheme = (theme, persist = true) => {
@@ -94,6 +90,41 @@ const focusablesIn = (container) => Array.from(
         'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     ),
 ).filter((element) => element.offsetParent !== null || element === document.activeElement);
+
+/* ------------------------------------------------------------- topbar search */
+
+/*
+ * The slash shortcut the topbar advertises.
+ *
+ * It focuses the search field and nothing else. It is skipped while somebody is
+ * already typing, because a "/" typed into a form field has to stay a slash, and
+ * it is skipped when a modifier is held, because that combination belongs to
+ * whatever the person is actually trying to do.
+ *
+ * The field is a real input inside a real form, so the shortcut is a
+ * convenience and never the only way to reach it.
+ */
+const topbarSearch = document.querySelector('[data-topbar-search] input[name="q"]');
+
+if (topbarSearch) {
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) {
+            return;
+        }
+
+        const active = document.activeElement;
+
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+            return;
+        }
+
+        // A modifier plus a key that is not a slash, such as "/" typed while
+        // shift is held on some layouts, is not the shortcut.
+        event.preventDefault();
+        topbarSearch.focus();
+        topbarSearch.select();
+    });
+}
 
 /* ------------------------------------------------------------------ account menu */
 
@@ -306,8 +337,64 @@ document.querySelectorAll('form[data-pending]').forEach((form) => {
         if (busy) {
             busy.textContent = original;
         }
+
+        releaseWhenThePageDoesNotMove(button);
     });
 });
+
+/*
+ * The other half of the busy state, and the part that was missing.
+ *
+ * Disabling the button stops a second click being sent, which is the point. It
+ * also means that if the request never completes, the control stays disabled
+ * until the person reloads by hand. That is the worst outcome available: the
+ * action they wanted has become impossible and the page looks broken rather than
+ * busy.
+ *
+ * Three things reopen it, and each covers a way a request can end without the
+ * page being replaced:
+ *
+ *   - a timer, for a request that hangs on a connection which never resolves
+ *   - pageshow, which fires when a page is restored from the back forward
+ *     cache, so going back does not return to a dead form
+ *   - the window coming back online, for a phone that lost signal mid submit
+ *
+ * The listeners are removed once the control is live again. A form that is
+ * submitted repeatedly would otherwise attach a new pair every time and leave
+ * them behind for the life of the page.
+ */
+const PENDING_RELEASE_AFTER_MS = 15000;
+
+function releaseWhenThePageDoesNotMove(button) {
+    const stop = () => {
+        window.removeEventListener('pageshow', release);
+        window.removeEventListener('online', release);
+    };
+
+    const release = () => {
+        stop();
+
+        // A button that has been replaced by a new page is not ours to touch.
+        if (!button.isConnected) {
+            return;
+        }
+
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+    };
+
+    const timer = window.setTimeout(release, PENDING_RELEASE_AFTER_MS);
+
+    window.addEventListener('pageshow', () => {
+        window.clearTimeout(timer);
+        release();
+    });
+
+    window.addEventListener('online', () => {
+        window.clearTimeout(timer);
+        release();
+    });
+}
 
 /* ------------------------------------------------- responsive table disclosure */
 
@@ -386,3 +473,82 @@ document.querySelectorAll('[data-password-reveal]').forEach((button) => {
         }
     });
 });
+
+/**
+ * The rotating line on the authentication panel.
+ *
+ * Types each sentence one character at a time, holds it long enough to be read,
+ * erases it in reverse, moves to the next sentence, and repeats indefinitely.
+ *
+ * The sentences arrive in a data attribute, and the element already holds the
+ * first one in its markup, so with this file blocked the panel still reads
+ * correctly. The block also reserves its own height, so swapping a short
+ * sentence for a long one cannot pull the message below it upward.
+ *
+ * The visible line is hidden from assistive technology in the markup, and the
+ * full set of sentences is rendered as a plain list beside it, so the
+ * information does not depend on the animation existing.
+ */
+const rotateSentences = (node) => {
+    const sentences = (node.dataset.sentences || '')
+        .split('||')
+        .map((sentence) => sentence.trim())
+        .filter(Boolean);
+
+    if (sentences.length < 2) {
+        return;
+    }
+
+    const TYPE_MS = 45;
+    const ERASE_MS = 22;
+    const HOLD_MS = 3600;
+    const GAP_MS = 520;
+    const FIRST_DELAY_MS = 1100;
+
+    let index = 0;
+    let shown = 0;
+    let erasing = false;
+    let timer = null;
+
+    const stop = () => {
+        if (timer !== null) {
+            window.clearTimeout(timer);
+            timer = null;
+        }
+    };
+
+    const step = () => {
+        const sentence = sentences[index];
+        shown += erasing ? -1 : 1;
+        node.textContent = sentence.slice(0, shown);
+
+        let delay = erasing ? ERASE_MS : TYPE_MS;
+
+        if (!erasing && shown === sentence.length) {
+            erasing = true;
+            delay = HOLD_MS;
+        } else if (erasing && shown === 0) {
+            erasing = false;
+            index = (index + 1) % sentences.length;
+            delay = GAP_MS;
+        }
+
+        timer = window.setTimeout(step, delay);
+    };
+
+    // Pausing while the tab is in the background is an optimisation, not a
+    // condition. Browsers already throttle timers on a hidden tab, and treating
+    // hidden as a reason not to run meant a page opened in the background never
+    // started at all, which is indistinguishable from a broken feature.
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            stop();
+        } else if (timer === null) {
+            timer = window.setTimeout(step, GAP_MS);
+        }
+    });
+
+    timer = window.setTimeout(step, FIRST_DELAY_MS);
+};
+
+document.querySelectorAll('[data-rotate-sentences]').forEach(rotateSentences);

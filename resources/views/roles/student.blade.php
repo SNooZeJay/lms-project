@@ -30,17 +30,53 @@
 
             {{-- The label on every tile names exactly what is counted, in plain
                  words. "Courses enrolled" would need a second reading to know
-                 whose courses and which state, so each label says so. --}}
-            <dl role="list" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <x-stat label="Courses enrolled" :value="$stats['courses_enrolled']" tone="primary"
-                        hint="Active or completed" />
+                 whose courses and which state, so each label says so.
+
+                 Six tiles, not ten. A learner's own progress is a short list, and
+                 a tile that repeats another is the first thing to cut.
+
+                 Two of the previous four were replaced rather than added to.
+                 "Courses enrolled" is now the sum of "in progress" and
+                 "completed", so keeping it would show the same number twice in a
+                 different place. "Quizzes passed" gave way to "quizzes pending",
+                 because a learner can act on the second one this week and only
+                 look back at the first. --}}
+            <dl role="list" class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+                <x-stat label="Overall progress" :value="$stats['average_progress'].'%'" tone="primary"
+                        hint="Average across your courses" />
+                <x-stat label="Courses in progress" :value="$stats['courses_in_progress']" tone="primary" />
+                <x-stat label="Courses completed" :value="$stats['courses_completed']" tone="accent" />
                 <x-stat label="Lessons completed" :value="$stats['lessons_completed']" tone="primary" />
-                <x-stat label="Quizzes passed" :value="$stats['quizzes_passed']" tone="accent" />
+                <x-stat label="Quizzes pending" :value="$stats['quizzes_pending']" tone="primary"
+                        hint="In your enrolled courses" />
                 <x-stat label="Certificates earned" :value="$stats['certificates_earned']" tone="accent" />
             </dl>
         </section>
 
-        <div class="mt-8 grid gap-6 lg:grid-cols-3">
+        <div class="mt-8 grid items-start gap-6 lg:grid-cols-3">
+            {{--
+                The one chart on this page. It answers "how am I progressing",
+                which a list of course names cannot, and it is built from the
+                progress already calculated for the course list below, so it adds
+                no query and cannot disagree with it.
+            --}}
+            <x-bar-chart
+                class="lg:col-span-2"
+                heading="Your progress"
+                description="How much of each course you have finished."
+                :rows="$progressRows"
+                empty="Enroll in a course and your progress will appear here."
+            />
+
+            <x-activity-agenda
+                heading="Recent activity"
+                description="What has happened on your account."
+                :entries="$agenda"
+                empty="Nothing has happened on your account yet."
+            />
+        </div>
+
+        <div class="mt-8 grid items-start gap-6 lg:grid-cols-3">
             {{--
                 Continue learning is the primary focus of this page, so it takes
                 the wider column.
@@ -59,7 +95,14 @@
                                 {{ $continueLesson->title }}
                             </h2>
                         </div>
-                        <x-badge tone="info">
+                        {{--
+                            The badge colour and the button wording are read from the
+                            same state, so the card cannot claim a lesson is
+                            finished and then offer to resume it. That is not a
+                            hypothetical: it did exactly that, with a "Completed"
+                            badge over a "Resume this lesson" button.
+                        --}}
+                        <x-badge :tone="$continueProgress->status->value === 'completed' ? 'success' : 'info'">
                             {{ $continueProgress->status->value === 'completed' ? 'Completed' : 'In progress' }}
                         </x-badge>
                     </div>
@@ -77,13 +120,23 @@
                             </p>
                         @endif
 
+                        {{--
+                            "Resume" means picking up something part-done. A lesson
+                            that is already finished is being opened again to read
+                            it, which is a different act, and naming it as one
+                            keeps the card telling the truth about its own badge.
+
+                            Offering a finished lesson at all is deliberate and is
+                            covered by `ContinueLearningTest`: a learner may want
+                            the last thing they read. Only the wording was wrong.
+                        --}}
                         <x-btn
                             :href="route('student.lessons.show', [$continueLesson->module->course, $continueLesson])"
                             variant="primary"
                             size="lg"
                             class="mt-5"
                         >
-                            Resume this lesson
+                            {{ $continueProgress->status->value === 'completed' ? 'Review this lesson' : 'Resume this lesson' }}
                             <x-icon name="arrow-right" size="sm" />
                         </x-btn>
                     </div>
@@ -238,7 +291,7 @@
             @endif
         </section>
 
-        <div class="mt-8 grid gap-6 lg:grid-cols-2">
+        <div class="mt-8 grid items-start gap-6 lg:grid-cols-2">
             {{-- Recent assessments. --}}
             <section class="card" aria-labelledby="student-attempts-heading">
                 <div class="card-header">

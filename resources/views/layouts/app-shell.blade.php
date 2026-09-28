@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="overflow-x-hidden">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="overflow-x-clip">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,8 +9,8 @@
 
     <title>@yield('title', config('app.name'))</title>
 
-    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('images/brand/touch-icon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}?v={{ filemtime(public_path('favicon.png')) }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/brand/touch-icon.png') }}?v={{ filemtime(public_path('images/brand/touch-icon.png')) }}">
 
     {{-- The theme is chosen before the first paint so a dark theme never flashes
          light. It is a small inline script, so it carries the request nonce that
@@ -40,7 +40,14 @@
         @vite(['resources/css/app.css'])
     @endif
 </head>
-<body class="min-h-screen overflow-x-hidden bg-canvas font-sans text-ink antialiased">
+{{-- overflow-x-clip, not overflow-x-hidden. Both stop content pushing the page
+     sideways, but a non-visible overflow on an axis makes that element a scroll
+     container, and overflow-y then computes to auto. On html and body that
+     turns the document into the sidebar's scroll container, so its
+     position: sticky anchors to an element that never scrolls and the sidebar
+     rides away with the content. Measured: the sidebar moved 1095px on a 1200px
+     scroll. clip does not create a scroll container, so sticky keeps working. --}}
+<body class="min-h-screen overflow-x-clip bg-canvas font-sans text-ink antialiased">
     <a
         href="#main-content"
         class="fixed left-4 top-4 z-50 -translate-y-24 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-transform focus:translate-y-0"
@@ -80,9 +87,13 @@
 
             <x-app.nav :user="auth()->user()" id="workspace-nav-desktop" class="flex-1" />
 
-            <div class="shrink-0 border-t border-line p-3 lg:px-2 xl:p-4">
-                <x-theme-toggle class="lg:mx-auto xl:w-full xl:justify-center" />
-            </div>
+            {{-- No footer control here any more. The theme switch used to sit
+                 at the bottom of the sidebar, and it also sat in the drawer and
+                 in the topbar, so on a phone the same switch appeared twice on
+                 one screen and on a desktop it was duplicated with the topbar
+                 once that gained one. It is in the topbar at every width now,
+                 where the reference puts it, and this column ends with the
+                 navigation so there is nothing left to fill it with. --}}
         </aside>
 
         {{-- The mobile drawer. It stays hidden until the menu button opens it,
@@ -108,10 +119,6 @@
                 </div>
 
                 <x-app.nav :user="auth()->user()" id="workspace-nav-drawer" class="flex-1" />
-
-                <div class="shrink-0 border-t border-line p-3">
-                    <x-theme-toggle class="w-full justify-center" />
-                </div>
             </div>
         </div>
 
@@ -119,7 +126,7 @@
              behind it inert and a keyboard user cannot tab into it. --}}
         <div data-workspace-column class="flex min-w-0 flex-1 flex-col">
             <header class="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur-sm" data-print="hide">
-                <div class="flex min-h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+                <div class="flex min-h-16 items-center gap-2 px-4 sm:gap-3 sm:px-6 lg:px-8">
                     <button
                         type="button"
                         data-drawer-open
@@ -132,16 +139,62 @@
                     </button>
 
                     <a href="{{ route('home') }}" class="flex min-h-11 min-w-0 items-center rounded-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus lg:hidden" aria-label="IT Learning Hub home">
-                        <x-logo size="sm" />
+                        {{-- The name is dropped on the narrowest phones.
+
+                             This has to be max-[399px]:hidden rather than
+                             min-[400px]:inline. The logo component's own name
+                             element carries display:block, and a plain width
+                             variant cannot switch that off: both are display
+                             utilities of equal weight, so which one wins is
+                             decided by their order in the stylesheet and not by
+                             the order they appear in the attribute. The
+                             measurement was the brand name rendering at 320px,
+                             clipped to "IT Learning...", which is the exact
+                             outcome the rule exists to prevent. A max-width
+                             variant is emitted inside a media query after the
+                             base utilities, so it wins. --}}
+                        <x-logo size="sm" name-class="max-[399px]:hidden" />
                     </a>
 
-                    <p class="hidden min-w-0 flex-1 truncate text-sm text-ink-muted lg:block">
-                        @yield('workspace-context', 'IT Learning Hub')
-                    </p>
+                    {{-- The trail, in the topbar's left slot.
 
-                    <div class="ml-auto flex shrink-0 items-center gap-2">
-                        <x-theme-toggle class="lg:hidden" />
+                         This replaces a flat string that said "Operations
+                         workspace" and went nowhere. The same words are still
+                         here, as the first crumb, and they now lead to the
+                         dashboard instead of sitting there.
+
+                         It is hidden on a phone, where the drawer button, the
+                         brand and the four controls on the right already fill
+                         the bar. The page has its own h1 immediately below, so
+                         nothing is lost by not repeating the name up here. --}}
+                    <div class="hidden min-w-0 flex-1 lg:block">
+                        <x-breadcrumbs :items="\App\Support\Navigation::trail(auth()->user())" />
+                    </div>
+
+                    {{-- The control cluster, in the reference order: search,
+                         notifications, messages, theme, account. Each is real.
+                         The theme control used to sit in the sidebar footer and
+                         in the drawer, so on a phone the same switch appeared
+                         twice on one screen; it lives here now, at every width. --}}
+                    <div class="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+                        <x-app.topbar-search />
+
+                        <x-app.notification-bell
+                            :unread="$unreadNotifications ?? 0"
+                            :recent="$recentNotifications ?? []"
+                        />
+
+                        <x-app.message-button
+                            :unread="$unreadMessages ?? 0"
+                            :threads="$recentConversations ?? []"
+                            :unread-threads="$unreadThreads ?? []"
+                        />
+
                         <x-app.user-menu :user="auth()->user()" id="workspace-account-menu" />
+
+                        {{-- Last, so it sits against the account button the way
+                             the reference has it. --}}
+                        <x-theme-toggle />
                     </div>
                 </div>
             </header>
@@ -150,12 +203,13 @@
                 @yield('content')
             </main>
 
-            <footer class="border-t border-line bg-surface" data-print="hide">
-                <div class="mx-auto flex w-full max-w-7xl flex-col gap-1 px-4 py-6 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-                    <p>{{ config('app.name') }}</p>
-                    <p>BSIT academic project</p>
-                </div>
-            </footer>
+            {{-- The compact band. The workspace sidebar already carries every
+                 destination, so repeating those columns here would make the
+                 footer a second, worse navigation. What the workspace still
+                 needs is the brand, the legal terms, and the copyright.
+                 Hidden on paper, because a certificate and a receipt are the
+                 only pages meant to be printed. --}}
+            <x-footer variant="workspace" hide-on-print />
         </div>
     </div>
 

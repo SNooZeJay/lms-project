@@ -31,7 +31,7 @@
                 <p class="prose-measure mt-5 text-lg leading-8 text-ink-muted">{{ $course->description }}</p>
             @endif
 
-            <dl class="mt-6 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+            <dl class="mt-6 grid grid-cols-1 gap-4 text-sm min-[360px]:grid-cols-2 lg:grid-cols-4">
                 <div>
                     <dt class="meta-label">Price</dt>
                     <dd class="mt-1 font-semibold text-ink">

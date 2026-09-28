@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="overflow-x-hidden">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="overflow-x-clip">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="@yield('description', 'IT Learning Hub, a practical academic learning management system for BSIT students in the Philippines.')">
+    <meta name="description" content="@yield('description', 'IT Learning Hub, an Information Technology learning platform with courses, lessons, quizzes, and certificates.')">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', config('app.name'))</title>
 
-    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('images/brand/touch-icon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}?v={{ filemtime(public_path('favicon.png')) }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/brand/touch-icon.png') }}?v={{ filemtime(public_path('images/brand/touch-icon.png')) }}">
 
     {{-- The theme is chosen before the first paint so a dark theme never flashes
          light. It is a small inline script, so it carries the request nonce that
@@ -39,10 +39,13 @@
         @vite(['resources/css/app.css'])
     @endif
 </head>
-<body class="min-h-screen overflow-x-hidden bg-canvas font-sans text-ink antialiased">
+{{-- overflow-x-clip rather than overflow-x-hidden, because a non-visible
+     overflow makes this element a scroll container and breaks sticky
+     descendants. See the note in layouts/app-shell.blade.php. --}}
+<body class="min-h-screen overflow-x-clip bg-canvas font-sans text-ink antialiased">
     <a
         href="#main-content"
-        class="fixed left-4 top-4 z-50 -translate-y-24 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-transform focus:translate-y-0"
+        class="fixed left-4 top-4 z-50 inline-flex min-h-11 -translate-y-24 items-center rounded-md bg-primary px-4 text-sm font-semibold text-white transition-transform focus:translate-y-0"
     >
         Skip to main content
     </a>
@@ -86,13 +89,19 @@
                             id="public-menu"
                             data-dropdown-panel
                             hidden
-                            class="absolute right-0 z-40 mt-2 w-56 origin-top-right rounded-lg border border-line bg-surface p-1.5 shadow-lg"
+                            {{-- The panel is sized to its contents rather than to a
+                                 fixed width. It holds one or two short labels, and a
+                                 224 pixel box around them reads as a long empty
+                                 panel. The floor keeps it from becoming a sliver
+                                 and the ceiling stops a longer label, such as one
+                                 added later, from stretching it across the screen. --}}
+                            class="absolute right-0 z-40 mt-2 w-max min-w-44 max-w-64 origin-top-right rounded-lg border border-line bg-surface p-1.5 shadow-lg"
                         >
                             <a
                                 href="{{ route('courses.index') }}"
                                 data-dropdown-item
                                 @if (request()->routeIs('courses.*')) aria-current="page" @endif
-                                class="flex min-h-11 items-center gap-2.5 rounded-md px-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus {{ request()->routeIs('courses.*') ? 'bg-primary-quiet text-primary-text' : '' }}"
+                                class="flex min-h-10 items-center gap-2.5 rounded-md px-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus {{ request()->routeIs('courses.*') ? 'bg-primary-quiet text-primary-text' : '' }}"
                             >
                                 <x-icon name="book-open" size="sm" class="text-ink-subtle" />
                                 Courses
@@ -104,7 +113,7 @@
                                 <a
                                     href="{{ route('login') }}"
                                     data-dropdown-item
-                                    class="flex min-h-11 items-center gap-2.5 rounded-md px-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus"
+                                    class="flex min-h-10 items-center gap-2.5 rounded-md px-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus"
                                 >
                                     <x-icon name="lock" size="sm" class="text-ink-subtle" />
                                     Sign in
@@ -120,56 +129,9 @@
             @yield('content')
         </main>
 
-        <footer class="border-t border-line bg-surface">
-            <div class="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-                <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-                    <div>
-                        <x-logo size="sm" />
-                        <p class="mt-4 max-w-xs text-sm leading-6 text-ink-muted">
-                            Courses in information technology, programming, web development,
-                            and cybersecurity.
-                        </p>
-                    </div>
-
-                    <div>
-                        <h2 class="text-sm font-semibold text-ink">Learn</h2>
-                        <ul role="list" class="mt-3 space-y-1 text-sm">
-                            <li><a href="{{ route('courses.index') }}" class="link-quiet text-ink-muted hover:text-ink">Course catalog</a></li>
-                            @auth
-                                <li><a href="{{ route('student.courses.index') }}" class="link-quiet text-ink-muted hover:text-ink">My courses</a></li>
-                            @endauth
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h2 class="text-sm font-semibold text-ink">Account</h2>
-                        <ul role="list" class="mt-3 space-y-1 text-sm">
-                            @auth
-                                <li><a href="{{ route('account.profile') }}" class="link-quiet text-ink-muted hover:text-ink">Your profile</a></li>
-                                <li><a href="{{ route('account.password') }}" class="link-quiet text-ink-muted hover:text-ink">Password</a></li>
-                            @else
-                                <li><a href="{{ route('login') }}" class="link-quiet text-ink-muted hover:text-ink">Sign in</a></li>
-                            @endauth
-                        </ul>
-                    </div>
-
-                    {{-- The terms the sign up and sign in pages link to. A page that
-                         is linked from somewhere has to exist, and these are the
-                         only two the site publishes. --}}
-                    <div>
-                        <h2 class="text-sm font-semibold text-ink">Legal</h2>
-                        <ul role="list" class="mt-3 space-y-1 text-sm">
-                            <li><a href="{{ route('legal.terms') }}" class="link-quiet text-ink-muted hover:text-ink">Terms of use</a></li>
-                            <li><a href="{{ route('legal.privacy') }}" class="link-quiet text-ink-muted hover:text-ink">Privacy</a></li>
-                        </ul>
-                    </div>
-                </div>
-
-                <p class="mt-8 border-t border-line pt-6 text-sm leading-6 text-ink-muted">
-                    &copy; {{ now()->year }} {{ config('app.name') }}
-                </p>
-            </div>
-        </footer>
+        {{-- The one footer for the whole site. The public pages get the full
+             column set; the workspace uses the compact band. --}}
+        <x-footer variant="site" />
     </div>
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))

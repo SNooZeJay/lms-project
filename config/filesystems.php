@@ -33,7 +33,22 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+
+            // Serve stays off. The framework honours 'serve' by registering
+            // GET and PUT routes that read and write any path under this disk
+            // for a request carrying a valid relative signature, and that
+            // signature is computed from APP_KEY. Nothing in this application
+            // produces such a URL: every Learning Material is delivered by
+            // MaterialDownloadController, which looks the record up by id,
+            // checks the owning course, lesson, and enrollment, and asks a
+            // policy first. So the two routes bought nothing and cost real
+            // exposure, because they widened what a leaked APP_KEY could reach.
+            // With APP_KEY alone an attacker could already forge a session; with
+            // these routes they could also read and overwrite every private
+            // file, anonymously, over HTTP. Deny by default: the route should
+            // not exist unless a feature needs it.
+            'serve' => false,
+
             'throw' => false,
             'report' => false,
         ],

@@ -176,7 +176,26 @@ class CourseFoundationTest extends TestCase
     public function test_phase_four_a_does_not_add_course_business_routes(): void
     {
         $this->assertFalse(Route::has('student.progress.index'));
-        $this->assertFalse(Route::has('instructor.courses.students'));
+
+        /*
+         | The learner list is no longer guarded here, and this is the second time
+         | this guard has been overtaken.
+         |
+         | It read `assertFalse(Route::has('instructor.courses.students'))` while
+         | the route was out of scope, which was the right thing to assert then.
+         | `plan.md` now lists "Student progress" among the things the Instructor
+         | workspace focuses on, the route is built, and
+         | `InstructorStudentProgressTest` covers who may open it and what it
+         | shows.
+         |
+         | A guard is not a wish. Leaving it would have made the suite fail on
+         | purpose, and deleting it silently would have removed the record of
+         | why it was ever there, so the retirement is written down instead.
+         |
+         | The other half stays. `student.progress.index` is a Student facing
+         | progress index, which is a different page for a different role and is
+         | still not approved.
+         */
     }
 
     private function makeInstructor(): User

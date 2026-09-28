@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\User;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
@@ -106,6 +107,78 @@ class ProductionReadinessTest extends TestCase
             ->assertExitCode(1);
     }
 
+    /**
+     * A server that says it will send mail but cannot is the failure this guards.
+     *
+     * The log mailer passes, because nothing is claimed that is not true: no
+     * message leaves the machine. The smtp mailer passes only once it can
+     * actually authenticate, and only when the From header is the same address
+     * the server authenticated as. Gmail silently rewrites a From header for an
+     * account it has not logged in as, so a mismatched pair is refused by the
+     * provider after the deployment looks healthy.
+     *
+     * The addresses used here are real looking on purpose. A fixture built on the
+     * reserved example.test domain would be refused by the check for being a
+     * placeholder, which is the correct behaviour and would make this test pass
+     * or fail for the wrong reason.
+     */
+    public function test_mail_that_cannot_be_sent_fails_the_readiness_check(): void
+    {
+        // Nothing is claimed, so nothing needs proving.
+        config()->set('mail.default', 'log');
+        config()->set('mail.from.address', 'lms@example.test');
+
+        $this->artisan('lms:check-production')
+            ->expectsOutputToContain('Mail is able to send')
+            ->assertExitCode(1);
+
+        // Claiming to send, with no credentials to send with.
+        config()->set('mail.default', 'smtp');
+        config()->set('mail.mailers.smtp.username', null);
+        config()->set('mail.mailers.smtp.password', null);
+        config()->set('mail.from.address', 'registrar@ncst.edu.ph');
+
+        $this->artisan('lms:check-production')
+            ->expectsOutputToContain('Mail is able to send')
+            ->assertExitCode(1);
+
+        // Authenticated, but the From header names a different mailbox.
+        config()->set('mail.mailers.smtp.username', 'owner@ncst.edu.ph');
+        config()->set('mail.mailers.smtp.password', 'a-real-looking-app-password');
+        config()->set('mail.from.address', 'lms@example.test');
+
+        $this->artisan('lms:check-production')
+            ->expectsOutputToContain('Mail is able to send')
+            ->assertExitCode(1);
+    }
+
+    /** A fully configured SMTP mailer is not held back by the mail check. */
+    public function test_a_correctly_configured_mailer_does_not_fail_the_mail_check(): void
+    {
+        config()->set('mail.default', 'smtp');
+        config()->set('mail.mailers.smtp.username', 'owner@ncst.edu.ph');
+        config()->set('mail.mailers.smtp.password', 'a-real-looking-app-password');
+        config()->set('mail.from.address', 'owner@ncst.edu.ph');
+
+        // The raw output is read directly rather than through the console test
+        // helper, because the helper matches on a fixed string and this line is
+        // printed in a padded column. Matching the line with a pattern keeps the
+        // assertion about the verdict rather than about how wide the column is.
+        $exit = Artisan::call('lms:check-production');
+
+        $this->assertSame(
+            1,
+            $exit,
+            'Everything else about a test server still fails, so the command must still exit non-zero.'
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/Mail is able to send\s+PASS/',
+            Artisan::output(),
+            'A fully configured SMTP mailer must pass the mail check.'
+        );
+    }
+
     public function test_the_runbook_documents_every_failing_check(): void
     {
         $runbook = File::get(base_path('docs/deployment.md'));
@@ -115,6 +188,7 @@ class ProductionReadinessTest extends TestCase
         $this->assertStringContainsString('SESSION_SECURE=true', $runbook);
         $this->assertStringContainsString('TRUSTED_PROXIES', $runbook);
         $this->assertStringContainsString('Do **not** run `php artisan storage:link`', $runbook);
+        $this->assertStringContainsString('MAIL_FROM_ADDRESS', $runbook);
         $this->assertStringContainsString('Rollback', $runbook);
     }
 

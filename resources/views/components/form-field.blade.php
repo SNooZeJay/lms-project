@@ -14,10 +14,25 @@
     'options' => null,
     'emptyLabel' => null,
     'fieldClass' => '',
+    'scope' => null,
 ])
 
 @php
-    $id = 'field-'.$name;
+    /*
+     | The identifier is the field name, optionally inside a caller-supplied scope.
+     |
+     | A page that renders the same form more than once cannot use the bare name.
+     | The Instructor course outline renders an add form for every module, every
+     | lesson and every material, and with the bare name the page carried
+     | field-title nineteen times. A label's `for` matches the first element with
+     | that identifier, so eighteen of those fields were announced with the wrong
+     | name, and any script looking one up edited the wrong row.
+     |
+     | The scope is a prefix rather than a whole identifier, so a caller cannot
+     | supply it and forget the part that makes it unique. Handing over the whole
+     | id would allow the field name to be dropped along with it.
+     */
+    $id = 'field-'.($scope ? $scope.'-' : '').$name;
     $describedBy = array_filter([
         $hint ? $id.'-hint' : null,
         $errors->has($name) ? $id.'-error' : null,

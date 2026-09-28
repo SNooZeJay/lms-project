@@ -5,11 +5,6 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-breadcrumbs :items="[
-            ['label' => 'Administrator', 'href' => route('administrator.dashboard')],
-            ['label' => 'Certificates'],
-        ]" class="mb-6" />
-
         <x-page-header
             eyebrow="Administration"
             title="Certificates"

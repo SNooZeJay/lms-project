@@ -27,15 +27,42 @@
         <section class="mt-8" aria-labelledby="instructor-summary-heading">
             <h2 id="instructor-summary-heading" class="sr-only">Your teaching totals</h2>
 
-            <dl role="list" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {{-- Five tiles, because an Instructor has one more question than a
+                 Student does: how many of my courses are still drafts. The
+                 completion rate is the figure that says whether the teaching is
+                 landing, so it takes the place of the raw quiz count, which is
+                 only interesting while authoring. --}}
+            <dl role="list" class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
                 <x-stat label="Courses" :value="$stats['courses']" tone="primary" hint="That you own" />
                 <x-stat label="Published" :value="$stats['published_courses']" tone="primary" hint="Of your courses" />
-                <x-stat label="Students enrolled" :value="$stats['students_enrolled']" tone="accent" hint="Across your courses" />
-                <x-stat label="Quizzes" :value="$stats['quizzes']" tone="accent" hint="In your courses" />
+                <x-stat label="Drafts" :value="$stats['draft_courses']" tone="primary" hint="Not published yet" />
+                <x-stat label="Active students" :value="$stats['active_students']" tone="accent" hint="Studying right now" />
+                <x-stat label="Completion rate" :value="$stats['completion_rate'].'%'" tone="accent"
+                        hint="Finished out of started" />
             </dl>
         </section>
 
-        <div class="mt-8 grid gap-6 lg:grid-cols-3">
+        <div class="mt-8 grid items-start gap-6 lg:grid-cols-3">
+            {{-- The one chart here. It answers "where are my students", which a
+                 list of course titles cannot, and it is built from the enrollment
+                 counts already loaded for the course list, so it adds no query. --}}
+            <x-bar-chart
+                class="lg:col-span-2"
+                heading="Students by course"
+                description="Enrollments across your published and draft courses."
+                :rows="$enrollmentRows"
+                empty="Publish a course and your enrollments will appear here."
+            />
+
+            <x-activity-agenda
+                heading="Recent activity"
+                description="What has happened on your courses."
+                :entries="$agenda"
+                empty="Nothing has happened on your courses yet."
+            />
+        </div>
+
+        <div class="mt-8 grid items-start gap-6 lg:grid-cols-3">
             {{-- Your courses. The primary working list for this role. --}}
             <section class="card lg:col-span-2" aria-labelledby="instructor-courses-heading">
                 <div class="card-header">
@@ -125,7 +152,7 @@
             </section>
         </div>
 
-        <div class="mt-8 grid gap-6 lg:grid-cols-2">
+        <div class="mt-8 grid items-start gap-6 lg:grid-cols-2">
             {{-- Recent assessment results. --}}
             <section class="card" aria-labelledby="instructor-results-heading">
                 <div class="card-header">

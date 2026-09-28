@@ -30,6 +30,7 @@ class ReorderCurriculum
 
         DB::transaction(function () use ($course, $order): void {
             $this->apply(
+                $course,
                 $course->modules()->where('status', '!=', ContentStatus::Archived),
                 $order
             );
@@ -45,6 +46,7 @@ class ReorderCurriculum
 
         DB::transaction(function () use ($module, $order): void {
             $this->apply(
+                $module,
                 $module->lessons()->where('status', '!=', ContentStatus::Archived),
                 $order
             );
@@ -54,8 +56,16 @@ class ReorderCurriculum
     /**
      * @param  array<int, int>  $order
      */
-    private function apply(HasMany $current, array $order): void
+    private function apply(Model $owner, HasMany $current, array $order): void
     {
+        // The owner's row is locked for the whole renumber, so a second reorder
+        // of the same list queues behind this one instead of interleaving with
+        // it. Without the lock the unique constraint still stops two rows from
+        // claiming one position, but the finished order can end up a mixture of
+        // the two requests, which is a silent wrong answer rather than an error
+        // the instructor can see and retry.
+        $owner->newQuery()->whereKey($owner->getKey())->lockForUpdate()->first();
+
         $models = $current->get()->keyBy('id');
 
         $base = ((int) $models->min('position')) - 1;

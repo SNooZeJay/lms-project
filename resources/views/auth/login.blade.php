@@ -4,15 +4,19 @@
 @section('description', 'Sign in to IT Learning Hub to reach your courses, lessons, and results.')
 
 @section('auth-switch')
-    New here? <a href="{{ route('register') }}" class="link">Create a student account</a>
+    New here? <a href="{{ route('register') }}" class="link tap">Create account</a>
+@endsection
+
+@section('auth-consent')
+    <x-consent />
 @endsection
 
 @section('auth-content')
     <h1 class="text-2xl font-[650] tracking-tight text-ink">
-        Sign in
+        Welcome back
     </h1>
     <p class="mt-2 text-sm leading-6 text-ink-muted">
-        Use the email address your account was created with.
+        Sign in to continue learning.
     </p>
 
     <x-form-errors :errors="$errors" class="mt-6" />
@@ -23,11 +27,13 @@
         </x-note>
     @endif
 
-    <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-5" data-pending>
+    {{-- The gap between fields is the same everywhere, so the two forms feel
+         like one product even though one has twice the fields. --}}
+    <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-3.5" data-pending>
         @csrf
 
         <div class="field flex min-w-0 flex-col">
-            <label class="field-label" for="email">Email</label>
+            <label class="field-label" for="email">Email address</label>
             <div class="input-icon">
                 <span class="input-icon-mark" aria-hidden="true">
                     <x-icon name="mail" size="sm" />
@@ -38,37 +44,42 @@
                     type="email"
                     value="{{ old('email') }}"
                     class="field-control"
-                    placeholder="you@ncst.edu.ph"
+                    placeholder="you@example.com"
                     autocomplete="username"
                     inputmode="email"
                     maxlength="255"
-                    aria-describedby="email-hint"
                     required
                     autofocus
                 >
             </div>
-            <p id="email-hint" class="field-hint">Use your institution account.</p>
         </div>
 
-        <div class="flex items-center justify-between gap-4">
-            <label class="field-label" for="password">Password</label>
-            <a href="{{ route('password.request') }}" class="link-quiet text-sm">Forgot password?</a>
+        <div>
+            <div class="flex items-center justify-between gap-4">
+                <label class="field-label" for="password">Password</label>
+                <a href="{{ route('password.request') }}" class="link-quiet tap text-sm">Forgot password?</a>
+            </div>
+
+            <x-password-field
+                name="password"
+                id="password"
+                autocomplete="current-password"
+                class="mt-2"
+            />
         </div>
 
-        <x-password-field name="password" id="password" autocomplete="current-password" />
+        <div class="pt-1">
+            <label class="check">
+                <input type="checkbox" name="remember" value="1" @checked(old('remember'))>
+                <span class="check-box" aria-hidden="true">
+                    <x-icon name="check" size="xs" />
+                </span>
+                Keep me signed in
+            </label>
+        </div>
 
-        <label class="check">
-            <input type="checkbox" name="remember" value="1" @checked(old('remember'))>
-            <span class="check-box" aria-hidden="true">
-                <x-icon name="check" size="xs" />
-            </span>
-            Keep me signed in
-        </label>
-
-        <x-btn type="submit" variant="primary" size="lg" block data-pending-button>
+        <x-btn type="submit" variant="primary" size="lg" block class="mt-2" data-pending-button>
             <span data-pending-text>Sign in</span>
         </x-btn>
-
-        <x-consent class="mt-5 text-center" />
     </form>
 @endsection

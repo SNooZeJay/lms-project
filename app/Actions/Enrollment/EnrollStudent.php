@@ -5,6 +5,7 @@ namespace App\Actions\Enrollment;
 use App\Enums\CourseStatus;
 use App\Enums\CourseType;
 use App\Enums\EnrollmentStatus;
+use App\Events\StudentEnrolled;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\User;
@@ -100,6 +101,20 @@ class EnrollStudent
                     'activated_at' => $isFree ? now() : null,
                 ]);
                 $enrollment->save();
+
+                /*
+                 | Dispatched only when the row was genuinely created.
+                 |
+                 | The catch block below hands back an enrollment that already
+                 | existed, and telling an instructor that somebody just joined a
+                 | course they joined last week is exactly the noise the
+                 | specification asks this system not to produce. The reuse path
+                 | therefore dispatches nothing.
+                 |
+                 | The event carries the after-commit rule, so no listener can
+                 | read this before the row exists.
+                 */
+                StudentEnrolled::dispatch($enrollment);
 
                 return $enrollment;
             });

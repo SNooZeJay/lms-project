@@ -15,7 +15,7 @@
         @endunless
     </div>
 
-    <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
+    <dl class="mt-4 grid grid-cols-1 gap-4 text-sm min-[360px]:grid-cols-2">
         <div>
             <dt class="meta-label">Role</dt>
             <dd class="mt-1">

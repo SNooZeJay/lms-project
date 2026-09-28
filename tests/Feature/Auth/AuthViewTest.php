@@ -17,7 +17,7 @@ class AuthViewTest extends TestCase
 
         $this->get('/register')
             ->assertOk()
-            ->assertSee('Create student account')
+            ->assertSee('Create your account')
             ->assertSee('Confirm password')
             ->assertSee('autocomplete="new-password"', false)
             ->assertDontSee('name="role"', false);
@@ -33,6 +33,63 @@ class AuthViewTest extends TestCase
             ->assertSee('New password');
     }
 
+    public function test_the_authentication_pages_do_not_expose_project_or_implementation_detail(): void
+    {
+        // These are the two pages every visitor sees first. A person signing in
+        // does not need to be told what the site is built with, and the wording
+        // that used to do so read as documentation rather than a product.
+        foreach (['/login', '/register'] as $path) {
+            $body = (string) $this->get($path)->assertOk()->getContent();
+
+            foreach ([
+                'BSIT',
+                'Laravel',
+                'Blade',
+                'academic project',
+                'student project',
+                'school project',
+                'Instructors and Administrators are assigned',
+                'Assigned by an Administrator',
+            ] as $phrase) {
+                $this->assertStringNotContainsStringIgnoringCase(
+                    $phrase,
+                    $body,
+                    "{$path} should not mention '{$phrase}'."
+                );
+            }
+        }
+    }
+
+    public function test_the_authentication_pages_do_not_over_explain(): void
+    {
+        // Each page carries a heading, one supporting line, the form, and the
+        // legal line. Anything longer than that is a paragraph nobody asked for.
+        foreach (['/login', '/register'] as $path) {
+            $body = (string) $this->get($path)->assertOk()->getContent();
+
+            $this->assertStringContainsString('Learn IT. Build practical skills.', $body);
+
+            foreach ([
+                'keeps a student',
+                'one record',
+                'course record',
+                'stay tied to',
+            ] as $phrase) {
+                $this->assertStringNotContainsStringIgnoringCase($phrase, $body);
+            }
+        }
+    }
+
+    public function test_the_role_name_is_not_exposed_in_the_public_registration_form(): void
+    {
+        // The form does create a learner account, but naming the role in the
+        // public interface makes it read as an administrative system.
+        $body = (string) $this->get('/register')->assertOk()->getContent();
+
+        $this->assertStringNotContainsStringIgnoringCase('student account', $body);
+        $this->assertStringNotContainsString('Instructor and Administrator access is assigned', $body);
+    }
+
     public function test_the_sign_in_page_is_where_a_guest_reaches_registration(): void
     {
         // Registration is deliberately not offered on the public pages, so the
@@ -41,6 +98,7 @@ class AuthViewTest extends TestCase
         $this->get('/login')
             ->assertOk()
             ->assertSee('New here?', false)
+            ->assertSee('Create account', false)
             ->assertSee(route('register'), false);
 
         $this->get('/register')
@@ -88,27 +146,47 @@ class AuthViewTest extends TestCase
         $this->assertStringContainsString('aria-pressed', $script);
     }
 
-    public function test_the_sign_in_page_points_students_at_their_institution_account(): void
+    public function test_the_forms_do_not_claim_an_institution_account_is_required(): void
     {
-        $this->get('/login')
-            ->assertOk()
-            ->assertSee('Use your institution account.')
-            // The hint has to be tied to the field it describes, or a screen
-            // reader user hears it detached from the email input.
-            ->assertSee('aria-describedby="email-hint"', false)
-            ->assertSee('id="email-hint"', false);
+        // Registration accepts any unique email address, so telling a visitor to
+        // use an institution account would be false advice. If that ever becomes
+        // a real rule, this test is the thing to update with it.
+        foreach (['/login', '/register'] as $path) {
+            $body = (string) $this->get($path)->assertOk()->getContent();
+
+            $this->assertStringNotContainsString('institution', $body);
+            $this->assertStringNotContainsString('edu.ph', $body);
+        }
     }
 
     public function test_both_forms_state_the_terms_and_the_privacy_policy(): void
     {
-        foreach (['/login', '/register'] as $path) {
+        // The line names the action being taken, so it reads correctly on the
+        // page it appears on rather than sounding the same on both.
+        foreach (['/login' => 'signing in', '/register' => 'creating an account'] as $path => $action) {
             $this->get($path)
                 ->assertOk()
-                ->assertSee('By clicking continue, you agree to our')
+                ->assertSee("By {$action}, you agree to our")
                 ->assertSee('Terms of Service')
                 ->assertSee('Privacy Policy')
                 ->assertSee(route('legal.terms'), false)
                 ->assertSee(route('legal.privacy'), false);
+        }
+    }
+
+    public function test_the_brand_panel_carries_the_copyright_and_nothing_else(): void
+    {
+        // The reference design closes its brand panel with the product name and a
+        // year. The wording must stay that plain: no framework, no course, no
+        // build location, which is what the reference file says in its place.
+        foreach (['/login', '/register'] as $path) {
+            $body = (string) $this->get($path)->assertOk()->getContent();
+
+            $this->assertStringContainsString(date('Y').' IT Learning Hub', $body);
+
+            foreach (['BUILT IN', 'RIGA', 'v3.1 preview'] as $phrase) {
+                $this->assertStringNotContainsString($phrase, $body);
+            }
         }
     }
 

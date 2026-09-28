@@ -5,11 +5,6 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-breadcrumbs :items="[
-            ['label' => 'My courses', 'href' => route('instructor.courses.index')],
-            ['label' => $course->title],
-        ]" class="mb-6" />
-
         @if (session('status'))
             <x-note tone="success" class="mb-6">{{ session('status') }}</x-note>
         @endif
@@ -29,7 +24,7 @@
                     @endif
                 </div>
 
-                <dl class="grid shrink-0 grid-cols-2 gap-4 text-sm sm:grid-cols-4 lg:min-w-96">
+                <dl class="grid shrink-0 grid-cols-1 gap-4 text-sm min-[360px]:grid-cols-2 lg:grid-cols-4 lg:min-w-96">
                     <div>
                         <dt class="meta-label">Status</dt>
                         <dd class="mt-1"><x-status :value="$course->status->value" /></dd>
@@ -64,6 +59,18 @@
                     <x-btn :href="route('instructor.courses.edit', $course)" variant="secondary" size="md">
                         <x-icon name="pencil" size="sm" />
                         Edit course details
+                    </x-btn>
+
+                    {{--
+                        The learner roster lives on the Course page, because a
+                        Course is where a teacher looks for it. The dashboard can
+                        only carry the handful of learners who are furthest
+                        behind, which answers "who needs chasing" and not "how is
+                        this cohort doing".
+                    --}}
+                    <x-btn :href="route('instructor.courses.students', $course)" variant="secondary" size="md">
+                        <x-icon name="users" size="sm" />
+                        View learners
                     </x-btn>
 
                     @if ($course->status === \App\Enums\CourseStatus::Archived)
@@ -216,7 +223,7 @@
                                         <p class="font-medium text-ink">{{ $material->title }}</p>
                                         <p class="mt-0.5 text-xs text-ink-muted">
                                             Material {{ $material->position }}
-                                            <span aria-hidden="true">·</span>
+                                            <span aria-hidden="true">Â·</span>
                                             {{ \App\Support\StatusLabel::words($material->material_type->value) }}
                                         </p>
                                         <x-btn
@@ -257,6 +264,7 @@
                                 <x-form-field
                                     name="title"
                                     label="Material title"
+                                    :scope="'material-'.$lesson->id"
                                     :value="$materialFailed ? old('title') : ''"
                                     :maxlength="255"
                                     required
@@ -267,6 +275,7 @@
                                 <x-form-field
                                     name="material_type"
                                     label="Material type"
+                                    :scope="'material-'.$lesson->id"
                                     type="select"
                                     :value="$materialFailed ? old('material_type') : 'text'"
                                     required
@@ -282,6 +291,7 @@
                                 <x-form-field
                                     name="file"
                                     label="Material file"
+                                    :scope="'material-'.$lesson->id"
                                     type="file"
                                     field-class="file:mr-3 file:min-h-11 file:rounded-md file:border-0 file:bg-surface file:px-3 file:text-sm file:font-semibold file:text-ink"
                                     hint="10 MB maximum. Executables and scripts are rejected."
@@ -290,6 +300,7 @@
                                 <x-form-field
                                     name="content_text"
                                     label="Material content"
+                                    :scope="'material-'.$lesson->id"
                                     type="textarea"
                                     :rows="4"
                                     :value="$materialFailed ? old('content_text') : ''"
@@ -301,6 +312,7 @@
                                 <x-form-field
                                     name="external_url"
                                     label="Material link"
+                                    :scope="'material-'.$lesson->id"
                                     type="url"
                                     :value="$materialFailed ? old('external_url') : ''"
                                     inputmode="url"
@@ -347,6 +359,7 @@
                         <x-form-field
                             name="title"
                             label="Lesson title"
+                            :scope="'lesson-'.$module->id"
                             :value="$lessonFailed ? old('title') : ''"
                             :maxlength="160"
                             required
@@ -356,6 +369,7 @@
                             name="summary"
                             label="Summary"
                             type="textarea"
+                            :scope="'lesson-'.$module->id"
                             :rows="3"
                             :value="$lessonFailed ? old('summary') : ''"
                             :maxlength="5000"
@@ -365,6 +379,7 @@
                             name="content_text"
                             label="Lesson content"
                             type="textarea"
+                            :scope="'lesson-'.$module->id"
                             :rows="4"
                             :value="$lessonFailed ? old('content_text') : ''"
                             :maxlength="100000"
@@ -376,6 +391,7 @@
                                 name="estimated_minutes"
                                 label="Estimated minutes"
                                 type="number"
+                                :scope="'lesson-'.$module->id"
                                 :value="$lessonFailed ? old('estimated_minutes') : ''"
                                 field-class="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
                                 hint="Optional and positive."
@@ -492,12 +508,12 @@
                                 @endif
                                 <p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-muted">
                                     <span>{{ $quiz->questions->count() }} {{ \Illuminate\Support\Str::plural('question', $quiz->questions->count()) }}</span>
-                                    <span aria-hidden="true">·</span>
+                                    <span aria-hidden="true">Â·</span>
                                     <span>pass at {{ rtrim(rtrim((string) $quiz->passing_score_percent, '0'), '.') }}%</span>
-                                    <span aria-hidden="true">·</span>
+                                    <span aria-hidden="true">Â·</span>
                                     <span>{{ $quiz->max_attempts }} {{ \Illuminate\Support\Str::plural('attempt', $quiz->max_attempts) }}</span>
                                     @if ($quiz->is_required)
-                                        <span aria-hidden="true">·</span>
+                                        <span aria-hidden="true">Â·</span>
                                         <span>required</span>
                                     @endif
                                 </p>
@@ -570,6 +586,7 @@
                                 <x-form-field
                                     name="prompt"
                                     label="Question prompt"
+                                    :scope="'question-'.$quiz->id"
                                     type="textarea"
                                     :rows="2"
                                     :maxlength="5000"
@@ -579,6 +596,7 @@
                                 <x-form-field
                                     name="points"
                                     label="Points"
+                                    :scope="'question-'.$quiz->id"
                                     type="number"
                                     field-class="sm:w-40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
                                 />
@@ -648,6 +666,7 @@
                     <x-form-field
                         name="title"
                         label="Quiz title"
+                        scope="quiz"
                         :value="$quizFailed ? old('title') : ''"
                         :maxlength="255"
                         required
@@ -656,6 +675,7 @@
                     <x-form-field
                         name="description"
                         label="Description"
+                        scope="quiz"
                         type="textarea"
                         :rows="2"
                         :value="$quizFailed ? old('description') : ''"
@@ -780,6 +800,7 @@
                 <x-form-field
                     name="title"
                     label="Module title"
+                    scope="module"
                     :value="$moduleFailed ? old('title') : ''"
                     :maxlength="160"
                     required
@@ -788,6 +809,7 @@
                 <x-form-field
                     name="description"
                     label="Module description"
+                    scope="module"
                     type="textarea"
                     :rows="3"
                     :value="$moduleFailed ? old('description') : ''"

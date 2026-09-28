@@ -19,7 +19,7 @@
         <x-status :value="$course->status->value" class="shrink-0" />
     </div>
 
-    <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+    <dl class="mt-4 grid grid-cols-1 gap-3 text-sm min-[360px]:grid-cols-2">
         <div>
             <dt class="meta-label">Type</dt>
             <dd class="mt-1 font-medium text-ink">{{ \App\Support\StatusLabel::words($course->course_type->value) }}</dd>

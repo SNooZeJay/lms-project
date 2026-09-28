@@ -5,12 +5,6 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-breadcrumbs :items="[
-            ['label' => 'My courses', 'href' => route('student.courses.index')],
-            ['label' => $course->title, 'href' => route('student.courses.show', $course)],
-            ['label' => $quiz->title],
-        ]" class="mb-6" />
-
         @if (session('status'))
             <x-note tone="success" class="mb-6">{{ session('status') }}</x-note>
         @endif
@@ -29,7 +23,7 @@
 
             {{-- Facts a Student needs before starting. Attempts used is always
                  shown, so a blocked Student knows exactly why. --}}
-            <dl class="mt-6 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+            <dl class="mt-6 grid grid-cols-1 gap-4 text-sm min-[360px]:grid-cols-2 lg:grid-cols-4">
                 <div>
                     <dt class="meta-label">Questions</dt>
                     <dd class="meta-value tabular-nums">{{ $questions->count() }}</dd>

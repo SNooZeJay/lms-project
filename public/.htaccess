@@ -5,6 +5,24 @@
 
     RewriteEngine On
 
+    # Refuse dotfiles and dot-directories outright.
+    #
+    # The front controller below serves any file that already exists in this
+    # directory, so nothing but a deliberate rule stands between a file dropped
+    # here and a stranger downloading it. The contents of this directory are
+    # index.php, .htaccess, favicon.png, robots.txt, images/, and build/, and
+    # none of them begin with a dot, so this cannot reject a real request.
+    #
+    # /.well-known is excluded on purpose: it is not a dotfile and it is where a
+    # certificate authority is told to fetch proof for a domain, so blocking it
+    # would quietly break issuing a certificate.
+    RewriteRule "(^|/)\.(?!well-known/)" - [F,L]
+
+    # The same argument applies to the project files that are not dotfiles.
+    # None of these belong in a document root, and refusing each is a cheap
+    # second line of defence if one is ever copied here by accident.
+    RewriteRule "(^|/)(composer\.(json|lock)|package(-lock)?\.json|artisan|server\.php|\.env.*|.*\.(pem|key|crt|p12|pfx|ppk)|credentials.*|secrets.*|id_rsa.*)$" - [F,L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

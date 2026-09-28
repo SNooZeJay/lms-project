@@ -3,6 +3,7 @@
 namespace App\Actions\Quizzes;
 
 use App\Enums\QuizAttemptStatus;
+use App\Events\QuizStarted;
 use App\Models\Enrollment;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
@@ -77,8 +78,14 @@ class StartQuizAttempt
                     throw $exception;
                 }
 
+                // No event on this path. The attempt exists, but this request did
+                // not start it, and an instructor told twice that a student had
+                // begun an attempt is the noise the specification rules out.
                 return $existing;
             }
+
+            // Only on the path that genuinely created the row.
+            QuizStarted::dispatch($quiz, $attempt);
 
             return $attempt;
         });

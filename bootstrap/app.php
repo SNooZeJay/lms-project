@@ -3,9 +3,11 @@
 use App\Http\Middleware\ConfineDebugOutput;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\RefuseWhenProjectIsWebReadable;
 use App\Http\Middleware\RequirePasswordChange;
 use App\Http\Middleware\SecureSessionCookies;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\ThrottleWrites;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -24,14 +26,22 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => EnsureUserHasRole::class,
         ]);
 
-        // Order matters. The two prepended middleware both have to run before
-        // anything later can fail or before the session starts, which is what
-        // makes the debug page and the cookie flag correct for this request
-        // rather than only for requests that succeed. SecurityHeaders is
-        // appended so its headers survive a response that replaces the body.
+        // Order matters. The prepended middleware all have to run before anything
+        // later can fail or before the session starts, which is what makes the
+        // debug page, the cookie flag, and the document root refusal correct for
+        // this request rather than only for requests that succeed.
+        // SecurityHeaders is appended so its headers survive a response that
+        // replaces the body.
+        $middleware->prepend(RefuseWhenProjectIsWebReadable::class);
         $middleware->prepend(ConfineDebugOutput::class);
         $middleware->prepend(SecureSessionCookies::class);
         $middleware->append(SecurityHeaders::class);
+
+        // Appended to the web group rather than prepended, so the session has
+        // already started and this can tell who is asking. That is what lets it
+        // count a write against the account rather than the address. Reads are
+        // ignored, so refreshing and paging stay unlimited.
+        $middleware->appendToGroup('web', ThrottleWrites::class);
 
         // Behind a reverse proxy the application must trust the proxy headers,
         // otherwise every generated URL would be http and a secure cookie

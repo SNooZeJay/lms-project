@@ -148,11 +148,31 @@ class InterfaceSystemTest extends TestCase
 
         // Exactly one navigation item may claim to be the current page, or a
         // screen reader announces two.
-        $this->assertSame(
-            1,
-            substr_count($body, 'aria-current="page"'),
-            'The sidebar must mark exactly one item as the current page.',
-        );
+        //
+        // Counted inside the navigation, not across the whole body. The body
+        // holds a breadcrumb as well, and a breadcrumb marks its last crumb with
+        // the same attribute, because it is also saying "you are here". Two
+        // marks on a page, one in the trail and one in the sidebar, is correct;
+        // two inside one navigation is not.
+        //
+        // This used to count the whole body and pass, but only by accident: the
+        // in-body breadcrumb supplied the single mark that the navigation was
+        // failing to supply, because the current page was not being matched at
+        // all. Fixing the match made three appear and exposed the measurement
+        // error underneath it.
+        preg_match_all('/<nav\b.*?<\/nav>/s', $body, $navs);
+
+        foreach ($navs[0] as $nav) {
+            if (! str_contains($nav, 'aria-label="Workspace"')) {
+                continue;
+            }
+
+            $this->assertSame(
+                1,
+                substr_count($nav, 'aria-current="page"'),
+                'A navigation must mark exactly one item as the current page.',
+            );
+        }
     }
 
     // ------------------------------------------------------------------- money

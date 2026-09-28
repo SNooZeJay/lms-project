@@ -5,11 +5,6 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-breadcrumbs :items="[
-            ['label' => 'Dashboard', 'href' => route('student.dashboard')],
-            ['label' => 'My certificates'],
-        ]" class="mb-6" />
-
         <x-page-header
             eyebrow="Student workspace"
             title="My certificates"
@@ -59,7 +54,7 @@
                             {{ $row['course']->instructor?->name ?? 'IT Learning Hub' }}
                         </p>
 
-                        <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                        <dl class="mt-4 grid grid-cols-1 gap-3 text-sm min-[360px]:grid-cols-2">
                             <div>
                                 <dt class="meta-label">Lessons</dt>
                                 <dd class="mt-1 font-semibold text-ink tabular-nums">

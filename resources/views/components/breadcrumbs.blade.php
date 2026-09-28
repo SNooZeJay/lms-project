@@ -23,9 +23,16 @@
                 @endphp
                 <li class="flex min-w-0 items-center gap-1">
                     @if (! $isLast && ! empty($item['href']))
+                        {{-- row-target, so a crumb is 24 pixels tall and grows to
+                             44 on a touch screen. The trail is a navigation and
+                             each crumb is a separate target separated by a
+                             chevron, so it is not a link inside a sentence and
+                             the inline exception does not cover it. At its
+                             natural height it was 20, which is under the WCAG
+                             2.5.8 minimum. --}}
                         <a
                             href="{{ $item['href'] }}"
-                            class="rounded-sm font-medium text-ink-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus"
+                            class="row-target -mx-1 flex items-center rounded-sm px-1 font-medium text-ink-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus"
                         >{{ $item['label'] }}</a>
                     @else
                         <span @if ($isLast) aria-current="page" @endif class="truncate font-semibold text-ink">

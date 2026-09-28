@@ -6,6 +6,7 @@ use App\Enums\QuizStatus;
 use App\Models\Course;
 use App\Models\Quiz;
 use App\Models\User;
+use App\Support\Position;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -35,7 +36,7 @@ class ManageQuiz
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
                 'instructions' => $data['instructions'] ?? null,
-                'position' => ((int) $course->quizzes()->max('position')) + 1,
+                'position' => Position::reserve($course, $course->quizzes()),
                 'status' => QuizStatus::Draft,
                 'is_required' => (bool) ($data['is_required'] ?? false),
                 'passing_score_percent' => $data['passing_score_percent'] ?? 80,

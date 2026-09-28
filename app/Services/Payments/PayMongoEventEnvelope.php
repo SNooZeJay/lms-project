@@ -63,6 +63,33 @@ final class PayMongoEventEnvelope
     ];
 
     /**
+     * What the provider says it collected.
+     *
+     * A checkout session event carries a list of payment attempts, so the
+     * amount is read from the first attempt in that list. A payment level event
+     * carries it directly on the resource, which is why both shapes are read.
+     *
+     * This is used to refuse an event whose amount does not match the Payment it
+     * claims to settle. The signature already proves the provider sent the
+     * event, so this is not about an outsider forging a delivery. It is about a
+     * provider bug, a misconfigured checkout, or a partially applied refund
+     * unlocking a course that was never paid for in full.
+     */
+    private const AMOUNT_PATHS = [
+        'data.attributes.data.attributes.payments.0.attributes.amount',
+        'data.data.attributes.payments.0.attributes.amount',
+        'data.attributes.data.attributes.amount',
+        'data.data.attributes.amount',
+    ];
+
+    private const CURRENCY_PATHS = [
+        'data.attributes.data.attributes.payments.0.attributes.currency',
+        'data.data.attributes.payments.0.attributes.currency',
+        'data.attributes.data.attributes.currency',
+        'data.data.attributes.currency',
+    ];
+
+    /**
      * Why a payment was declined. The provider reports this on the payment
      * resource, so it is read wherever that resource is nested.
      */
@@ -94,6 +121,13 @@ final class PayMongoEventEnvelope
         public readonly ?string $resourceId,
         public readonly ?string $referenceNumber,
         public readonly ?string $providerPaymentId,
+
+        /** What the provider reported it collected, in minor units. */
+        public readonly ?int $amountMinor,
+
+        /** The currency the provider reported, as an ISO code. */
+        public readonly ?string $currency,
+
         public readonly ?bool $livemode,
         public readonly ?string $failureCode,
         public readonly ?string $failureMessage,
@@ -121,6 +155,8 @@ final class PayMongoEventEnvelope
             resourceId: $resourceId,
             referenceNumber: self::firstString($payload, self::REFERENCE_PATHS),
             providerPaymentId: self::resolveProviderPaymentId($payload, $resourceId),
+            amountMinor: self::firstInteger($payload, self::AMOUNT_PATHS),
+            currency: self::firstString($payload, self::CURRENCY_PATHS),
             livemode: self::resolveLivemode($payload),
             failureCode: self::firstString($payload, self::FAILURE_CODE_PATHS),
             failureMessage: self::firstString($payload, self::FAILURE_MESSAGE_PATHS),
@@ -222,6 +258,37 @@ final class PayMongoEventEnvelope
 
             if (is_string($value) && $value !== '') {
                 return $value;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The first whole number at one of these positions.
+     *
+     * The provider sends the amount as a JSON number, but a value that has been
+     * through a proxy or a spreadsheet can arrive as a numeric string, so both
+     * are accepted. A value that is not a whole number, such as a float or a
+     * word, is treated as absent rather than guessed at, because an amount has
+     * to be exact to be compared against a stored one. Returning null here means
+     * the check is skipped, so a malformed amount cannot be used to force a
+     * mismatch either.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  list<string>  $paths
+     */
+    private static function firstInteger(array $payload, array $paths): ?int
+    {
+        foreach ($paths as $path) {
+            $value = data_get($payload, $path);
+
+            if (is_int($value)) {
+                return $value;
+            }
+
+            if (is_string($value) && preg_match('/^-?\d+$/', $value) === 1) {
+                return (int) $value;
             }
         }
 

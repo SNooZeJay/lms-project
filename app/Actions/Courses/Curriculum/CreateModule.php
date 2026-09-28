@@ -6,6 +6,7 @@ use App\Enums\ContentStatus;
 use App\Models\Course;
 use App\Models\Module;
 use App\Models\User;
+use App\Support\Position;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -24,7 +25,7 @@ class CreateModule
                 'course_id' => $course->id,
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
-                'position' => ((int) $course->modules()->max('position')) + 1,
+                'position' => Position::reserve($course, $course->modules()),
                 'status' => ContentStatus::Draft,
             ]);
             $module->save();

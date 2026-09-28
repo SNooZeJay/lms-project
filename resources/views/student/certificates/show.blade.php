@@ -5,11 +5,6 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-breadcrumbs :items="[
-            ['label' => 'My certificates', 'href' => route('student.certificates.index')],
-            ['label' => 'Certificate'],
-        ]" class="mb-6" />
-
         {{-- The certificate itself. A double rule and a monospace code, and it
              never claims to be an accredited document. --}}
         <article
@@ -39,7 +34,7 @@
             </div>
 
             <footer class="mt-10 border-t border-line pt-6">
-                <dl class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+                <dl class="grid grid-cols-1 gap-4 text-sm min-[360px]:grid-cols-2">
                     <div>
                         <dt class="meta-label">Certificate code</dt>
                         <dd class="mt-1 font-mono font-semibold text-ink">{{ $certificate->certificate_code }}</dd>

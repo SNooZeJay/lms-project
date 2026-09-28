@@ -44,10 +44,16 @@ class CourseCatalogSeeder extends Seeder
      * person who actually teaches here rather than to an invented name. If it
      * does not exist yet, a fresh database gets one with the same identity.
      *
+     * If the address already belongs to an account with a different role, the
+     * seeder stops rather than correcting the mismatch by rewriting that
+     * account's permissions. A seeder that silently demotes an Administrator or
+     * promotes a Student is a seeder that changes who can do what, and it does
+     * it from a command nobody was watching.
+     *
      * The password below is a documented demo value rather than a secret, and it
      * is only ever used when the account has to be created from nothing.
      */
-    private const INSTRUCTOR_EMAIL = 'jayzeeb65@gmail.com';
+    private const INSTRUCTOR_EMAIL = 'bautista.jayzee@ncst.edu.ph';
 
     private const INSTRUCTOR_NAME = 'Jay Zee Test';
 
@@ -73,9 +79,34 @@ class CourseCatalogSeeder extends Seeder
         $existing = User::query()->where('email', self::INSTRUCTOR_EMAIL)->first();
 
         if ($existing !== null) {
-            // Only the role is enforced. An existing account keeps its own name,
-            // password, and biography, because this is a real account rather than
-            // a fixture the seeder is allowed to reshape.
+            /*
+             | Only the role is enforced. An existing account keeps its own name,
+             | password, and biography, because this is a real account rather than
+             | a fixture the seeder is allowed to reshape.
+             |
+             | But an account that is already something more important than an
+             | Instructor is not reshaped at all. Setting the role to Instructor
+             | here is how an Administrator silently loses the ability to sign in
+             | to the dashboard that would have reported the loss, and how a
+             | Student silently gains the ability to publish.
+             |
+             | The seeder is bound to one address. If that address turns out to
+             | belong to somebody else, the correct thing is to stop and say so,
+             | not to correct the mismatch by editing a person's permissions.
+             */
+            $role = $existing->profile?->role;
+
+            if ($role !== null && $role !== UserRole::Instructor) {
+                throw new \RuntimeException(sprintf(
+                    'The address this seeder is configured with, %s, belongs to an account whose '
+                    .'role is %s. Refusing to change it, because a seeder must not rewrite a '
+                    .'person\'s permissions. Point INSTRUCTOR_EMAIL at the Instructor account, or '
+                    .'give that account its own address.',
+                    self::INSTRUCTOR_EMAIL,
+                    $role->value,
+                ));
+            }
+
             $existing->profile->forceFill(['role' => UserRole::Instructor])->save();
 
             return $existing->fresh();

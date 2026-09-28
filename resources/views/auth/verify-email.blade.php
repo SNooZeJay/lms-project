@@ -11,7 +11,8 @@
         </p>
 
         <x-note tone="info" class="mt-5">
-            The local demo mailer writes the message to the Laravel log, so you can open the link from there.
+            Delivery can take a minute. Check your spam folder if the message has not
+            arrived, then resend it.
         </x-note>
 
         <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

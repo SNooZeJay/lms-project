@@ -5,11 +5,16 @@
 
 @php
     $groups = \App\Support\Navigation::for($user);
-    $current = \App\Support\Navigation::activeRoute();
 
-    $isCurrent = static function (array $item) use ($current): bool {
-        return in_array($current, $item['matches'], true);
-    };
+    /*
+     | Whether an item is the current page is answered by Navigation, not here.
+     |
+     | The answer used to be an exact comparison against the item's match list,
+     | and that list holds patterns such as admin.users.* rather than literal
+     | route names. Exact comparison therefore matched only the dashboard, whose
+     | entry carries no wildcard, and every other item sat unhighlighted on every
+     | page underneath it.
+     */
 @endphp
 
 @if ($groups !== [])
@@ -23,7 +28,7 @@
 
                 <ul role="list" class="mt-2 space-y-1">
                     @foreach ($group['items'] as $item)
-                        @php $active = $isCurrent($item); @endphp
+                        @php $active = \App\Support\Navigation::isCurrent($item); @endphp
                         <li>
                             <a
                                 href="{{ route($item['route']) }}"
@@ -35,8 +40,33 @@
                                         : 'text-ink-muted hover:bg-surface-muted hover:text-ink' }}"
                             >
                                 <x-icon :name="$item['icon']" size="md" />
-                                <span class="hidden xl:inline">{{ $item['label'] }}</span>
-                                <span class="sr-only xl:hidden">{{ $item['label'] }}</span>
+
+                                {{-- One label element, not two.
+
+                                     Three widths, three jobs. Below lg the sidebar
+                                     is a drawer with room for words, so the label
+                                     is painted. Between lg and xl it is the 80px
+                                     icon rail, where a painted label would be
+                                     clipped, so it becomes screen reader only and
+                                     the title attribute names it for a pointer.
+                                     At xl the sidebar expands and the label paints
+                                     again.
+
+                                     sr-only rather than hidden, deliberately. A
+                                     hidden element is removed from the
+                                     accessibility tree as well as from the
+                                     screen, which would leave the rail's links
+                                     with nothing but a title. And not two
+                                     elements either: a second copy of the same
+                                     words is read out twice in the drawer, which
+                                     is worse than one label that changes shape.
+
+                                     Writing this as "hidden xl:inline" got it
+                                     wrong, and the mistake was invisible in the
+                                     source: the drawer only exists below lg, so
+                                     it never reaches xl, and every item rendered
+                                     as a bare icon. --}}
+                                <span class="lg:sr-only xl:not-sr-only">{{ $item['label'] }}</span>
                             </a>
                         </li>
                     @endforeach

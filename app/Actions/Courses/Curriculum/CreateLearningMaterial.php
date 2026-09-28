@@ -8,6 +8,7 @@ use App\Models\Lesson;
 use App\Models\User;
 use App\Services\Storage\LearningMaterialStorage;
 use App\Support\MaterialFileRules;
+use App\Support\Position;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -32,7 +33,7 @@ class CreateLearningMaterial
                 'uploaded_by' => $actor->id,
                 'title' => $data['title'],
                 'material_type' => $type,
-                'position' => ((int) $lesson->learningMaterials()->max('position')) + 1,
+                'position' => Position::reserve($lesson, $lesson->learningMaterials()),
                 'content_text' => $data['content_text'] ?? null,
                 'external_url' => $data['external_url'] ?? null,
                 'storage_disk' => null,

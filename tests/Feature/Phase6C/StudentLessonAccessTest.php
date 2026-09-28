@@ -277,7 +277,13 @@ class StudentLessonAccessTest extends TestCase
     public function test_phase_six_c_adds_no_progress_quiz_payment_or_download_routes(): void
     {
         $this->assertFalse(Route::has('student.progress.index'));
-        $this->assertFalse(Route::has('instructor.courses.students'));
+
+        // The learner list guard is retired here for the same reason as in
+        // CourseFoundationTest: plan.md now lists "Student progress" among the
+        // things the Instructor workspace focuses on, the route is built, and
+        // InstructorStudentProgressTest covers it. The Student facing progress
+        // index above is a different page and is still not approved, so it stays
+        // guarded.
     }
 
     /**

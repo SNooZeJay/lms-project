@@ -6,6 +6,7 @@ use App\Enums\ContentStatus;
 use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\User;
+use App\Support\Position;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -27,7 +28,7 @@ class CreateLesson
                 'slug' => $this->uniqueSlug($module, $data['title']),
                 'summary' => $data['summary'] ?? null,
                 'content_text' => $data['content_text'] ?? null,
-                'position' => ((int) $module->lessons()->max('position')) + 1,
+                'position' => Position::reserve($module, $module->lessons()),
                 'status' => ContentStatus::Draft,
                 'is_required' => (bool) ($data['is_required'] ?? true),
                 'estimated_minutes' => $data['estimated_minutes'] ?? null,
