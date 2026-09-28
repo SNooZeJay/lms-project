@@ -534,3 +534,122 @@ C: is at 9 percent free. Not the cause of anything today, and worth watching.
 The `ngrok` authtoken was printed in the clear while reading its configuration
 file. That was careless and is recorded here rather than quietly dropped. It lives
 outside the repository so it was not committed. Rotate it.
+## Sixth pass: the features that existed and could not be used
+
+### The report
+
+Ask what is still unfinished. The answer that took longest to find is the one that
+looks least like a fault from the outside, because every page renders, every test
+passes, and the feature is approved, built, tested and documented.
+
+### How it was found
+
+A crawl of every page each role can reach, 66 pages and 339 distinct form actions,
+compared against the write routes the route table declares. The question is not
+"does this page work" but "can a person reach the thing this route is for". Four
+write routes had no form anywhere:
+
+    ORPHAN  administrator posts a platform announcement
+    ORPHAN  instructor posts a course announcement
+    ORPHAN  a course thread is started
+    ok      anyone opens a support conversation
+    ok      a message is sent into a thread
+    ok      a learning material is added
+    ok      an administrator changes a user
+    ok      a quiz question is authored
+
+A route nobody can reach is not a feature. It is a controller with a test, and
+every one of these had tests, because the tests posted to the routes directly. The
+way a person reaches a feature and the way a test reaches it had drifted apart, and
+only one of the two is the product.
+
+### What the gate hid
+
+`@can('createPlatform')` binds no model, so there is no policy to look in and the
+answer is always false. Asked directly:
+
+    createPlatform, no model                 false
+    createPlatform, Announcement             true
+    createCourse, Course model               false
+    createCourse, Announcement and Course    true, for the instructor who owns it
+
+Both abilities live on `AnnouncementPolicy`, so the form has to name the model.
+`@can('createCourse', $course)` was looking for `CoursePolicy::createCourse`, which
+does not exist. Both were measured rather than reasoned about, and both now render.
+
+### Two faults underneath
+
+The course in a thread address was decorative. `startCourseThread` re-derived the
+course with `first()` over the pair's shared courses, so a Student in two courses
+by one Instructor who asked about the second was handed the first. The action now
+takes the course from the request and proves the pair shares that one.
+
+The thread key was the pair alone, so even with the course passed in, a request
+about course two returned course one's thread. The class docblock said the
+guarantee came from "the unique index on (kind, course_id, requester_id)". There is
+no such index. The one that exists is on `(kind, thread_key)`, and `thread_key` did
+not say which course. A docblock describing an index that is not there made a real
+gap look like a guarantee, which is worse than having written nothing. The course is
+in the key now, and no migration is needed because the column and the index
+already exist.
+
+### A fault in the tool committed yesterday
+
+`serve-concurrently.php` could not run a second instance. `mod_proxy_balancer` keeps
+its membership in a shared memory file inside `DefaultRuntimeDir` and refuses to
+start when that file exists, so one shared directory meant a probe instance failed
+with `balancer slotmem_create failed` and nothing in the message said why. Found by
+using the tool the way a person would. Each port now gets its own runtime
+directory, and two instances run side by side.
+
+### The demonstration could not show a certificate, and it was not a fault
+
+Two enrollments had every lesson complete and no certificate existed. The
+application's own checker said why: completion also requires passing required
+published quizzes, nobody had sat one, and so nobody was eligible. Correct
+behaviour, and a demonstration that cannot show the thing it built.
+
+`tools/seed-completion-demo.php` runs the real `StartQuizAttempt`,
+`SubmitQuizAttempt` and `CompleteCourse` rather than inserting rows, because
+grading, the quiz notices to the Student, the activity notice to the Instructor,
+the eligibility re-check and the certificate code are the parts worth having run at
+least once. Two students now hold certificates they earned.
+
+### What was ruled out, so the next pass does not repeat it
+
+- Every page a person can reach, 27 pages times 3 roles times 2 widths: no
+  unstyled page, no console error, no uncaught exception, no server error, and
+  nothing overflowing at 390 pixels.
+- The private file path, with a real PDF: uploaded as multipart, downloaded by an
+  enrolled Student, 622 bytes out against 622 in, correct MIME, `no-store`,
+  refused for an Administrator and for a signed out visitor, and a renamed text
+  file refused as a PDF.
+- One role asking for another's area: 403 in all six directions.
+- A wrong password: refused, and the refusal does not distinguish an unknown
+  account from a wrong one.
+- Odd addresses, including a null byte, `..`, `abc`, `-1`, `1e5` and a 600
+  character path: 404 or 403, and no page leaks a stack trace, a SQLSTATE or a
+  framework class name.
+
+### Three harness faults recorded, because each read as an application fault
+
+- A sign in that redirects is not a sign in that worked. A rejected attempt
+  redirects to the form too, so a helper that checked only the status reported
+  success and every later request came back as a guest. The redirect target is the
+  check.
+- The application rate limits sign in and returns 429 with `Retry-After`. That is
+  right, and a probe that signs in as three roles in a row has to wait the time the
+  server asked for rather than measure the wrong thing.
+- Laravel redirects back with 302 on a validation failure, exactly as it does on
+  success. Three checks reported a refusal as an acceptance until the redirect was
+  followed and the page read.
+
+### A caution about the public address
+
+`distinct-perplexed-defog.ngrok-free.dev` is IPv6 only: five AAAA records and no A.
+For part of this pass the name resolved through `Resolve-DnsName` and failed
+through `getaddrinfo`, which is what Node and .NET use, so half the probes failed
+for a while with nothing wrong with the application. `ngrok http 8000` carries no
+`--domain`, so the name is a random free one rather than a reserved one. A
+demonstration depends on that name resolving on the presenter's network, and
+nothing in the repository can make that true.

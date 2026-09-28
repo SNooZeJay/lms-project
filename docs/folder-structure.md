@@ -563,6 +563,21 @@ screen instead of asserting them.
   it asked for CSS, so the page renders unstyled. It lives in the repository so
   there is one copy of the rule and it survives a reboot
 - `serve-concurrently.php` serves the application from a pool of workers behind
+- `cleanup-probe-announcements.php` removes the duplicate announcements the form
+  probe leaves behind, and the notices that were generated with them. Posting a real
+  announcement is the only honest way to prove a publish form works and the wrong way
+  to leave a demonstration, and three probe runs left three identical notices that read
+  as somebody having pressed publish three times by accident. Only titles the probe
+  writes are touched, and one of each is kept
+- `seed-completion-demo.php` runs the real quiz and completion Actions so the
+  demonstration can show a graded result and an earned certificate. Completion needs
+  every required lesson finished and every required quiz passed, and with nobody having
+  sat a quiz no Student was eligible, so the workflow existed, worked and had nothing to
+  show. It seeds past nothing: `StartQuizAttempt`, `SubmitQuizAttempt` and
+  `CompleteCourse` are the application's own, so grading, the quiz notices to the
+  Student, the activity notice to the Instructor, the eligibility re-check and the
+  certificate code all genuinely run. Safe to run twice: a quiz already passed is left
+  alone and completion returns the existing certificate rather than issuing a second
   Apache, which is how the public address is reached. `start` writes the Apache
   configuration, starts the workers and the front door, and proves the sign in
   page renders before reporting success; `stop`, `status` and `check` are the

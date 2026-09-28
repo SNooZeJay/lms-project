@@ -3968,3 +3968,77 @@ as a failure next to a blank one.
   repository so it survives a reboot and there is one copy of the rule.
 - No application code was changed, so no feature behaviour moved. The 1680 test
   suite is the gate.
+## 44. Making the communication features usable
+
+### Input
+
+Ask what is still unfinished, across every role, every workflow, the database, the
+interface and the deployment, and finish it.
+
+### Process
+
+A page returning 200 says a page rendered. It says nothing about whether the thing
+that page is for can be reached. So the question was asked of every page each role
+can reach: 66 pages, 339 distinct form actions, compared against the write routes
+the route table declares.
+
+Four write routes had no form on any page. Two were real faults in approved
+features, and every test for them had passed because the tests posted to the
+routes directly rather than through the pages a person uses.
+
+Announcements could be read and withdrawn but never written. An Instructor had
+built a whole course and had no way to say a word to the people taking it. An
+Administrator had no way to announce anything to anybody. Both now have a compose
+form, sharing one component so the fields cannot drift apart, and each says who
+will read it before the button is pressed.
+
+A Student could open a support request and could reply inside a thread, and could
+never once start one with the Instructor of the course they were taking, which is
+the conversation the plan lists first. The Student course page now offers it, and
+offers a link to the thread instead once it exists.
+
+The gate was the quiet part and it is worth writing down. `@can('createPlatform')`
+with no model binds nothing, so there is no policy to look in and the answer is
+always false. `@can('createCourse', $course)` looked for a method on CoursePolicy
+that does not exist. Both abilities are on AnnouncementPolicy, so both gates have
+to name it. Measured, not reasoned about: the two wrong shapes both answer false
+and the right ones answer true.
+
+### Two faults underneath
+
+The course in a thread address was decorative. `startCourseThread` re-derived the
+course with `first()` over the pair's shared courses, so a Student in two courses
+by one Instructor who asked about the second was handed the first. The action now
+takes the course from the request and proves the pair shares that one.
+
+The thread key was the pair alone, so a request about course two returned course
+one's thread. The docblock said this was guaranteed by "the unique index on (kind,
+course_id, requester_id)". There is no such index; the one that exists is on
+`(kind, thread_key)`, and the key did not say which course. The course is in the
+key now. No migration, because the column and the index already exist and only the
+value changes.
+
+### Output
+
+- An Instructor publishes to a course from that course's page, and an
+  Administrator publishes to everybody from the announcements page. Both reach the
+  people they were addressed to and nobody else.
+- A Student opens a thread with the Instructor of the course they are taking, and
+  the button becomes a link once it exists.
+- 1690 tests, up from 1680. The new ones go through the pages, because posting to
+  a route directly is what let the gap exist unnoticed.
+- `tools/seed-completion-demo.php` runs the real quiz and completion actions, so
+  two students hold certificates they earned and grading, the notices and the
+  eligibility re-check have all run at least once against real records.
+- `serve-concurrently.php` can now run a second instance, found by using it the way
+  a person would.
+
+### What was checked and found sound, so it is not checked again by reading
+
+- 27 pages, 3 roles, 2 widths: no unstyled page, no console error, no uncaught
+  exception, no server error, nothing overflowing at 390 pixels.
+- The private file path against a real PDF: 622 bytes in, 622 out, correct MIME,
+  `no-store`, refused for an Administrator and for a signed out visitor, and a
+  renamed text file refused as a PDF.
+- Six role crossings, all refused. A wrong password refused, without saying which
+  half was wrong. Odd addresses answered without leaking a stack trace.
