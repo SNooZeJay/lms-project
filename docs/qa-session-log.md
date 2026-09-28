@@ -778,6 +778,36 @@ state where the application deliberately offers one of two: a completed lesson
 withdraws its control, a sat quiz withdraws its start form, and a course thread that
 exists withdraws the form that would have created a duplicate.
 
+### A correction to my own account of what happened
+
+The state agreed for the demonstration was described as "Justine is two lessons and
+two attempts in with a paid course waiting at a checkout". By the time it was
+agreed she had exactly that. By the time the work finished she had five enrollments
+and twelve progress rows, because the workflow probe was run eight more times while
+the two faults were being found, and each run enrolls into one more catalog course
+and completes one more lesson.
+
+That is the probe doing what an honest probe does, in a way that is wrong to repeat:
+a verification that walks a student through enrolling, completing a lesson and
+sitting a quiz is the only way to prove those screens work, and it is also the
+wrong thing to run eight times before a presentation. Two lessons came out of it.
+
+The first is that a probe which mutates demonstration data needs a way back, the
+way `cleanup-probe-announcements.php` already existed for announcements. The
+workflow probe now withdraws what it publishes for the same reason, and
+`restore-the-agreed-demo-state.php` puts one named account back to the agreed shape
+after a run that went further than intended. It prints every row before removing it,
+removes only progress and enrollments belonging to that one account, and does
+nothing on a second run.
+
+The second is that a reading which looks wrong should be checked against the schema
+before it is acted on. Two progress rows per lesson looked like a missing unique
+index, which would have inflated every learner's progress and could have completed a
+course early. There is a unique index on `(enrollment_id, lesson_id)` and no
+duplicates; the doubling was a display artefact of a join in a throwaway query where
+`lp.id` and `l.id` collided on the name `id`. The measurement that settled it was
+one that counted distinct lessons rather than rows.
+
 ### Where it ended
 
 - Accounts and role separation: 31 of 31 checks, all five signing in, landing on the
@@ -792,6 +822,11 @@ exists withdraws the form that would have created a duplicate.
 
 ### The state the demonstration now walks in with
 
-Kept as it is, since each account carries one story: Joren is enrolled with nothing
-started, Justine is two lessons and two attempts in with a paid course waiting at a
-checkout, and Garmino has two courses finished and two certificates.
+Kept as it is, since each account carries one story, and counted rather than
+described: Joren is enrolled in one course with nothing started. Justine holds two
+free enrollments with one completed lesson in each, two quiz attempts, and one paid
+enrollment waiting at a checkout. Garmino has 21 completed lessons, 5 attempts, 2
+courses finished and 2 certificates.
+
+The workflow probe mutates that state, so it is run before this shape is restored
+rather than after.
