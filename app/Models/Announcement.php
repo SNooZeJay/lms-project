@@ -52,41 +52,76 @@ class Announcement extends Model
     /**
      * The announcements one person may be shown.
      *
-     * Course announcements arrive through an enrollment rather than through the
-     * announcement, which is what makes a hand-typed id resolve to a 403 instead
-     * of to somebody else's course. A student who is not enrolled has no course
-     * to join the query through, so the condition is false for them rather than
-     * true and then filtered afterwards.
+     * THIS QUERY AND AnnouncementPolicy::view ARE ONE RULE
+     *
+     * The controller says it builds the list from here so that a list filtered one
+     * way and a page judged another would not be two rules, and for a while they
+     * were. The policy has always let two people read a course announcement: the
+     * one who wrote it, and the instructor who owns the course. This query joined
+     * only through an enrollment, so an instructor could open the announcement at
+     * its own address and then find no list containing it. Publishing was reachable,
+     * the notice reached the students, and the author had nothing to read it from
+     * and nothing to withdraw it with.
+     *
+     * The two claims are added here rather than loosened in the policy, because both
+     * are claims to your own content rather than to somebody else's, and neither
+     * reaches a course the reader has no part in. The policy is the authority and
+     * this is the same question asked of many rows; a test asserts the two agree for
+     * every combination of reader and announcement, so a clause added to one side
+     * alone is caught rather than shipped.
      *
      * Course announcements also need their course published. An announcement in a
      * draft course is about content the reader cannot open, and a notice about it
-     * would lead to a page that refuses.
+     * would lead to a page that refuses. The author is exempt, matching the policy,
+     * which answers for the author before it looks at the course at all.
+     *
+     * The active account check is not repeated here. AnnouncementPolicy::viewAny
+     * requires it and EnsureAccountIsActive stops a suspended account before a
+     * controller runs, so a third copy in the query would be a rule that could
+     * disagree with those two rather than one that agrees with them.
      *
      * @param  Builder<$this>  $query
      */
     public function scopeVisibleTo(Builder $query, User $viewer): void
     {
         $query->where(function (Builder $outer) use ($viewer): void {
-            $outer->where('scope', AnnouncementScope::Platform->value);
+            // What this person wrote, at either scope.
+            $outer->where('author_id', $viewer->id);
+
+            $outer->orWhere('scope', AnnouncementScope::Platform->value);
 
             $outer->orWhere(function (Builder $course) use ($viewer): void {
                 $course->where('scope', AnnouncementScope::Course->value)
                     /*
-                     * The two sub-queries are typed against the query builder,
-                     * not the Eloquent one. whereExists hands the closure a plain
+                     * The sub-queries are typed against the query builder, not the
+                     * Eloquent one. whereExists hands the closure a plain
                      * Illuminate\Database\Query\Builder, and hinting it as the
                      * Eloquent class is a TypeError on the first platform
                      * announcement anybody reads.
+                     *
+                     * Enrolled, or the instructor who owns it. These are grouped
+                     * rather than left as two siblings, because an ungrouped pair
+                     * would let the published check below bind to the owner branch
+                     * alone and hand a student in a draft course the announcement.
                      */
-                    ->whereExists(function (QueryBuilder $enrollment) use ($viewer): void {
-                        $enrollment->selectRaw('1')
-                            ->from('enrollments')
-                            ->whereColumn('enrollments.course_id', 'announcements.course_id')
-                            ->where('enrollments.student_id', $viewer->id)
-                            ->whereIn('enrollments.status', [
-                                EnrollmentStatus::Active,
-                                EnrollmentStatus::Completed,
-                            ]);
+                    ->where(function (Builder $who) use ($viewer): void {
+                        $who->whereExists(function (QueryBuilder $enrollment) use ($viewer): void {
+                            $enrollment->selectRaw('1')
+                                ->from('enrollments')
+                                ->whereColumn('enrollments.course_id', 'announcements.course_id')
+                                ->where('enrollments.student_id', $viewer->id)
+                                ->whereIn('enrollments.status', [
+                                    EnrollmentStatus::Active,
+                                    EnrollmentStatus::Completed,
+                                ]);
+                        });
+
+                        $who->orWhereExists(function (QueryBuilder $owned) use ($viewer): void {
+                            $owned->selectRaw('1')
+                                ->from('courses')
+                                ->whereColumn('courses.id', 'announcements.course_id')
+                                ->where('courses.instructor_id', $viewer->id);
+                        });
                     })
                     ->whereExists(function (QueryBuilder $published): void {
                         $published->selectRaw('1')

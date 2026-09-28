@@ -55,7 +55,15 @@ class CourseCatalogSeeder extends Seeder
      */
     private const INSTRUCTOR_EMAIL = 'bautista.jayzee@ncst.edu.ph';
 
-    private const INSTRUCTOR_NAME = 'Jay Zee Test';
+    /*
+     | The name the demonstration presents this account under.
+     *
+     | It was "Jay Zee Test", which is what a placeholder looks like, and a re-seed
+     | put that name back on a prepared account. An existing account keeps its own
+     | name when the seeder runs, so the constant only decides what a fresh database
+     | gets, and it should get the name the demonstration actually uses.
+     */
+    private const INSTRUCTOR_NAME = 'Instructor Demo';
 
     public function run(): void
     {

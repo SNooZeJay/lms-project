@@ -196,33 +196,58 @@ final class RecordNotification
      * An address on this application's own host is allowed and reduced to its
      * path, because route() returns an absolute URL and every caller would
      * otherwise have to remember to convert it. That is a footgun with a crash
-     * at the end of it rather than a security control: the first caller that
-     * forgot raised an InvalidArgumentException from a notification that was
-     * perfectly safe. Comparing against config('app.url') is the same authority
-     * PublicHttps uses for the scheme, so the two cannot disagree about what
-     * this application's address is.
+     * at the end of it rather than a security control.
+     *
+     * WHICH HOST COUNTS AS THIS APPLICATION
+     *
+     * Two, and the first version knew only one. config('app.url') is the address
+     * the application believes it is published at. The request in flight is the
+     * address the work is actually being done at, and the two are not the same
+     * whenever the application is reached by another name: localhost against a
+     * tunnel, 127.0.0.1 against localhost, or any other port. Eleven listeners
+     * compose their links with route(), which takes its address from the request
+     * in flight, so measuring a route() link against the configured address alone
+     * refuses the ordinary case. Publishing a course announcement over localhost
+     * returned HTTP 500 with an InvalidArgumentException from a notice that was
+     * entirely safe, and the suite never saw it because the test environment sets
+     * APP_URL to http://127.0.0.1:8000 and the test client requests exactly that,
+     * so the two agreed and the refusal was unreachable.
+     *
+     * WHY THE SCHEME IS NOT PART OF THE DECISION
+     *
+     * It is not part of the answer, because it is not part of the stored value.
+     * toLocalPath discards the scheme, host and port and keeps the path, so a
+     * link that is allowed here and a link that is refused here cannot differ in
+     * what a reader eventually follows. Comparing schemes also produced a false
+     * refusal of its own: PublicHttps upgrades the scheme of generated links on a
+     * public request, so a link could be raised as https while the request that
+     * produced it was still http, and the upgrade is the behaviour that keeps
+     * assets loading. A guard that fails a notice over that is punishing the
+     * application for working.
+     *
+     * WHAT THIS DOES NOT ALLOW
+     *
+     * A host that is neither the configured address nor the one the request
+     * arrived at is still refused, and that is the case the guard exists for. It
+     * also cannot put an address into the column, because the host is gone before
+     * the value is written, so even a Host header somebody chose produces a path.
      */
     private function guardLinkIsLocal(string $link): void
     {
         if (preg_match('#^https?://#i', $link) === 1) {
             $parts = parse_url($link);
             $host = strtolower((string) ($parts['host'] ?? ''));
-            $port = $parts['port'] ?? null;
+            $port = $this->effectivePort($parts['port'] ?? null, (string) ($parts['scheme'] ?? 'http'));
 
-            $appParts = parse_url((string) config('app.url'));
-            $appHost = strtolower((string) ($appParts['host'] ?? ''));
-            $appPort = $appParts['port'] ?? null;
-
-            $schemeMatches = strtolower((string) ($parts['scheme'] ?? ''))
-                === strtolower((string) ($appParts['scheme'] ?? 'http'));
-
-            if ($host !== $appHost || $port !== $appPort || ! $schemeMatches) {
-                throw new InvalidArgumentException(
-                    "A notification link must stay on this application, got '{$link}'."
-                );
+            foreach ($this->localHosts() as $local) {
+                if ($host === $local['host'] && $port === $local['port']) {
+                    return;
+                }
             }
 
-            return;
+            throw new InvalidArgumentException(
+                "A notification link must stay on this application, got '{$link}'."
+            );
         }
 
         if (! Str::startsWith($link, '/')) {
@@ -240,6 +265,64 @@ final class RecordNotification
         if (preg_match('#[\x00-\x1f\x7f]#', $link) === 1) {
             throw new InvalidArgumentException('A notification link must not contain control characters.');
         }
+    }
+
+    /**
+     * The hosts a link may name, as host and effective port.
+     *
+     * The configured address is first because it is the one that holds when
+     * nothing is in flight: a queued job, a console command, a test. The request
+     * in flight is second and is what makes an ordinary publish work, because
+     * route() read its address from there.
+     *
+     * A request is only consulted when one actually exists. Outside a request the
+     * container still holds an empty one, and reading a host off it would invent
+     * a second way in that only looks like a request.
+     *
+     * @return array<int, array{host: string, port: int}>
+     */
+    private function localHosts(): array
+    {
+        $configured = parse_url((string) config('app.url'));
+
+        $hosts = [[
+            'host' => strtolower((string) ($configured['host'] ?? '')),
+            'port' => $this->effectivePort($configured['port'] ?? null, (string) ($configured['scheme'] ?? 'http')),
+        ]];
+
+        if (! app()->bound('request')) {
+            return $hosts;
+        }
+
+        $request = request();
+
+        if (! $request->getHost()) {
+            return $hosts;
+        }
+
+        $hosts[] = [
+            'host' => strtolower((string) $request->getHost()),
+            'port' => $this->effectivePort($request->getPort(), $request->getScheme()),
+        ];
+
+        return $hosts;
+    }
+
+    /**
+     * The port a link actually reaches, with the scheme's default filled in.
+     *
+     * "https://app.test/x" and "https://app.test:443/x" are the same place, and
+     * parse_url reports only the first as having a port. Comparing the two
+     * without this would refuse the same application for spelling its address
+     * the shorter way.
+     */
+    private function effectivePort(mixed $port, string $scheme): int
+    {
+        if ($port !== null && $port !== '') {
+            return (int) $port;
+        }
+
+        return strtolower($scheme) === 'https' ? 443 : 80;
     }
 
     /**

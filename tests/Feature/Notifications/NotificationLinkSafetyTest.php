@@ -3,11 +3,14 @@
 namespace Tests\Feature\Notifications;
 
 use App\Actions\Notifications\RecordNotification;
+use App\Enums\EnrollmentStatus;
 use App\Enums\NotificationType;
 use App\Models\Course;
+use App\Models\Enrollment;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -312,5 +315,147 @@ class NotificationLinkSafetyTest extends TestCase
             'support_reply',
             'system_announcement',
         ], $notScoped);
+    }
+
+    /* ------------------------------------------ the host a request actually arrived on */
+
+    /**
+     * A link built by route() during a request is this application, whatever host
+     * the request arrived on.
+     *
+     * route() returns an absolute address taken from the request in flight, so a
+     * link composed by any of the eleven listeners is on the host the person doing
+     * the work is using. The guard only compared that against config('app.url'),
+     * which is the address the application believes it is published at, and the
+     * two are not the same thing whenever the application is reached by another
+     * name: localhost against a tunnel, 127.0.0.1 against localhost, or any other
+     * port.
+     *
+     * That is not hypothetical. The whole suite agreed with itself about this:
+     * the test environment sets APP_URL to http://127.0.0.1:8000, and the test
+     * client requests http://127.0.0.1:8000, so every notification test compared
+     * two identical hosts and the refusal was never reached. Posting an
+     * announcement to a course over localhost while the published address was the
+     * ngrok tunnel returned HTTP 500 with "A notification link must stay on this
+     * application" raised from inside a notice that was entirely safe.
+     *
+     * The tests below make the two hosts disagree on purpose, which is the only
+     * way to reach the branch.
+     */
+    public function test_a_link_on_the_host_the_request_arrived_on_is_this_application(): void
+    {
+        $student = User::factory()->create();
+        $course = Course::factory()->create();
+
+        $this->arriveAt('http://localhost:8000');
+
+        $this->assertNotSame(
+            request()->getHost(),
+            parse_url((string) config('app.url'), PHP_URL_HOST),
+            'This test is only meaningful while the two hosts disagree. If they match, the guard is never reached and the test passes for the wrong reason.'
+        );
+
+        $this->record->handle(
+            $student,
+            NotificationType::LessonCompleted,
+            'Finished.',
+            course: $course,
+            link: route('announcements.index'),
+            authorizeLink: fn (): bool => true,
+        );
+
+        $notification = Notification::query()->where('user_id', $student->id)->sole();
+
+        $this->assertSame('/announcements', $notification->link);
+    }
+
+    public function test_the_stored_link_is_a_path_even_when_the_request_host_was_spoofed(): void
+    {
+        $student = User::factory()->create();
+        $course = Course::factory()->create();
+
+        // The reason accepting the request's host does not weaken the guard.
+        // A Host header an attacker chose is this application's host as far as the
+        // guard can tell, but the value is reduced to a path before it is stored,
+        // so nothing off-site can reach the column and no notice can point at it.
+        $this->arriveAt('https://attacker.example');
+
+        $this->record->handle(
+            $student,
+            NotificationType::LessonCompleted,
+            'Finished.',
+            course: $course,
+            link: route('announcements.index'),
+            authorizeLink: fn (): bool => true,
+        );
+
+        $this->assertSame('/announcements', Notification::query()->where('user_id', $student->id)->sole()->link);
+    }
+
+    public function test_a_third_host_is_still_refused_while_a_request_is_in_flight(): void
+    {
+        $student = User::factory()->create();
+        $course = Course::factory()->create();
+
+        $this->arriveAt('http://localhost:8000');
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        // Same scheme, same port, neither configured nor in flight. This is the
+        // case the guard exists for, and it must keep failing now that two hosts
+        // are allowed rather than one.
+        $this->record->handle(
+            $student,
+            NotificationType::LessonCompleted,
+            'Finished.',
+            course: $course,
+            link: 'http://elsewhere.test:8000/steal',
+            authorizeLink: fn (): bool => true,
+        );
+    }
+
+    public function test_an_instructor_can_publish_to_a_course_when_the_two_hosts_disagree(): void
+    {
+        // The fault as it was actually met: a real request, a real publish, and a
+        // notice with no reason to exist. The controller and the listener are
+        // exercised together, because fixing the guard while the listener kept
+        // building absolute links would move the failure rather than end it.
+        $instructor = User::factory()->instructor()->create();
+        $student = User::factory()->create();
+        $course = Course::factory()->create(['instructor_id' => $instructor->id]);
+
+        // The factory, because Enrollment only accepts student_id and course_id
+        // from a caller. A hand built row here is silently pending_payment, which
+        // the recipient query excludes, and the notice then goes to nobody for a
+        // reason that has nothing to do with the host being tested.
+        Enrollment::factory()->create([
+            'student_id' => $student->id,
+            'course_id' => $course->id,
+            'status' => EnrollmentStatus::Active,
+        ]);
+
+        $this->arriveAt('http://localhost:8000');
+
+        $this->actingAs($instructor)
+            ->post(route('instructor.courses.announcements.store', $course), [
+                'title' => 'Bring a laptop',
+                'body' => 'The workshop needs a machine you can install things on.',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(
+            1,
+            Notification::query()->where('user_id', $student->id)->count(),
+            'The enrolled student was not told, because the notice was raised as a fault rather than written.'
+        );
+    }
+
+    /**
+     * Put a request with a chosen host in the container, as the framework does
+     * when a request arrives.
+     */
+    private function arriveAt(string $url): void
+    {
+        $this->app->instance('request', Request::create($url));
     }
 }

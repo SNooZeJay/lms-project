@@ -28,6 +28,13 @@ $app->make(Kernel::class)->bootstrap();
 $families = [
     'Catalog check on Sunday morning%',
     'Bring your own laptop on Thursday%',
+    // The workflow probe writes this one, and it now withdraws what it published
+    // through the application's own action. It is listed here as well because a
+    // probe that was interrupted between publishing and withdrawing would leave a
+    // row behind, and twelve of them read as somebody having pressed publish a dozen
+    // times by accident. The tool keeps the newest of each, so an announcement
+    // somebody actually published by hand is left alone.
+    'Bring a laptop on Thursday%',
 ];
 
 echo PHP_EOL.'  the announcements the probe left behind:'.PHP_EOL;

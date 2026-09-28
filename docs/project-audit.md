@@ -1,4 +1,4 @@
-﻿# Project audit
+# Project audit
 
 ## 1. Audit status
 
@@ -596,6 +596,8 @@ These quality checks exist and all pass:
 | Shell layout and topbar pass | 1502 | 6879 |
 | Responsive sweep and target sizes | 1508 | 6888 |
 | Card alignment and component attributes | 1514 | 6898 |
+| Verification confirmation and countdown | 1700 | 7550 |
+| Demonstration accounts, notification link scope, announcement list scope | 1713 | 7567 |
 
 ### Security audit
 
@@ -688,6 +690,29 @@ failed request. The theme toggle was verified with a real trusted mouse click.
 CI is implemented through the repository commands. A hosted continuous
 integration workflow is not configured, which is a deployment decision rather
 than a code gap.
+
+### Defects found by preparing and using the demonstration accounts
+
+September 29, 2026. Both were found by performing the workflow rather than by reading
+it, and both passed every check that existed before them.
+
+- **A notice that raised an exception on any local request.** `RecordNotification`
+  allowed an absolute link only when its host matched `config('app.url')`, while
+  eleven listeners compose their links with `route()`, which takes its address from
+  the request in flight. Publishing a course announcement over `127.0.0.1` returned
+  HTTP 500 from a notice that was entirely safe. The guard now also accepts the host
+  the request arrived on, and the scheme is not compared because `toLocalPath`
+  discards it before the value is stored.
+- **The author could not see what they published.** `AnnouncementPolicy::view` has
+  always allowed the author and the course owner to read a course announcement;
+  `Announcement::scopeVisibleTo` joined only through an enrollment, so the list was
+  narrower than the policy it is documented to mirror. The two claims were added to
+  the query, and a test now asserts the list and the policy agree for every
+  combination of reader and announcement.
+
+Both were invisible to the suite for the same reason, which is worth recording: the
+test environment set `APP_URL` to `http://127.0.0.1:8000` and the test client
+requested exactly that, so the code path that refused was never reached.
 
 ### Interface system pass
 

@@ -20,8 +20,10 @@ use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -301,6 +303,118 @@ class AnnouncementTest extends TestCase
             'About their course',
             $html,
             'A student was shown an announcement for a course they are not enrolled in.'
+        );
+    }
+
+    public function test_the_list_shows_an_instructor_the_announcements_they_published(): void
+    {
+        $instructor = $this->instructor();
+        $course = $this->publishedCourse($instructor);
+
+        app(PublishAnnouncement::class)
+            ->courseAnnouncement($instructor, $course, 'Bring a laptop', 'Thursday needs a machine.');
+
+        $html = (string) $this->actingAs($instructor)
+            ->get(route('announcements.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString(
+            'Bring a laptop',
+            $html,
+            'The instructor published this and cannot see it. Publishing is reachable, the notice reaches the students, and the person who wrote it has no list to read it from or withdraw it with.'
+        );
+    }
+
+    public function test_the_list_does_not_show_an_instructor_another_instructors_course_announcement(): void
+    {
+        $mine = $this->instructor();
+        $theirs = $this->instructor();
+        $theirCourse = $this->publishedCourse($theirs);
+
+        app(PublishAnnouncement::class)
+            ->courseAnnouncement($theirs, $theirCourse, 'Their news', 'Not for me.');
+
+        $html = (string) $this->actingAs($mine)
+            ->get(route('announcements.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringNotContainsString(
+            'Their news',
+            $html,
+            'Widening the list to an instructor must stop at the courses they own, or one instructor reads another instructors communication.'
+        );
+    }
+
+    /**
+     * The list and the policy must answer the same question, which is what
+     * AnnouncementController::index says it is for.
+     *
+     * The controller's own rule is that a list built from a different filter than
+     * the policy is two rules, and a hand-typed id is judged by the second one
+     * alone. That is exactly the shape of the fault this found: the policy has
+     * always let the author and the course owner read a course announcement, while
+     * the query behind the list only joined through an enrollment, so an instructor
+     * could open the announcement at its own address and then find no list
+     * containing it. Checking one actor against many announcements rather than
+     * asserting a single page catches that, and catches it again the next time a
+     * clause is added to one side and not the other.
+     *
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function readersAndAnnouncements(): array
+    {
+        return [
+            'the author' => ['author', 'ownCourse'],
+            'the instructor of the course' => ['owner', 'ownCourse'],
+            'a student enrolled in the course' => ['enrolledStudent', 'ownCourse'],
+            'a student in another course' => ['otherStudent', 'ownCourse'],
+            'an instructor of another course' => ['otherInstructor', 'ownCourse'],
+            'an administrator' => ['administrator', 'ownCourse'],
+            'anybody at all, for a platform notice' => ['otherInstructor', 'platform'],
+        ];
+    }
+
+    #[DataProvider('readersAndAnnouncements')]
+    public function test_the_list_agrees_with_the_policy_about_every_announcement(string $reader, string $published): void
+    {
+        $instructor = $this->instructor();
+        $course = $this->publishedCourse($instructor);
+
+        $announcement = $published === 'platform'
+            ? app(PublishAnnouncement::class)->platformAnnouncement($this->administrator(), 'Maintenance', 'Down from 02:00.')
+            : app(PublishAnnouncement::class)->courseAnnouncement($instructor, $course, 'Bring a laptop', 'Thursday needs a machine.');
+
+        /*
+         * Six readers against two kinds of announcement, chosen so that the answers
+         * differ from one row to the next rather than all being true or all being
+         * false. A single pair would have passed against the fault: the author and
+         * the owner are the two the policy allows and the list omitted.
+         */
+        $actor = match ($reader) {
+            'author', 'owner' => $instructor,
+            'enrolledStudent' => $this->student(),
+            'otherStudent' => $this->student(),
+            'otherInstructor' => $this->instructor(),
+            'administrator' => $this->administrator(),
+        };
+
+        if ($reader === 'enrolledStudent') {
+            $this->enroll($actor, $course);
+        }
+
+        $inList = Announcement::query()
+            ->visibleTo($actor)
+            ->whereKey($announcement->id)
+            ->exists();
+
+        $byPolicy = Gate::forUser($actor)->allows('view', $announcement);
+
+        $this->assertSame(
+            $byPolicy,
+            $inList,
+            "The list and the policy disagree for a {$reader} reading a {$published} announcement. The list is built from scopeVisibleTo and the page is judged by the policy, so a disagreement means one of the two can be shown something the other refuses."
         );
     }
 

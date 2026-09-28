@@ -1,4 +1,4 @@
-# QA session log — adversarial pass
+# QA session log â€” adversarial pass
 
 Date: September 27, 2026
 Target: `IT Learning Hub` (BSIT Academic LMS), Laravel 13, Blade, MySQL.
@@ -72,9 +72,9 @@ Reused across every field so a class is defined once and applied everywhere.
 | Symbol | `!@#$%^&*()_+-={}[]\|;:"'<>,.?/` | Escaping, header construction, HTML |
 | HTML | `<script>`, `"><img onerror>`, `<b>` | Output encoding |
 | SQL-shaped | `' OR '1'='1`, `'; DROP TABLE` | Parameter binding |
-| Unicode | `こんにちは`, `مرحبا`, `Привет` | Multi-byte length counting, collation |
-| Emoji | `😀🚀🔥💻🎓` | Multi-byte length, surrogate pairs |
-| RTL | `‮abc‬` | Visual spoofing, display order |
+| Unicode | `ã“ã‚“ã«ã¡ã¯`, `Ù…Ø±Ø­Ø¨Ø§`, `ÐŸÑ€Ð¸Ð²ÐµÑ‚` | Multi-byte length counting, collation |
+| Emoji | `ðŸ˜€ðŸš€ðŸ”¥ðŸ’»ðŸŽ“` | Multi-byte length, surrogate pairs |
+| RTL | `â€®abcâ€¬` | Visual spoofing, display order |
 | Zero-width | `a\u{200B}b`, `a\u{FEFF}b` | Length counted differently from display |
 | Long | 100, 160, 161, 500, 1000, 5000, 5001, 10000 chars | The boundary, either side of the rule |
 | Type-confused | `123`, `true`, `null`, `[]`, `{}`, `1.5`, `NaN`, `Infinity` | Wrong type where a string is expected |
@@ -87,7 +87,7 @@ Tagged as BUG, QUESTION, IDEA, RISK, or NOTE. Times are the order of discovery.
 
 | # | Tag | Charter | Observation | Evidence |
 | --- | --- | --- | --- | --- |
-| 1 | NOTE | — | Baseline before the pass: 813 tests, 3814 assertions, Pint clean, composer audit clean, build clean | recorded in `docs/project-audit.md` |
+| 1 | NOTE | â€” | Baseline before the pass: 813 tests, 3814 assertions, Pint clean, composer audit clean, build clean | recorded in `docs/project-audit.md` |
 | 2 | BUG | C1 | **Every `max:` rule on course creation was reported unenforced.** A 161-character title, a 5001-character description, and a 101-character category were all accepted. | `tests/Feature/Qa/LengthRuleEnforcementTest.php` failed on all three. |
 | 3 | NOTE | C1 | Observation 2 was **not a defect in the application.** The validator fails correctly in isolation, and a browser form POST is refused with a redirect carrying the error in the session. The 302 was being read as acceptance because a refused form POST answers 302 exactly as a successful one does. Split into `LengthRuleEnforcementTest`, which asserts the session rather than the status, and a second case proving the JSON shape answers 422. | diagnostic showed validator FAILS, request 302 to `/`, `session errors: []` on the wrong probe, and the real error present on the correct one |
 | 4 | BUG | C1 | A course title of 10,000 characters causes the course page to render at an unusable width. Not a crash: the page renders, but the text overflows its container. | recorded as a layout risk; the value is stored and rendered as given |
@@ -99,15 +99,15 @@ Tagged as BUG, QUESTION, IDEA, RISK, or NOTE. Times are the order of discovery.
 | 10 | NOTE | C2 | **The final-administrator guard in `AssignUserRole` is unreachable.** It requires the target to be an active administrator with the active count at one, but `UserPolicy` already refuses a self-directed role change, so the actor is always a *different* active administrator and the count is at least two. It is defence in depth behind the policy, not a bug, but it cannot be tested directly. The property is now asserted where it is enforced. | diagnostic drove the system to one administrator and printed `demote the only admin -> HTTP 403`; the 403 came from the policy |
 | 11 | NOTE | C2 | Three separate attempts to read a flashed error all failed before the assertion worked: the response object's own session, then the global `session()` helper, then the response after it had been sent. The client tracks the session for the request it made, so `assertSessionHasErrors` on the response is the only correct reader. | four readings of the same request disagreed |
 | 12 | NOTE | C2 | A fixture for a completion test must mark the lesson `is_required`. The completion rule counts required lessons, so an optional lesson completes nothing and two certificate tests silently skipped. The two skips were replaced with a hard assertion that names the unmet rule. | `No certificate was issued` on two tests; fixed by `is_required => true` plus an explicit completion request |
-| 13 | BUG | C5 | **Fixed: a settled amount was never checked against the amount owed.** `ProcessPayMongoEvent::markPaid` marked the Payment as paid and activated the enrollment without reading `amount` or `currency` from the event, and `PayMongoEventEnvelope` did not carry them at all. `docs/architecture.md` listed "Amount or currency mismatch" as a webhook test case, but no such test existed. A provider delivery of ₱1,000 would unlock a course priced at ₱125,000. Amount and currency are now read from the event and compared before the payment is applied. | `test_an_amount_that_does_not_match_is_not_applied` and the currency companion both failed before the fix; envelope diagnostic confirmed `amountMinor` was `null` |
+| 13 | BUG | C5 | **Fixed: a settled amount was never checked against the amount owed.** `ProcessPayMongoEvent::markPaid` marked the Payment as paid and activated the enrollment without reading `amount` or `currency` from the event, and `PayMongoEventEnvelope` did not carry them at all. `docs/architecture.md` listed "Amount or currency mismatch" as a webhook test case, but no such test existed. A provider delivery of â‚±1,000 would unlock a course priced at â‚±125,000. Amount and currency are now read from the event and compared before the payment is applied. | `test_an_amount_that_does_not_match_is_not_applied` and the currency companion both failed before the fix; envelope diagnostic confirmed `amountMinor` was `null` |
 | 14 | NOTE | C5 | A payment does not issue a certificate, because the course is not finished. A replay test asserting one certificate was failing on correct behaviour. Replaced with a comparison against the count before the replay. | first delivery activated correctly; the certificate assertion was the failure |
 | 15 | NOTE | C5 | The webhook endpoint does not check the declared content type, so a correctly signed body labelled `text/plain` is applied. **Not a weakness.** The signature is the boundary and cannot be produced without the secret, and refusing on the declared type would risk dropping real deliveries where an intermediary rewrote the header. Replaced with two tests: an unsigned body is refused whatever the type claims, and a signed one is applied whatever the type claims. | a signed `text/plain` delivery returned 200 and activated the enrollment |
 | 16 | NOTE | C5 | An event whose `reference_number` is hostile is still applied, because the payment is identified by the provider checkout id as a fallback. **Not a weakness.** An earlier version of this test asserted the enrollment stayed pending and failed on correct matching. Split into two cases: one where the checkout id is intact and application is expected, and one where both identifiers are hostile and nothing may be applied. | `resolvePayment` matches on `idempotency_key` first, then `provider_checkout_id` or `provider_payment_id` |
-| 17 | BUG | — | **Found in my own harness, worth recording because it is easy to ship:** the webhook tests encoded the payload once to sign it and again to send it. `json_encode` with different flags produces different bytes, so a payload containing a slash or a multi-byte character produced a signature that did not match for reasons unrelated to the check under test. Replaced with a `sign()` helper that encodes once and returns both the body and its signature. | 38 failures traced to this, not to the application |
+| 17 | BUG | â€” | **Found in my own harness, worth recording because it is easy to ship:** the webhook tests encoded the payload once to sign it and again to send it. `json_encode` with different flags produces different bytes, so a payload containing a slash or a multi-byte character produced a signature that did not match for reasons unrelated to the check under test. Replaced with a `sign()` helper that encodes once and returns both the body and its signature. | 38 failures traced to this, not to the application |
 | 18 | NOTE | C3 | Six addresses that looked like malformed input are correctly answered with 200. `//courses` normalises, `/courses#frag` never reaches the server, and `?search[]=a` is an unknown parameter. Requiring a refusal for these asserts the application is *stricter* than it needs to be, which is its own kind of wrong. Split into "unresolvable" and "normalises" sets. | ten cases initially failed as `array contains 200` |
-| 19 | BUG | — | **Fixed: the sign in, register, and forgot password pages each had two `h1` elements.** The decorative brand panel rendered its marketing line as a page heading alongside the form's own heading, so a screen reader announced "Learn IT. Build practical skills." before it said what the page was for. `docs/project-audit.md` states "exactly one `h1` per page" as verified; that claim came from a browser measurement which covered the workspace and catalog pages but not the three auth pages, so it had quietly stopped being true. The panel line is now a paragraph; the aside keeps its accessible name because `aria-labelledby` accepts any element. | `/login`, `/register`, `/forgot-password` each reported `h1 count: 2`; `/` and `/courses` reported 1 |
-| 20 | RISK | — | The h1 claim in the audit was a browser measurement with no test behind it. `OneHeadingPerPageTest` now asserts it on all 19 public, student, instructor, and administrator pages, so the claim cannot quietly stop being true again. | 13 tests, 44 assertions |
-| 21 | NOTE | — | **The first two browser "findings" were measurement artefacts, not defects.** Every signed-in page reported 144px of horizontal overflow and the create-course form reported no fields. The cause was the measurement setup: `PublicHttps` derives the scheme from `APP_URL`, which is `https` because the application is served over a tunnel, so every redirect to the sign in page pointed at an `https` address on a plain-http measurement port. Chrome then failed the TLS handshake and reported `ERR_CONNECTION_REFUSED`, and the probe was measuring Chrome's error page, which has no `overflow-x-hidden` and a fixed 1280px width. Reproduced outside the browser with a raw socket to prove it was the server response and not the probe. | raw response was `302 Found` with `Location: https://127.0.0.1:8011/login` against a plain-http server |
+| 19 | BUG | â€” | **Fixed: the sign in, register, and forgot password pages each had two `h1` elements.** The decorative brand panel rendered its marketing line as a page heading alongside the form's own heading, so a screen reader announced "Learn IT. Build practical skills." before it said what the page was for. `docs/project-audit.md` states "exactly one `h1` per page" as verified; that claim came from a browser measurement which covered the workspace and catalog pages but not the three auth pages, so it had quietly stopped being true. The panel line is now a paragraph; the aside keeps its accessible name because `aria-labelledby` accepts any element. | `/login`, `/register`, `/forgot-password` each reported `h1 count: 2`; `/` and `/courses` reported 1 |
+| 20 | RISK | â€” | The h1 claim in the audit was a browser measurement with no test behind it. `OneHeadingPerPageTest` now asserts it on all 19 public, student, instructor, and administrator pages, so the claim cannot quietly stop being true again. | 13 tests, 44 assertions |
+| 21 | NOTE | â€” | **The first two browser "findings" were measurement artefacts, not defects.** Every signed-in page reported 144px of horizontal overflow and the create-course form reported no fields. The cause was the measurement setup: `PublicHttps` derives the scheme from `APP_URL`, which is `https` because the application is served over a tunnel, so every redirect to the sign in page pointed at an `https` address on a plain-http measurement port. Chrome then failed the TLS handshake and reported `ERR_CONNECTION_REFUSED`, and the probe was measuring Chrome's error page, which has no `overflow-x-hidden` and a fixed 1280px width. Reproduced outside the browser with a raw socket to prove it was the server response and not the probe. | raw response was `302 Found` with `Location: https://127.0.0.1:8011/login` against a plain-http server |
 | 22 | NOTE | C2 | The final chaos pass, after the measurement environment was corrected, reported **zero bugs** across all three roles: no console errors, no uncaught exceptions, no failed requests, no horizontal overflow at 320, 360, 390, 768 or 1440, no spinner left on screen, no permanently disabled button, and every protected address redirecting a guest away. A 353-character value mixing emoji, Japanese, a right-to-left override and a script tag was typed into a real form, kept in full, and submitted without error. | `bugs: 0, notes: 1, shots: 21` for the instructor run; `0 / 2 / 20` for student and administrator |
 
 ## Debrief
@@ -653,3 +653,145 @@ for a while with nothing wrong with the application. `ngrok http 8000` carries n
 `--domain`, so the name is a random free one rather than a reserved one. A
 demonstration depends on that name resolving on the presenter's network, and
 nothing in the repository can make that true.
+
+## Seventh pass: preparing the demonstration accounts
+
+Date: September 29, 2026
+Scope: the five accounts the demonstration is built on, and the faults found by
+actually using them rather than by reading the code.
+
+### What was asked for
+
+Five accounts with fixed names, addresses, roles and passwords, a clean account
+list, and proof through the application's own authentication that each one works
+and is kept apart from the others.
+
+### The accounts, and what each one was already carrying
+
+Inspecting first turned out to matter more than expected. Two of the five addresses
+already existed and already owned the demonstration:
+
+| Account | Role | Already held |
+| --- | --- | --- |
+| `jayzeeb65@gmail.com` | Administrator | 2 announcements, a conversation |
+| `bautista.jayzee@ncst.edu.ph` | Instructor | all 5 courses, 17 quizzes, 2 announcements |
+| `garmino.shanleekian@ncst.edu.ph` | Student | 2 enrollments, 21 lessons, 5 attempts, 2 certificates |
+| `lalamonan.joren@ncst.edu.ph` | Student | new |
+| `guia.justinejosh@ncst.edu.ph` | Student | new |
+
+Two accounts that were not on the list held data as well, so both deletions were put
+to the user before anything was touched. `rutherford.emmanuelle@example.com` had an
+enrollment, 4 messages and 3 notices; it is a reserved `example.com` address with a
+name that does not match it, so it is seeded test data that could never receive mail
+and never be signed into again. Its enrollment was moved to Joren Lalamonan first, so
+the course kept a second student and the account list came out at five.
+`jaybau16@gmail.com` had no enrollments and was registered for the user an hour
+earlier to walk the verification flow; it was removed as superseded.
+
+`tools/prepare-demo-accounts.php` applies the list. It reads the passwords from a JSON
+file whose path is given on the command line and refuses any path inside the
+repository, so no credential is ever written into a tool or into the history. It
+never prints a password, not even to say it set one.
+
+### Three faults the rehearsal caught, none of which the suite could see
+
+**1. The role was reported but never set.** The tool created the five accounts and
+printed `as administrator`, `as instructor`, three times `as student`. All five were
+students. `Profile` has `bio` as its only fillable field, so passing `role` into
+`create()` was dropped without a word and the column took its database default. On
+the real database this would have left a demonstration with nobody able to administer
+or teach anything, while the tool reported all three roles. The role is now set by
+assignment, the way `BootstrapOwner` does it, and read back afterwards so the tool
+reports what is stored rather than what it intended.
+
+**2. Half a list was applied before the run stopped.** Checking and writing happened
+in the same pass, so a list whose fifth entry asked for the wrong role created the
+first four accounts and then stopped. Half a demonstration applied is worse than
+none: the accounts exist, the passwords are set, and the person using them is not the
+person they were prepared for. The list is now checked in full before anything is
+written, and every problem is reported at once.
+
+**3. A hand built row is silently wrong.** `Enrollment` accepts only `student_id`
+and `course_id` from a caller, so a test that built one by hand got `pending_payment`
+from the column default and a student the notification query excludes. This bit a
+test written during this pass, not the application. The factory is the right way to
+make one, and the same trap exists on `Course` and on `Profile`, which is the models
+protecting server owned fields rather than a fault.
+
+### A real fault: a notice that 500s on a local request
+
+Publishing a course announcement over `http://127.0.0.1:8000` returned HTTP 500 with
+`A notification link must stay on this application` raised from inside a notice that
+was entirely safe.
+
+`RecordNotification` allows an absolute link only when its host matches
+`config('app.url')`. Eleven listeners compose their links with `route()`, which takes
+its address from the request in flight, so every one of them refused a legitimate
+action whenever the application was reached by a different name than the one it
+believes it is published at. It passed every earlier check because every earlier
+check went through the ngrok tunnel, where the two hosts happened to agree. The suite
+agreed with itself for the same reason: `.env.testing` sets `APP_URL` to
+`http://127.0.0.1:8000` and the test client requests exactly that, so the refusal was
+unreachable.
+
+The guard now accepts the configured address or the host the request arrived on, and
+the scheme is not part of the decision because `toLocalPath` discards it before the
+value is stored, so it cannot reach the column either way. A third host is still
+refused, and a test asserts that a spoofed `Host` header still yields a path.
+
+### A second real fault: the author could not see what they published
+
+An instructor publishes an announcement to their course. Enrolled students receive it
+and can open it. The instructor's own list showed only the two platform
+announcements, so they could not read it, and had no list to withdraw it from.
+
+`AnnouncementPolicy::view` has always allowed the author and the instructor who owns
+the course. `Announcement::scopeVisibleTo` joined only through an enrollment. The
+controller's own comment says the two must be one rule, so this was a query narrower
+than the policy it claims to mirror rather than a new feature, and the two claims
+were added to the query. `AnnouncementTest` now asserts the list and the policy agree
+for every combination of reader and announcement, so a clause added to one side alone
+is caught rather than shipped. The administrator's view is unchanged, which is what
+was asked for: platform notices only.
+
+### The harness, which was wrong more often than the application
+
+Three rounds of probe failures were each the probe being wrong about the application,
+and each is now written into the probe at the point it matters:
+
+- The enrol route is POST only, so asking it for a form returns 405 with nothing in
+  it, and posting the token from that page is a 419 rather than a reading.
+- A course cannot be told free from paid on the catalog page. It has the same enrol
+  form either way, and the difference only appears as a redirect to a checkout.
+- A quiz submits to its own `.../submit` page, not to the attempt. A selector looking
+  for anything mentioning the attempt finds the read only page and posts to a GET.
+- Answers are named after the question id (`answers[8]`), not by position, and a `q`
+  field sits beside them.
+- A thread's reply posts to the conversation itself, while close, reopen and archive
+  post beside it and match the same search.
+- A certificate number is four groups and lives on the certificate, not on the list.
+
+The probe also used to enroll a student on every run, so a second run read a different
+application from the first and a failure could not be told apart from a change
+somebody else made. It now reads the account's real state first and accepts either
+state where the application deliberately offers one of two: a completed lesson
+withdraws its control, a sat quiz withdraws its start form, and a course thread that
+exists withdraws the form that would have created a duplicate.
+
+### Where it ended
+
+- Accounts and role separation: 31 of 31 checks, all five signing in, landing on the
+  right workspace, and refused the other two.
+- Workflows: 38 of 38, including a real enrollment, a lesson completed, a quiz sat
+  and graded at 100%, a message sent into a thread the instructor can see, and a
+  certificate opened by its holder.
+- Suite: 1713 tests, 7567 assertions. Pint 391 files. `composer audit` clean. 106
+  routes.
+- No password appears in any tracked file, and the account file is outside the
+  repository.
+
+### The state the demonstration now walks in with
+
+Kept as it is, since each account carries one story: Joren is enrolled with nothing
+started, Justine is two lessons and two attempts in with a paid course waiting at a
+checkout, and Garmino has two courses finished and two certificates.

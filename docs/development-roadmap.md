@@ -93,7 +93,7 @@ Use a vertical slice whenever possible.
 Example:
 
 ```text
-Registration → login → Student dashboard
+Registration â†’ login â†’ Student dashboard
 ```
 
 A vertical slice proves the full path from browser input to database record and back.
@@ -104,13 +104,13 @@ Every feature and phase must follow this cycle:
 
 ```text
 Data gathering
-→ Create or update ERD and flowcharts
-→ Develop
-→ Build
-→ Test
-→ Find bugs
-→ Fix
-→ Test again
+â†’ Create or update ERD and flowcharts
+â†’ Develop
+â†’ Build
+â†’ Test
+â†’ Find bugs
+â†’ Fix
+â†’ Test again
 ```
 
 Required evidence for each cycle:
@@ -131,7 +131,7 @@ Required evidence for each cycle:
 Document every feature using:
 
 ```text
-Input → Process → Output
+Input â†’ Process â†’ Output
 ```
 
 **Input**
@@ -592,7 +592,7 @@ flowchart TD
 Bugs found and fixed during this phase:
 
 - The local owner name needed quoting in `.env`.
-- Fortify’s default unknown-email reset response exposed account state, so the project now uses a safe generic response.
+- Fortifyâ€™s default unknown-email reset response exposed account state, so the project now uses a safe generic response.
 - The owner command test initially reused the real local secret path, so the test now uses a unique temporary path outside the repository.
 - The password-change middleware initially allowed the page route but not its POST route, so the gate now permits both password-change endpoints.
 - Registration normalization initially assumed name and email keys existed, so missing-field validation now returns errors instead of a server error.
@@ -1159,7 +1159,7 @@ flowchart TD
 **Output**
 
 - Ordered Module, Lesson, and Learning Material records
-- Course → Module → Lesson → Material relationships
+- Course â†’ Module â†’ Lesson â†’ Material relationships
 - No public curriculum route
 - No upload or private download behavior
 - No enrollment or payment record
@@ -1190,7 +1190,7 @@ flowchart TD
   - Verify: focused migration and model tests.
 
 - [x] Task 4: Add Module and Lesson factories and relationships
-  - Acceptance: factories create valid parent-scoped records; Course → Module → Lesson relationships resolve correctly.
+  - Acceptance: factories create valid parent-scoped records; Course â†’ Module â†’ Lesson relationships resolve correctly.
   - Verify: focused factory and relationship tests.
 
 - [x] Task 5: Add failing Learning Material tests
@@ -1209,7 +1209,7 @@ flowchart TD
 
 - Added `ContentStatus` and the Module and Lesson migrations.
 - Enforced positive, parent-scoped positions and Lesson slug uniqueness.
-- Added Module and Lesson models with Course → Module → Lesson relationships.
+- Added Module and Lesson models with Course â†’ Module â†’ Lesson relationships.
 - Added Module and Lesson factories with safe draft defaults.
 - Added server-owned field mass-assignment tests.
 - The full suite passes 70 tests and 279 assertions.
@@ -3360,8 +3360,8 @@ platform. So the write seam refused to store the notice for a course
 announcement, with `announcement belongs to a course, so a course is required`.
 
 That is the same shape as the `NEW_MESSAGE` split in slice 8: a scope rule
-written from a plausible assumption rather than from the plan, and the seam —
-working exactly as designed — refusing to write the row. The correction is
+written from a plausible assumption rather than from the plan, and the seam â€”
+working exactly as designed â€” refusing to write the row. The correction is
 recorded in `docs/messaging-plan.md`.
 
 ### A design decision worth stating
@@ -3747,7 +3747,7 @@ Also, from the same review pass:
   Renamed to "Latest changes" and "Account and role changes". Nothing was
   removed: the mixed feed is chronological and the three categorised panels
   below it are not, so it answers a question they do not.
-- "1 instructors · 1 administrators" on the Students tile. The count and its
+- "1 instructors Â· 1 administrators" on the Students tile. The count and its
   noun were two fixed strings.
 
 ## 42. The topbar: what the reference asked for, and what the data allowed
@@ -4042,3 +4042,36 @@ value changes.
   renamed text file refused as a PDF.
 - Six role crossings, all refused. A wrong password refused, without saying which
   half was wrong. Odd addresses answered without leaking a stack trace.
+
+## Demonstration accounts, and two faults found by using them
+
+Date: September 29, 2026
+
+### Input
+
+Five accounts with fixed names, addresses, roles and passwords, a clean account
+list, and proof through the application's own authentication that each one works and
+is kept apart from the others.
+
+### Process
+
+Inspect what each address already carries before touching it, put the two deletions
+that hold data to the user, then apply the list through a tool that takes its
+passwords from a file outside the repository and never prints one. Verify by signing
+in over HTTP as each account and asking the running application which pages it will
+serve, then walk the demonstration workflows each role would perform.
+
+### Output
+
+- `tools/prepare-demo-accounts.php` applies the list and retires what it supersedes.
+  It refuses an account file inside the repository, checks every entry before writing
+  any, refuses to retire an account that owns courses or authored a quiz, and will
+  not correct a role from a data file.
+- Five accounts, correct names, roles, addresses and passwords, all active and
+  verified, all signing in and landing on their own workspace.
+- The author now sees the announcements they published, which the policy always
+  allowed and the list never showed.
+- A notice is no longer refused for carrying the host the request arrived on, which
+  was returning HTTP 500 on eleven listeners whenever the application was reached by
+  any name other than the one it believes it is published at.
+- 1713 tests, 7567 assertions. Pint 391 files. `composer audit` clean. 106 routes.
