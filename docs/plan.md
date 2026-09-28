@@ -889,12 +889,9 @@ V1 does not include:
 - Assignment submissions
 - Submission grading
 - Gradebook
-- Announcements
-- Notifications
 - Forums
 - Discussions
 - Live classes
-- Direct messaging
 - Public certificate verification
 - Public dashboards
 - Direct video uploads
@@ -904,6 +901,36 @@ V1 does not include:
 - Advanced analytics
 
 New domains require approved requirements and documentation changes.
+
+### 17.1 Approved V2 additions
+
+Three items were excluded from V1 above and are now approved as an addition.
+The requirements source is
+`docs/Messaging, Notifications, Announcements, and Automation system.md`, and
+the implementation plan is `docs/messaging-plan.md`. Approved 27 September 2026.
+
+| Item | Why it moved | Boundary |
+| --- | --- | --- |
+| Notifications | Required by the communication system, and driven by learning events the application already detects | In-app only. No email, SMS, or push |
+| Announcements | Required for course and platform communication | Publish on creation. Scheduled and drafted publishing is deferred |
+| Direct messaging | Required for student and instructor course communication, and for user to administrator support threads | Scoped to course enrollment and to support reports. No group threads, no attachments |
+
+The following stay excluded. They are named here because the requirements
+document that approved the items above also discusses them, and leaving them
+unlisted would make a later reader assume they were merely forgotten:
+
+- Assignments, assignment submissions, and submission grading remain excluded.
+  The application has no assignment domain and the requirements document does
+  not ask for one to be built. Notification types that depend on them are not
+  created. Assessment notifications are produced by the existing automatic quiz
+  grading, which is reused unchanged.
+- Gradebook remains excluded.
+- Email, SMS, and web push delivery remains excluded.
+- Scheduled or drafted announcement publishing remains excluded.
+- Live classes, forums, and discussions remain excluded.
+- Live chat, websockets, and message polling remain excluded. The application is
+  server-rendered with no client data layer, so messaging is an ordinary form
+  post rather than a live channel.
 
 ## 18. Acceptance criteria
 

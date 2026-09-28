@@ -221,7 +221,7 @@ Every protected mutation repeats authorization inside the server workflow. Middl
 | GET | `/register` | Student registration | Guest |
 | POST | `/register` | Create Student account | Guest |
 | GET | `/forgot-password` | Request password reset | Guest |
-| POST | `/forgot-password` | Send reset instructions | Guest |
+| POST | `/forgot-password` | Send reset instructions. One answer either way: `SafePasswordResetLinkResponse` serves both of the package response contracts, so the form cannot reveal which addresses have an account | Guest |
 | GET | `/reset-password/{token}` | Reset form | Valid reset token |
 | POST | `/reset-password` | Save new password | Valid reset token |
 | GET | `/email/verify` | Email verification notice | Authenticated |
@@ -277,6 +277,29 @@ Phase 5B assigns positions, status, parent IDs, and Lesson slugs on the server. 
 | PATCH | `/instructor/courses/{course}/modules/{module}/lessons/{lesson}` | Save Lesson metadata | Instructor role and LessonPolicy |
 
 Phase 5C keeps owner, parent, position, status, currency, and slugs server-owned. It does not add delete, archive, reorder, publish, upload, download, enrollment, or payment routes.
+
+
+### Instructor learner progress route
+
+| Method | URI | Purpose | Protection |
+|---|---|---|---|
+| GET | `/instructor/courses/{course}/students` | Every learner on an owned Course, with the progress they have made | Instructor role and `CoursePolicy::viewStudents` |
+
+This is the page behind the "Student progress" item in `plan.md` L785. It sits on
+the Course rather than on the dashboard because a dashboard can only carry a
+panel's worth of learners, and "how is this cohort doing" is a question about one
+Course.
+
+`viewStudents` answers the same as `view` today, and is asked for by name so the
+rule is written in one place: a later change to who may open a Course does not
+silently change who may read its roster. Administration is not teaching, so an
+Administrator does not gain it, which is the line `ConversationPolicy` draws for
+course messages.
+
+The progress percentage is produced by `ProgressCalculator`, the same place
+every other figure on every page comes from, so the number a teacher sees and the
+number a learner sees are produced by one piece of code. Cancelled and unpaid
+enrollments are not listed, because they have not started.
 
 ### Phase 5D Learning Material routes
 
@@ -2123,6 +2146,52 @@ Use the database queue during early development. Select a production queue drive
 39. Keep Learning Material storage paths on private metadata only.
 40. Never treat a storage path as public access.
 41. Validate external material URLs and uploaded files only in later approved actions.
+42. Never set `serve` on a private disk. Deliver stored files through a policy-checked controller instead.
+43. Refuse every request when the document root is the project directory rather than `public/`.
+44. Refuse dotfiles, environment files, private keys, and project files in `public/.htaccess`, while allowing `/.well-known/`.
+45. Ignore every `.env*` file in Git except the committed example templates.
+46. Ignore private key, certificate, and credential file patterns in Git.
+47. Remove `X-Powered-By` at the SAPI level, not only from the response object.
+48. Rate-limit account actions such as registration and password reset separately from ordinary writes.
+49. Treat a PayMongo signature mismatch as diagnosable: log digest prefixes and byte counts, never the secret or the raw body.
+50. Prove each boundary with a test that sends a real request, rather than by reading the source and assuming it works.
+
+### Boundary placement
+
+A control only works at the layer that owns the decision. Placing one in the wrong
+layer gives a false sense of safety, so the placement is decided per boundary and
+is worth stating.
+
+| Boundary | Enforced by | Why there and not elsewhere |
+| --- | --- | --- |
+| Which role may open a page | `EnsureUserHasRole` and Policies | The interface already hides what a role may not do. A hidden control is a usability decision, and it is defeated by typing an address. |
+| Who may read a stored file | `MaterialDownloadController` plus `LearningMaterialPolicy` | Only the application knows who is entitled. The download looks the record up by id, checks the owning course, lesson, and enrollment, and never takes a path from the request. |
+| Whether the project folder is being served | The web server document root, with `RefuseWhenProjectIsWebReadable` as the tripwire | A wrongly rooted server hands out `.env` and `.git` without the framework running, so no middleware can intercept it. The only in-application response is to refuse and say so, which turns a silent disclosure into a reported fault. |
+| Whether a static file is exposed | `public/.htaccess` | Static files never reach a controller. The rules also stop working if `AllowOverride` is `None`, which is why the document root check exists as well. |
+| Whether a secret is committed | `.gitignore` | A committed secret is reachable to everyone who clones, and removing the file later does not remove it from history. |
+| Whether a request is a human or a script | `ThrottleWrites`, decided by HTTP verb | Naming a throttle on each route is the version that gets forgotten, and the forgotten one is the endpoint a script finds. Deciding by verb covers a new write route on the day it is added. |
+| Whether a webhook event is genuine | `PayMongoApiClient::verifySignature` | The endpoint is public by design, so the signature is the only thing that makes a request trustworthy. It is checked against the raw body, because re-encoding a parsed payload changes the bytes. |
+| Whether a page may be cached publicly | Response cache headers | Every page carries a CSRF meta token, so a shared-cacheable response could hand one person's session token to another. |
+
+### What a control does not do
+
+Naming these keeps a later change from quietly removing a guarantee that is
+still being assumed.
+
+- `ThrottleWrites` bounds load. It is not the duplicate-submission defence; the
+  database constraints and the row locks in the actions are.
+- A rate limit never decides who may do what, and never returns another person's
+  data.
+- `ConfineDebugOutput` decides on the presence of a forwarded header rather than
+  its value, so a client cannot claim to be loopback by sending the header.
+- The debug page is confined on a direct loopback request with no proxy headers.
+  A tunnel is a proxy, so anything arriving through one loses it.
+- `RefuseWhenProjectIsWebReadable` cannot close the exposure it detects. It makes
+  the fault visible. Only the document root setting fixes it.
+- Uploaded material is stored under a generated path on a private disk, and its
+  MIME type is sniffed from the file rather than read from the request. The
+  browser's filename and content type are never trusted, and the client filename
+  is never used as a path.
 
 ## 21. Error handling and observability
 
@@ -2223,6 +2292,61 @@ Test critical paths:
 - Light and dark themes
 - Keyboard access
 
+### Security tests
+
+These exist because the interface already hides what a role may not do. A hidden
+control is a usability decision, and it is defeated by typing an address, so
+each test signs in as the wrong role or the wrong owner and requires the server
+to refuse.
+
+`tests/Feature/SecurityBoundaryTest.php`
+
+- Student, instructor, and administrator each refused the other two areas
+- Guest redirected to sign in rather than shown a dashboard
+- A refused role change leaves the role unchanged
+- A request cannot promote itself through a field the model does not fill
+- Instructor refused a course they do not own
+- Another student's enrollment, certificate, and progress refused
+- A material refused through a mismatched course and lesson address
+- `.env`, `.env.*`, `.git/config`, logs, and project files refused over HTTP
+- The document root enumerated for dotfiles and secrets
+- A private disk with no serving route, and a root outside the document root
+- Environment values and provider keys absent from responses and the JS bundle
+- Path traversal refused in parent, encoded, double-encoded, backslash, null
+  byte, and absolute form
+- Stored content escaped, and the escaped form asserted so dropping content is
+  not mistaken for encoding it
+- Session cookie `HttpOnly` and `SameSite`, and `Secure` when the public address
+  is https
+- Security headers present and a policy without `unsafe-inline` or `unsafe-eval`
+
+`tests/Feature/Hardening/SecretExposureTest.php`
+
+- Secret and credential filenames ignored by Git, and the example template not
+- The real `.env` neither tracked nor present in any commit
+- No credential-shaped string in shipped code, and any such string confined to
+  the test suite and the documentation
+- `.htaccess` refuses dotfiles, keeps `/.well-known/`, and refuses project and
+  credential files
+- No dotfile in the document root that the rule would reject
+
+`tests/Feature/Hardening/AbuseLimitTest.php`
+
+- Registration, password reset, and sign in are refused within their allowance
+- The account limit is tighter than the general write ceiling
+- A real person's ordinary sequence of requests still succeeds
+- A refusal carries `Retry-After` and tells the person to wait
+- Reads are not throttled
+
+`tests/Feature/Hardening/DocumentRootTripwireTest.php`
+
+- A correct document root does not trip
+- A document root at or above the project directory refuses every request
+- The refusal names the fault and leaks no path
+- An unknown, empty, or unresolvable document root is left alone
+- A separator difference and a similarly named sibling are not treated as the
+  same directory
+
 ## 23. Quality gates
 
 A change is not complete until:
@@ -2235,6 +2359,85 @@ A change is not complete until:
 - Migrations run on a clean test database
 - No secret or `.env` file is committed
 - Documentation matches the implemented behavior
+
+### Query budget
+
+A page that is comfortable with five rows and slow with five hundred has been
+designed against a demonstration dataset. The dashboards and reports are held to
+a fixed query count, and `tests/Feature/DashboardQueryBudgetTest.php` fails if a
+count starts growing with the data.
+
+| Path | Queries | Grows with data |
+| --- | --- | --- |
+| Student dashboard counters | 6 | no |
+| Student average progress | 3 | no |
+| Student agenda | 5 | no |
+| Instructor counters | 8 | no |
+| Administrator counters | 11 | no |
+| Administrator enrollment report, 50 rows | 4 | no |
+| Catalog index, paginated | 3 | no |
+
+Two of these were linear before and are the reason the table exists. Progress
+was read once per enrollment, so a student with twelve courses cost thirty seven
+queries, and the administrator report read the newest payment once per row, so
+fifty rows cost fifty three. Both are now single batched reads.
+
+`php tools/verify-large-dataset.php` seeds a few hundred courses and reports the
+same table against real data. `php tools/verify-cleanup.php` removes what it
+made, identifying its own rows by having no modules and no lessons.
+
+### Concurrency
+
+Two requests arriving together is normal, not exceptional: a double click, a
+browser retry, two tabs, a replayed delivery. The rules are:
+
+- **The database decides uniqueness, not the application.** Every rule that must
+  hold exactly once has a unique constraint: one enrollment per student and
+  course, one progress row per enrollment and lesson, one attempt per number, one
+  active certificate per enrollment, one payment per idempotency key, one
+  delivery per provider event.
+- **Anything derived from a read is written in one statement.** A read followed
+  by a write has a window between them. Lesson progress is written with an
+  upsert, and a visit record only advances a lesson that is not started, so no
+  request can turn a completion back into an unfinished lesson.
+- **Anything that allocates a position locks its parent row first.**
+  `App\Support\Position` is the only way a position is handed out. It refuses to
+  run outside a transaction, because a lock released immediately protects
+  nothing.
+- **Payment and quiz submission take an explicit row lock** before reading what
+  they are about to change.
+
+`tests/Feature/DuplicateRequestTest.php` holds the behaviour of the second
+request. `php tools/verify-concurrency.php` proves the lock itself, using two
+genuinely separate database sessions: it holds the parent row lock on one
+connection and shows the application connection is refused on the other. That
+tool is not a test because it deliberately holds a lock open and lets it time
+out.
+
+### Load limits
+
+`App\Http\Middleware\ThrottleWrites` bounds writes and ignores reads. Deciding by
+verb rather than per route means a new write route is covered the moment it is
+added, and a dashboard refresh is never refused for something that costs one
+indexed read. The counter is keyed to the account where there is one, so one
+person behind a shared address cannot exhaust everyone else's allowance.
+
+This is a backstop, not the duplicate submission defence, and it never decides
+who may do what. A refused request leaves no partial row, and a refusal says how
+long to wait and carries a `Retry-After` header.
+
+### Loading states
+
+A placeholder is shaped by the same tokens as the content it stands in for, never
+by a hand measured box, because a hand drawn placeholder is right on the day it
+is written and wrong within one release. `components/skeleton.blade.php` uses the
+type scale and the muted surface, so it cannot drift from a card, and its pulse
+stops entirely for reduced motion.
+
+A submit button disables itself while its request is in flight, and reopens on a
+timer, on `pageshow`, and on `online`. A request that hangs must not leave the
+control permanently dead, because that makes the action impossible and the page
+looks broken rather than busy.
 
 ## 24. Deployment architecture
 

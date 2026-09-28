@@ -1,4 +1,4 @@
-# Project audit
+﻿# Project audit
 
 ## 1. Audit status
 
@@ -11,7 +11,7 @@ through Phase 15 is implemented, tested, and committed. The approved feature
 scope in `plan.md` is complete.
 
 The PayMongo integration has been confirmed against the live test API, and the
-whole paid path has been walked in a browser: a ₱100 GCash test payment settled,
+whole paid path has been walked in a browser: a â‚±100 GCash test payment settled,
 the enrollment activated, the lesson was completed, and a certificate was
 issued. One real payment with live credentials is therefore no longer
 outstanding.
@@ -50,8 +50,8 @@ The application now contains the whole approved V1 scope. It does not contain de
 | `bootstrap/` | Laravel application bootstrap | Application source |
 | `config/` | Laravel, Fortify, local owner, and role authorization configuration | Application source |
 | `database/` | Framework, Phase 2 identity, Phase 3 activity-log, and Phase 4A Course migrations plus factories and empty business seeder | Application source |
-| `public/` | Public document root and compiled local assets | Generated assets are ignored |
-| `resources/` | Blade layouts, authentication/account/role/admin views, Tailwind CSS, and theme script | Application source |
+| `public/` | Public document root, compiled local assets, and the served brand mark | Generated assets are ignored |
+| `resources/` | Blade layouts, shared interface components, authentication/account/role/admin views, Tailwind CSS, shared theme script, and the source brand artwork | Application source |
 | `routes/` | Public, authentication, account, role, admin, and health route configuration | Application source |
 | `storage/` | Private local storage skeleton | Local runtime files are ignored |
 | `tests/` | Authentication, account, role, admin, owner-command, database, Phase 5A through Phase 5F UI feature tests, and Phase 6A through Phase 6D foundation and UI tests | Application source |
@@ -84,6 +84,9 @@ The following Phase 1 foundation files exist:
 - `.env.example`
 - `package.json` and `package-lock.json`
 - `phpunit.xml`
+- The source brand artwork in `resources/`
+- `public/images/brand/` derivatives, plus `public/favicon.png` and
+  `public/images/brand/touch-icon.png`
 
 The following Phase 1, Phase 2, Phase 3, and Phase 4A capabilities exist:
 
@@ -120,7 +123,7 @@ The following Phase 1, Phase 2, Phase 3, and Phase 4A capabilities exist:
 - `Course` model, Instructor relationship, and `CourseFactory`
 - `modules` and `lessons` curriculum tables with ordered parent-scoped constraints
 - `ContentStatus` enum
-- `Module` and `Lesson` models with Course â†’ Module â†’ Lesson relationships
+- `Module` and `Lesson` models with Course Ã¢â€ â€™ Module Ã¢â€ â€™ Lesson relationships
 - `ModuleFactory` and `LessonFactory`
 - `learning_materials` metadata table with Lesson and uploader relationships
 - `LearningMaterialType` enum
@@ -151,7 +154,11 @@ The following capabilities are not implemented yet:
 - Local-only owner bootstrap command
 - DPAPI-protected temporary password
 - Forced first-login password change
-- Public email verification through Laravel's log mailer
+- Public email verification and password reset through Laravel's SMTP transport,
+  sending from the Gmail account named in the local ignored `.env`
+- The test suite never touches that account: `phpunit.xml` pins
+  `MAIL_MAILER=array`, so a change to the local mail settings cannot reach a
+  test or send a real message
 - Own-profile editing for display name and bio
 - PayMongo public test key stored only in the local ignored `.env`
 - No payment package, route, table, checkout, or webhook
@@ -418,6 +425,17 @@ Rules:
 - Never copy its branding or assets without license review
 - Use it only as a visual and interaction reference
 
+The reference was used read-only for the interface system pass. It informed the
+shape of the authenticated shell, the sidebar and header proportions, the split
+authentication panel, and the role dashboard order. No file, class, bundle,
+style rule, or asset was copied, and nothing under `FOR_UI/` was written to
+during the pass. The mark now in the project is the project owner's own
+artwork from `resources/it-lms-logo-only.png`, not a reference asset.
+
+`FOR_UI/` is not tracked by Git, so "unchanged" cannot be proved by a diff.
+The evidence is that every file in the folder carries one identical
+extraction timestamp from an earlier bulk copy, and no file has a later one.
+
 ## 7. Project support state
 
 ### `.agents/`
@@ -569,6 +587,77 @@ These quality checks exist and all pass:
 | Phase 13 dashboards and reports | 449 | 1585 |
 | Phase 14 quality and accessibility | 450 | 1618 |
 | Phase 15 deployment and defense | 464 | 1665 |
+| Interface system pass | 639 | 2939 |
+| Performance and stability pass | 722 | 3423 |
+| Security audit and hardening pass | 813 | 3814 |
+| Adversarial QA and bug-hunting pass | 1424 | 6647 |
+| Messaging slice 1, notification core | 1471 | 6765 |
+| Shell layout and topbar pass | 1502 | 6879 |
+| Responsive sweep and target sizes | 1508 | 6888 |
+| Card alignment and component attributes | 1514 | 6898 |
+
+### Security audit
+
+A dedicated audit ran against the whole application rather than a single area.
+The standard applied was that every user-controlled input is hostile, every
+client-side check can be bypassed, and every sensitive resource is inaccessible
+unless explicitly authorized.
+
+Defects found and fixed:
+
+- The private disk had `serve => true`, which registered `GET` and `PUT` routes
+  reading and writing any path under `storage/app/private` for a request carrying
+  a relative signature. That signature is computed from `APP_KEY`, so the routes
+  turned a key leak from "forge a session" into "read and overwrite every stored
+  file, anonymously". Nothing in the application ever generated such a URL, so
+  `serve` is now `false` and both routes are gone.
+- `X-Powered-By: PHP/8.5.8` was published on every response. The middleware
+  removed the header from the Symfony response, but PHP's SAPI emits it before the
+  framework exists, so the removal never took effect. `header_remove()` is now
+  called at the SAPI level, and the durable server fix is tracked as a
+  `lms:check-production` failure.
+- `public/.htaccess` served any file present in the document root and had no
+  dotfile rule, so a `.env` or a `.git` directory copied there would have been
+  downloadable. Dotfiles, environment files, private keys, and project files are
+  now refused, with `/.well-known/` left alone so certificate validation keeps
+  working.
+- `.gitignore` enumerated `.env`, `.env.production`, `.env.testing`,
+  `.env.backup`, and `.env.*.local`, which left `.env.local`, `.env.development`,
+  `.env.staging`, and `.env.test` free to be committed. It also ignored no
+  certificate, private key, or credential file at all. The patterns are now
+  closed by default with the example templates re-admitted.
+- Registration and password reset were bounded only by the general write ceiling
+  of 60 a minute, which is 86,400 reset emails a day to one address. They now
+  share a 5-a-minute account allowance, and a test confirms an ordinary person's
+  requests still succeed.
+- The mail transport was `log` with the literal string `null` as both username
+  and password, so nothing had ever been sent and a Forgot Password submission
+  only ever wrote to `storage/logs/laravel.log`. Turning on real delivery
+  exposed two configuration traps that are silent by design: this mailer rejects
+  the old `tls` spelling outright, and an unquoted Gmail app password breaks the
+  whole environment file rather than just the mail settings, because dotenv
+  reads the spaces as a syntax error. `lms:check-production` now also refuses a
+  server whose `MAIL_FROM_ADDRESS` differs from the account it authenticates
+  as, which Gmail accepts and then discards.
+
+Confirmed sound and left alone, with the evidence recorded: no secret in Git
+history, `.env.example` free of issued credentials, private disk outside the
+document root with no `public/storage` link, generated upload paths with
+content-sniffed MIME types, raw-body HMAC webhook verification with
+constant-time comparison and mode-aware signature slots, digest-prefix-only
+signature logging, the debug page confined on direct loopback with no proxy
+headers, and a nonce-based policy with no `unsafe-inline`.
+
+The gap that no code can close is the local Apache document root. It points at
+`C:/xampp/htdocs` with `AllowOverride none`, so the whole project directory is
+web readable and the framework never runs for those requests. It is recorded in
+section 11 with the fix.
+
+Two of the project's own measurement tools were wrong before they were useful and
+were corrected rather than trusted: a route-listing tool reported that the write
+throttle was absent from routes it does cover, and the secret scan matched the
+test suite's own credential-shaped fixtures. Both were replaced by tests that
+drive real requests, which is the only thing that proves a control works.
 
 ### Browser audit
 
@@ -599,12 +688,107 @@ CI is implemented through the repository commands. A hosted continuous
 integration workflow is not configured, which is a deployment decision rather
 than a code gap.
 
+### Interface system pass
+
+The interface was reviewed and rebuilt against `docs/design.md`. The behaviour
+did not change, so no route, Policy, Action, or table was touched. What changed
+is the presentation layer, the shared wording, and the amount formatting.
+
+What the pass added:
+
+- The authenticated application shell that `design.md` section 7 requires and
+  the application was missing. Every signed in page now uses one sidebar, one
+  header, and one account menu, with an icon rail on tablet widths and an off
+  canvas drawer on a phone. The public site keeps its own layout, because a
+  guest has no workspace.
+- The approved brand mark, resampled from the source artwork in `resources/`
+  into size-matched derivatives in `public/images/brand/`, plus a favicon and a
+  touch icon, used in the shell, the header, the footer, the authentication
+  brand panel, and the certificate. `design.md` section 26 previously recorded
+  that no mark was approved.
+- A component library under `resources/views/components/`, so a token change
+  reaches every page and no Blade file carries a long class list. The list is
+  in `design.md` section 28.
+- Three support classes that own interface wording and shape:
+  `App\Support\Money`, `App\Support\StatusLabel`, and
+  `App\Support\Navigation`. None of them authorizes anything.
+- A split authentication layout with a brand panel, matching the reference
+  direction, on the same flat treatment as the rest of the interface.
+- Real dashboard panels for the three roles, so each page follows the order in
+  `design.md` sections 10, 11, and 12 instead of a bare count grid.
+
+Defects found and fixed by this pass:
+
+- The application shell was written without a document wrapper on the first
+  attempt, so authenticated pages rendered with no `<head>` and no stylesheet.
+  The shell is now a complete document.
+- The shell had no `@stack('scripts')` placeholder, so the payment return page
+  lost its polling script. The placeholder is required, not optional.
+- `Navigation` asked a Gate for an ability with a `null` subject. Gate resolves
+  a Policy from the model it is asked about, so every gated item silently
+  vanished from the navigation. The subject is now an empty model instance.
+- `Money::course()` treated a missing course type as a free course, so a
+  stored payment of `50000` minor units printed the word `Free` on the
+  Administrator report. A payment has no course type, so it is now formatted
+  with `Money::format()`.
+- Several pages divided minor units by 100 and printed a float, and the public
+  course page printed `PHP 0.00` for a free course. All amounts now go through
+  `Money`.
+- `StudentPaymentState` built a pay button label with a float division and the
+  `PHP` prefix. It now uses `Money`, so the button reads `Pay â‚±499.00`.
+- `StudentPaymentState` used a `danger` tone that no design token defines, so
+  a failed payment badge had no colour. The tone is now `error`.
+- Two tone names in the student course list, `bg-accent-surface` and
+  `text-danger-text`, matched no token and rendered nothing.
+- The home page still carried a "Foundation preview" label and a "Not available
+  yet" panel that claimed quizzes, certificates, and payments were unbuilt.
+  All three are built. The page now describes what exists.
+- An authoring form was marked with its full class list in a test, so any
+  restyle failed a behavioural test. The forms now carry a `data-form-context`
+  hook and the test asserts that.
+
+A copy and link audit then walked 25 pages as the right role and checked every
+anchor. Thirty five internal links resolved, no page carried an inline style
+attribute, no inline script lacked its nonce, no page used a colour that no
+token defines, and no page overflowed horizontally at 390 pixels.
+
+A second, concurrent work session on the same repository also touched the
+interface. It added `resources/views/components/course-card.blade.php`, a
+public course card built on the `Money`, `StatusLabel`, `x-badge`, `x-icon`,
+and `x-btn` primitives this pass introduced, plus a legal terms page and a
+hit-area test. The public catalog now renders that one shared card rather than a
+second, near-identical one, so the catalog and the workspace cannot drift apart.
+Because two sessions edit the same files, the most likely places to conflict are
+the two layouts, the catalog views, and the course list views.
+
+Running two test processes at once against the single `lms_test` database
+produces false failures. During this pass the same suite returned 632 passed,
+then 2, 11, and 532 failed across four runs, with a different set of failures
+each time, and every failing file passed when run on its own. The failures were
+always `Table 'lms_test.<name>' doesn't exist` or `already exists`, which is one
+process rebuilding the schema under another.
+
 An assisted browser review of Phase 6C ran a 17-check HTTP walkthrough and measured six pages at 390 and 1440 pixels through headless Edge. It found three defects: the shared header could not shrink below about 440 pixels, the catalog filter buttons could not wrap, and the footer still claimed enrollment and lesson content were unavailable. All three are fixed, and no page overflows after the fixes. Every temporary review record and account was deleted and the database was verified back to its original state.
 
-A second review used the connected OpenCode desktop browser and walked the flow by typing and clicking. Authorization held in a real browser: an unenrolled Student and an Instructor both received `Access denied` with no lesson text. The console was clean and no request failed. That pass found five stale messages that still described enrollment and lesson content as unavailable, plus two Instructor pages that still claimed publication was disabled. All seven are corrected, and a copy audit re-checked every remaining "not available yet" string against the built behavior. A reviewer question about unpublishing an already enrolled Course exposed a dead link on the `My courses` card, which linked to a public address that returns `404` after unpublishing. The card now explains that the Course is no longer published, keeps the enrollment, and shows no link. Two tests now lock the unpublish rule: the enrollment record survives and the public pages stay closed. A first Phase 6B run returned `403` instead of `404` for an unpublished Course, because the Policy check ran before the publication check; the controller now hides an unpublished Course first, and the Policy keeps role and publication as defense in depth. One Phase 6B test also used a verified factory user while expecting an unverified redirect, and the factory state was corrected. The first Phase 6A test expected a database error for an unknown enrollment status, but the enum cast rejects it first, so the coverage was split into a model-level and a database-level check. Four earlier guards that blocked the `enrollments` table were updated to check the still-absent `lesson_progress` table. A first Phase 5F test file had one mangled closing bracket that broke parsing, and it was repaired before the tests ran. A first catalog query used an unqualified `status` column, which MySQL rejected as ambiguous once the lesson count subquery joined Modules; the columns are now qualified. Four earlier guards that blocked the public catalog route were updated to check still-absent enrollment, payment, and student routes. A first Phase 5E run exposed a missing `Course::lessons()` relation, so a `HasManyThrough` relation was added and retested. One earlier Phase 5C guard that blocked the publish route was updated to block the future archive route instead, because publishing is now approved. Human review found the material row said `Position 1` while Module and Lesson rows said `Module 1` and `Lesson 1`; the label and the tutorial wording were corrected and a test now pins the `Material 1` wording. A first Phase 5D run exposed dropped controller imports that returned HTTP 500; the controller was rewritten in one pass and retested. Two earlier guards that blocked the material store route were updated to block the future upload route instead, because material metadata authoring is now approved. A first Phase 5C run exposed controller imports that were dropped while the methods were added, which returned HTTP 500; the imports were restored and retested. The free and paid price rules moved into `App\Support\CoursePrice` so create and update cannot drift apart. A first Phase 5B run exposed a missing policy import that returned HTTP 500 instead of creating a Module, and the import was fixed and retested. A first Phase 5B form check also showed that a failed lesson form lost its typed text, so the failed form now keeps its input and reopens. The first dependency pass found a missing PHP Fileinfo extension, which was enabled and retested. The Administrator user list now marks unverified accounts and explains that role changes unlock after email verification; the server-side rejection remains enforced. The shared authenticated header now exposes a visible Sign out form; the missing Administrator logout control was reproduced and fixed. A later cached-config run exposed a test database selection defect, which was fixed and retested. A first-run Blade check exposed an unconditional Vite manifest dependency, which was fixed and retested. A local `.env` owner-name value needed quoting and was fixed before the Phase 2 tests passed. Fortifyâ€™s default unknown-email reset response initially exposed account state, so a safe generic response was added and retested. The password-change middleware initially allowed the GET route but not the POST route, and the fix was retested. The owner test initially reused the real local secret path, so it now uses a unique temporary path. Registration normalization initially assumed missing fields were present, so missing-field validation now returns safe errors. Edge fallback review confirmed responsive auth layout, theme persistence, and keyboard-safe controls. The Phase 3 Administrator table initially caused mobile page overflow; stacked mobile cards fixed it and the 390px browser check was rerun. The first Phase 4A factory test exposed an array value in a text column; the factory now joins sentences before insertion. The Phase 5A Course list initially used an unsupported nested `withCount` relation; the controller now uses a supported Module count and the browser page passes.
+A second review used the connected OpenCode desktop browser and walked the flow by typing and clicking. Authorization held in a real browser: an unenrolled Student and an Instructor both received `Access denied` with no lesson text. The console was clean and no request failed. That pass found five stale messages that still described enrollment and lesson content as unavailable, plus two Instructor pages that still claimed publication was disabled. All seven are corrected, and a copy audit re-checked every remaining "not available yet" string against the built behavior. A reviewer question about unpublishing an already enrolled Course exposed a dead link on the `My courses` card, which linked to a public address that returns `404` after unpublishing. The card now explains that the Course is no longer published, keeps the enrollment, and shows no link. Two tests now lock the unpublish rule: the enrollment record survives and the public pages stay closed. A first Phase 6B run returned `403` instead of `404` for an unpublished Course, because the Policy check ran before the publication check; the controller now hides an unpublished Course first, and the Policy keeps role and publication as defense in depth. One Phase 6B test also used a verified factory user while expecting an unverified redirect, and the factory state was corrected. The first Phase 6A test expected a database error for an unknown enrollment status, but the enum cast rejects it first, so the coverage was split into a model-level and a database-level check. Four earlier guards that blocked the `enrollments` table were updated to check the still-absent `lesson_progress` table. A first Phase 5F test file had one mangled closing bracket that broke parsing, and it was repaired before the tests ran. A first catalog query used an unqualified `status` column, which MySQL rejected as ambiguous once the lesson count subquery joined Modules; the columns are now qualified. Four earlier guards that blocked the public catalog route were updated to check still-absent enrollment, payment, and student routes. A first Phase 5E run exposed a missing `Course::lessons()` relation, so a `HasManyThrough` relation was added and retested. One earlier Phase 5C guard that blocked the publish route was updated to block the future archive route instead, because publishing is now approved. Human review found the material row said `Position 1` while Module and Lesson rows said `Module 1` and `Lesson 1`; the label and the tutorial wording were corrected and a test now pins the `Material 1` wording. A first Phase 5D run exposed dropped controller imports that returned HTTP 500; the controller was rewritten in one pass and retested. Two earlier guards that blocked the material store route were updated to block the future upload route instead, because material metadata authoring is now approved. A first Phase 5C run exposed controller imports that were dropped while the methods were added, which returned HTTP 500; the imports were restored and retested. The free and paid price rules moved into `App\Support\CoursePrice` so create and update cannot drift apart. A first Phase 5B run exposed a missing policy import that returned HTTP 500 instead of creating a Module, and the import was fixed and retested. A first Phase 5B form check also showed that a failed lesson form lost its typed text, so the failed form now keeps its input and reopens. The first dependency pass found a missing PHP Fileinfo extension, which was enabled and retested. The Administrator user list now marks unverified accounts and explains that role changes unlock after email verification; the server-side rejection remains enforced. The shared authenticated header now exposes a visible Sign out form; the missing Administrator logout control was reproduced and fixed. A later cached-config run exposed a test database selection defect, which was fixed and retested. A first-run Blade check exposed an unconditional Vite manifest dependency, which was fixed and retested. A local `.env` owner-name value needed quoting and was fixed before the Phase 2 tests passed. FortifyÃ¢â‚¬â„¢s default unknown-email reset response initially exposed account state, so a safe generic response was added and retested. That hardening covered only the failure branch. When real mail was switched on, the success branch was found still returning the package default sentence about having emailed a reset link, so a stranger could type addresses into the public form and learn who studies here. `SafePasswordResetLinkResponse` now implements both of the package response contracts, so the two branches cannot differ, and the sentence lives in one constant instead of two classes. The test that claimed to cover this only asserted that a session key was present, which is true of both branches; it now compares the actual message text for both a browser and a JSON caller. The password-change middleware initially allowed the GET route but not the POST route, and the fix was retested. The owner test initially reused the real local secret path, so it now uses a unique temporary path. Registration normalization initially assumed missing fields were present, so missing-field validation now returns safe errors. Edge fallback review confirmed responsive auth layout, theme persistence, and keyboard-safe controls. The Phase 3 Administrator table initially caused mobile page overflow; stacked mobile cards fixed it and the 390px browser check was rerun. The first Phase 4A factory test exposed an array value in a text column; the factory now joins sentences before insertion. The Phase 5A Course list initially used an unsupported nested `withCount` relation; the controller now uses a supported Module count and the browser page passes.
 
 CI and production deployment checks are implemented. The pre-flight command is
 `php artisan lms:check-production`, and the runbook is `docs/deployment.md`.
+
+### Shared test database hazard
+
+`php artisan test` and `php artisan migrate` both target the single `lms_test`
+database. Two processes running at once collide there, and the symptom is
+misleading: one process reports `Table 'sessions' already exists` or
+`Table 'lms_test.payments' doesn't exist` while the other is mid migration.
+Both are schema races, not application defects.
+
+This was observed twice during the interface system pass, and both times the
+suite passed cleanly once a single process held the database. Required
+response: run one test process at a time, and if a migration error appears
+while something else is running, rebuild with
+`php artisan migrate:fresh --env=testing --force` and re-run before treating
+it as a defect.
 
 ## 11. Main risks
 
@@ -615,6 +799,7 @@ CI and production deployment checks are implemented. The pre-flight command is
 | Payment replay | Duplicate enrollment or access | Unique events, transactions, and idempotency |
 | Unsafe uploads | Private file exposure | Private disks, generated paths, and validation |
 | Large documentation | Confusion | Use the documentation map and one source of truth per concern |
+| Shared test database | False test failures | One test process at a time; rebuild the test schema when a migration error appears |
 | Scope growth | Delayed V1 | Enforce the V1 exclusion list |
 | Reference copying | Security and license problems | Use concepts only and require clear permission |
 | Payment assumptions | Broken integration | Check current official PayMongo documentation |
@@ -625,6 +810,10 @@ CI and production deployment checks are implemented. The pre-flight command is
 | Fake provider passing while PayMongo breaks | False confidence | A real test-API call found a request type bug the fake missed, so a real call is a release gate |
 | Local PHP has no CA bundle | Every outbound HTTPS call fails with `cURL error 60` | Install a CA bundle and point `curl.cainfo` at it. Never disable certificate verification to work around it |
 | No antivirus on uploads | Stored malware | The allow-list stops executables and scripts only |
+| Web server rooted at the project directory | `.env`, `.git`, `storage/`, and the source are downloadable, and no in-application control can intercept it because the request never reaches the framework | **Open on this machine.** The local Apache document root is `C:/xampp/htdocs` with `AllowOverride none`. Point it at `lms-project/public`. `RefuseWhenProjectIsWebReadable` now refuses every request while the fault lasts, and `lms:check-production --document-root=` reports it, but neither can close the exposure |
+| `AllowOverride none` on this machine | `public/.htaccess` is ignored entirely, so its dotfile and credential rules protect nothing here | Covered by fixing the document root above. The rules remain correct and necessary for any host that does honour them |
+| `expose_php = On` | The exact PHP version is published to anyone who asks | **Open.** Add `expose_php=Off` to `php.ini`. `SecurityHeaders` now calls `header_remove()` so the application stops it at the SAPI level, and `lms:check-production` fails on it, but the durable fix is the server setting |
+| Private disk was set to `serve => true` | An `APP_KEY` leak would have become anonymous read and write of every stored file over HTTP, through routes that the application never used | Resolved. `serve` is now `false`, both `/storage/{path}` routes are gone, and a test asserts they do not return |
 
 ## 12. Current approved decisions
 
@@ -668,7 +857,7 @@ V1 is complete. Every phase through Phase 15 is built, tested, and committed.
 The remaining work is not a coding phase. Hosting is settled: the project runs
 on an ngrok tunnel and is not being deployed to a host.
 
-The payment step that used to sit here is done. A ₱100 GCash test payment was
+The payment step that used to sit here is done. A â‚±100 GCash test payment was
 placed through the hosted checkout, the webhook settled it, the enrollment
 activated, the lesson was completed, and a certificate was issued. The whole
 chain was also walked against the live test API for QR Ph and PayMaya, on both
@@ -701,3 +890,5 @@ The honest gaps are written down in `docs/defense.md` rather than hidden. The
 largest is that the hosted checkout page shows the provider account holder's name
 in its corner. It cannot be changed through the API, which was verified against
 the live test API, and a support request is open.
+
+

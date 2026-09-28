@@ -8,6 +8,74 @@ Phase 0 is approved. Phase 1 is complete. Phase 2, Phase 3, Phase 4A, Phase 4B, 
 
 Do not skip directly to payment processing or dashboard polish.
 
+## 1A. Interface system pass
+
+This is a presentation pass, not a phase. It adds no feature, no route, no
+table, and no business rule, so it is recorded here rather than as a phase.
+
+### Why
+
+`docs/design.md` was approved before most of the interface was built, and the
+result had drifted from it. Three gaps mattered:
+
+- Section 7 requires one authenticated shell for all three roles. Every
+  authenticated page was using the public header, so a Student, an Instructor,
+  and an Administrator each navigated by a row of links in a public bar.
+- Section 26 recorded that no mark was approved, and the product had no mark in
+  any layout. The owner has now supplied one.
+- Several pages carried wording that was true when written and false now, most
+  visibly the home page claiming quizzes, certificates, and payments were
+  unbuilt.
+
+### Scope
+
+- The authenticated shell, its sidebar, its account menu, and the mobile
+  drawer, as `design.md` section 7 describes.
+- The brand mark, in every approved placement.
+- A shared component set, so one token change reaches every page.
+- Consistent status wording, money formatting, and page hierarchy across the
+  public, Student, Instructor, and Administrator areas.
+- Removal of stale copy that contradicts a built feature.
+
+### Explicitly out of scope
+
+- No route, controller, Policy, Action, migration, or dependency change.
+- No new feature, no new navigation destination, no new data page.
+- No change to authorization, and no reliance on hidden links for protection.
+
+### Input, process, and output
+
+**Input**
+
+- `docs/design.md` as the source of truth for the visual direction
+- `FOR_UI/adminator (FOR USER DASHBOARD)` read only, for shell and layout shape
+- The source brand artwork in `resources/` as the approved mark
+- The existing routes, Policies, and report service as the only data sources
+
+**Process**
+
+- Read every existing view and note the drift against `design.md`
+- Build the shell, the components, and the wording helpers
+- Restyle the pages without changing a control, a label a test relies on, or a
+  value the server owns
+- Replace stale copy with what the application actually does
+- Format every amount through one class, so minor units are never printed raw
+
+**Output**
+
+- One shell for all three roles, with a sidebar, a header, and an account menu
+- The mark in the shell, the header, the footer, authentication, and the
+  certificate
+- A component library and three wording helpers
+- Rewritten page copy, with the home page describing built features
+- 639 tests and 2939 assertions passing, plus Pint, both audits, the build,
+  the route list, and the cache builds
+
+### Evidence
+
+Recorded in `docs/project-audit.md` under "Interface system pass", including
+the eleven defects the pass found and fixed.
+
 ## 2. Delivery rules
 
 Every implementation slice must:
@@ -2888,7 +2956,183 @@ All fifteen phases are implemented, tested, and connected-browser reviewed. The
 PayMongo integration is verified against the live test API. The paid course to
 certificate chain is verified end to end in a browser with a real test payment.
 
-There is no open implementation task. What remains is project work, not code:
+### 34.1 Approved V2 work: messaging, notifications, announcements, automation
+
+Approved 27 September 2026, recorded in `docs/plan.md` section 17.1. The
+requirements source is
+`docs/Messaging, Notifications, Announcements, and Automation system.md` and the
+plan is `docs/messaging-plan.md`. The plan is the authority for scope; this
+section records only the build order.
+
+Fourteen vertical slices. Each one is independently shippable, ends green on
+the full suite, and has its tests written before it is called done.
+
+| # | Slice | Depends on | Status |
+| --- | --- | --- | --- |
+| 1 | `notification-core`: the table, the type vocabulary, the write seam, the dedup key, mark read | none | **done 27 September 2026** |
+| 2 | `domain-events`: event classes and the `afterCommit` dispatch points, emitting nothing yet | none | **done 28 September 2026** |
+| 3 | `automation`, lessons: `LESSON_STARTED`, `LESSON_COMPLETED`, the completion recheck | 2 | **done 28 September 2026** |
+| 4 | `automation`, quizzes: started, completed, passed, failed, retake required | 2 | **done 28 September 2026** |
+| 5 | `automation`, certificates and enrollment: enrollment, course completed, certificate available, revoked, reissued | 2 | **done 28 September 2026** |
+| 6 | batched authorization on `LessonPolicy`: the whole access composite in one query | none | **done 28 September 2026** |
+| 7 | `automation`, content fan-out: `COURSE_CONTENT_PUBLISHED` for lessons, modules, materials, course publish | 1, 6 | **done 28 September 2026, with the dispatch point moved** |
+| 8 | `conversations`: shared thread and message storage, and thread authorization | 1 | **done 28 September 2026** |
+| 9 | `course-messaging`: enrollment-scoped student and instructor threads | 8, 2 | **done 28 September 2026, minus the `LessonSent` automation from slice 2** |
+| 10 | `support-threads`: user and administrator report threads | 8, 2 | **done 28 September 2026, minus the automation from slice 2** |
+| 11 | `announcements`: course and platform announcements with fan-out | 1, 7 | **done 28 September 2026** |
+| 12 | `notification-centre`: badge, list, mark read, mark all read | 1 | **done 28 September 2026** |
+| 13 | `messaging-ui`: thread list, thread view, composer | 9, 10 | **done 28 September 2026** |
+| 14 | `dashboard-integration`: the three dashboards and the two navigation items | all | **partly done 28 September 2026: the Messages nav entry and the topbar control, which slice 8 unblocked** |
+
+Slice 1, as built. `notifications` carries a `NotificationType` enum column, a
+unique index on `(user_id, dedup_key)` that makes idempotency the database's
+property rather than a check, and indexes on `(user_id, id)` and
+`(user_id, read_at)`. `NotificationType` holds seventeen values: fifteen kept
+from the specification and two added, with the six that cannot be produced
+documented as absent rather than reserved. `RecordNotification` is the only
+writer; it refuses a blank or overlong title, a course-scoped type with no
+course, a platform type pinned to a course, a blank or overlong dedup key, and
+any link that is not a path inside this application. A link is stored only when
+the caller can show the recipient may follow it, and is dropped otherwise while
+the notice is still delivered. `NotificationPolicy` gives read state to the
+recipient alone, with no administrator override. Forty seven tests.
+
+The plan's test list for this module asks that "a recipient with no access
+receives nothing". What slice 1 can prove is the half it owns: the seam never
+stores a link the recipient would be refused. Suppressing a notice entirely is
+the fan-out's job and is proven with the batched composite in slices 6 and 7.
+
+### 34.3 The shell pass, and the one topbar control deliberately absent
+
+The topbar was rebuilt to the reference layout on 27 September 2026: a derived
+breadcrumb trail on the left, and search, notifications, theme and account on the
+right. Four faults were found and fixed while doing it, none of which a feature
+test could see.
+
+- **The drawer showed bare icons.** The label was `hidden xl:inline`, correct for
+  the icon rail and wrong for the drawer, which exists only below lg and never
+  reaches xl. It is now one element, `lg:sr-only xl:not-sr-only`.
+- **The sidebar did not stick.** `overflow-x-hidden` on the html and the body
+  made the document a scroll container, so `position: sticky` anchored to
+  something that never scrolled. Measured at 1095px of drift on a 1200px scroll.
+  Changed to `overflow-x-clip`, which clips without creating a scroll container.
+- **The theme control appeared three times**, so a phone showed the same switch
+  twice. It is in the topbar at every width now.
+- **The sidebar marked nothing as the current page on any sub page.** Each item
+  declares its area with a pattern such as `admin.users.*`, and the comparison
+  was exact, so only the dashboard matched. `aria-current` came from the same
+  answer, so assistive technology was told nothing either. `Navigation::isCurrent`
+  now matches with `Str::is`.
+
+**Messages is the one reference control that is absent, on purpose.** The
+conversation, message and participant tables are slice 8 and are not built, so a
+message button would be a control that goes nowhere. The project's own
+`IconGeometryTest` refuses a configured icon that no view renders, which is the
+correct behaviour and the reason the `message-square` drawing is not in
+`config/icons.php`. Adding the control means building slice 8 first.
+
+Thirty five tests cover the shell and the topbar. The rendered measurements live
+in three probes: `check-nav-labels.mjs`, `check-sticky.mjs` and `shoot-topbar.mjs`.
+
+### 34.4 The responsive sweep, and three faults in the measurement
+
+A twelve width sweep over six pages found no horizontal overflow, nothing past
+the right edge and no clipped text. It did find two targets below the WCAG 2.5.8
+AA minimum of 24 by 24 pixels, both now on `row-target`, which has a 24 pixel
+floor and grows to 44 on a coarse pointer:
+
+- a breadcrumb crumb at 20, added with the topbar trail
+- an activity agenda label link at 19, which had been there all along
+
+It also found that the brand name was never actually hidden on a narrow phone.
+The rule was `min-[400px]:inline`, and the logo component's own name element
+carries `display: block`. Both are display utilities of equal weight, so which
+one applies is decided by their order in the stylesheet and not by the order they
+appear in the attribute. A minimum width variant can never switch a `block` off.
+`max-[399px]:hidden` is emitted inside a media query after the base utilities and
+does win. Verified at 320, 390 and 500.
+
+**Three of the sweep's own reports were faults in the sweep.** Recorded because
+each one looked like an application bug and would have sent the next person
+chasing the wrong file.
+
+- It reported every screen reader only element in the document as clipped text.
+  Clipped to a single pixel is what `sr-only` does on purpose.
+- It measured a card at 317 pixels on a 320 pixel screen, 29 pixels too wide.
+  `setEmitTouchEventsForMouse` alongside touch emulation widens the layout
+  viewport past the width being measured. A second tool measuring the same card
+  without that call agreed at 288, which is 320 less the page padding, and the
+  screenshot at 320 showed nothing cut off.
+- It reported a brand name clipped eleven minutes after that same name had been
+  measured working, because it requests each URL twelve times in a row and the
+  browser served the first response's HTML for the rest of the run.
+
+A layout sweep that measures a cached page, or a screen reader only span, or a
+viewport it has quietly widened, is worse than no sweep, because it produces
+confident numbers about things that are fine. `Network.setCacheDisabled` is now
+on, and the exclusions are in the probe.
+
+### 34.5 Components that discarded the class a caller passed them
+
+Two cards side by side had their headings at different distances from their own
+borders, and the measurement said **1 pixel against 21**. The bar chart and the
+activity agenda put their heading, description and list straight inside
+`<section class="card">` instead of using `card-header` and `card-body` like
+every other card. Both now use the shared pieces, so the alignment is structural
+rather than a padding somebody has to remember.
+
+Chasing that led somewhere worse. `card` is only a border and a background; the
+padding comes from whatever is inside it. Several components were writing their
+class literally on the root element, which means Blade's attribute bag was thrown
+away and **every class a caller passed was a silent no-op**:
+
+| Component | Call sites affected | What was lost |
+| --- | --- | --- |
+| `form-errors` | 28 | the margin, so every error summary in the application sat flush against the field above it |
+| `bar-chart`, `activity-agenda` | 6 | `lg:col-span-2`, which is why all three dashboards had a dead third column |
+| `status` | several | `shrink-0` on a badge |
+| `footer`, `error-state`, `course-card`, `bar-row` | none today | nothing, yet |
+
+Nothing warned and nothing threw. The view reads as though the spacing is
+handled, and the rendered page disagrees, which is the worst kind of layout fault
+to review. All of them merge the bag now. `ComponentAttributesTest` walks every
+component, fails on one that discards a caller class, and separately proves the
+single remaining exemption, `skeleton`, is still justified rather than taken on
+trust.
+
+Measured after the fix, at 1440: grid of three 343 pixel columns, chart 711,
+agenda 343, dead space **0**. Every card heading on the page sits 21 pixels in
+and 17 pixels down.
+
+One report is still open and is not a fault: the admin activity table is a
+full bleed card with no inset, which is deliberate, because `table-head th` and
+`table-cell` carry their own `px-4 py-3` and `px-4 py-4`. A table that scrolled
+sideways inside an inset card would be worse.
+
+Slices 1 and 2 are independent of each other and can run in parallel. Slices 3
+to 5 are independent of each other. Slice 6 must land before slice 7. Slices 8
+to 11 can run in parallel once 1 and 2 are in.
+
+Slices 1 to 7 deliver the automation with **no user-facing surface**, which is
+deliberate: the events are correct and quiet before anything is rendered, so a
+mistake in a listener is not also a visible mistake.
+
+Two measurements are already recorded and they change the design, so they are
+not to be re-derived:
+
+- `StudentCourseAccess::allows()` costs one query per call, so a per-student
+  fan-out is an N+1. It also ignores role and account status, so the batched
+  sibling belongs on `LessonPolicy`, which holds the composite rule. Reproduce
+  with `php tools/verify-fanout-query.php`.
+- The web document root must point at `public/`. While it points at the project
+  directory, `.git` and `.env` are downloadable and the application refuses to
+  answer at all. `php artisan lms:check-production --document-root=<path>`
+  reports it.
+
+### 34.2 Remaining project work
+
+There is no other open implementation task. What remains is project work, not
+code:
 
 - **Defense preparation.** Section 30 lists the deliverables. Diagrams, the
   authorization matrix, and the security checklist are the gaps.
@@ -2927,3 +3171,729 @@ contents. Every one is an environment setting that is correct to leave off
 locally. None is a code defect, and the command is not expected to pass until
 the application is deployed.
 
+---
+
+## 35. Messaging slices 8, 9, 10, 13 and 14, and what measuring them found
+
+28 September 2026. Slices 8, 9, 10, 13 and 14 of `docs/messaging-plan.md` are
+built. Slices 2 to 7 and 11 are not: there are still no domain events, so nothing
+automatically notifies anybody when a lesson is completed or a quiz is passed,
+and there are no announcements. The bell fills from messaging only.
+
+**Input.** A student, an instructor who owns a course they share, and an
+administrator.
+
+**Process.** `conversations`, `conversation_participants` and
+`conversation_messages`; `ConversationPolicy`; `StartConversation`, `PostMessage`
+and `ThreadState`; the thread list, the thread view, the composer, the support
+form, the administration support list, and the topbar control.
+
+**Output.** Eleven routes. A student can open one thread per instructor per
+course and message in it. Any active account can raise a support request, and
+only the person who raised it and an administrator can read it. A thread is
+reachable only by its participants, which is the whole of the authorization.
+
+### The three answers the plan calls out, and how they are enforced
+
+- An instructor cannot read a support thread, including about a student they
+  teach, because they are not a participant. That falls out of the rule rather
+  than needing a special case.
+- An administrator cannot post into a course thread, and cannot read one they are
+  not in. Administration is not teaching.
+- A student cannot reach a thread for a course they are not enrolled in, because
+  the course is resolved through the enrollment and the policy checks it.
+
+### Defects the tests found
+
+| Defect | Why it was not obvious |
+| --- | --- |
+| The unique key was `(kind, course_id, requester_id)` | A thread belongs to a *pair*, so when both people reached out the two rows differed in `requester_id` and both passed. Replaced with `thread_key`, the pair in a fixed order. |
+| Unread was `created_at > last_read_at` | Every timestamp column here holds whole seconds, so a message sent in the same second as the read was dropped. Replaced with `last_read_message_id`. |
+| One `NEW_MESSAGE` type for both kinds of thread | A course thread has a course and a support one does not, and the seam checks the type, so one kind became unwritable. Split into `COURSE_MESSAGE` and `SUPPORT_MESSAGE`. |
+| Support threads keyed on the requester | Two separate problems from one person collapsed into one thread. Each raise is now its own thread. |
+| `sharedCourse` asked for a course taught by the counterpart | An instructor reaching out to a student silently got nothing. Resolved by role. |
+| The composer had no textarea | `x-form-field` renders its own control and takes no slot, so a textarea passed as a child was discarded and a one-line input appeared. |
+| The thread row read "messages, people" | The `withCount` aliases did not match the attributes the view asked for, so both counts were null. |
+| The topbar message control navigated instead of opening | It was a link, so the click opened the panel and navigated away. Now a button, like the bell. |
+| The message list cost two queries per thread | `unreadCountFor()` was called per row from the view. Now one grouped aggregate. |
+| The controller computed a total unread the view never read | A query discarded on every page load. The total is now summed from the grouped map, for free. |
+| Two `use` statements were silently absent | PHP resolves an unimported short name against the file's namespace and only fails at the point of use, so this read as a broken feature. `tools/check-imports.php` and `ImportIntegrityTest` now make it a build failure. |
+
+### Three lessons worth keeping
+
+- **`withMax` takes two arguments in this Laravel version.** A third is accepted
+  without complaint and then ignored, so asking for an alias looks like it worked
+  and quietly does not. `Conversation::getLatestMessageIdAttribute` hides it.
+- **A test that posts to a route never loads the page a person types on.** Every
+  one of the composer, count and button defects above passed a green suite. They
+  were found by measuring the rendered page, which is why
+  `TopbarMessagingCostTest` reads the query log and the messaging tests assert on
+  markup.
+- **A cost test that cannot fail is worse than none.** The first version of
+  `TopbarMessagingCostTest` allowed a tolerance of four queries and built one
+  thread, so it passed with a deliberate N+1 in place. The fixture is now six
+  threads against an allowance of six, and the N+1 was reintroduced on purpose to
+  confirm the test fails before it was removed.
+
+## 36. Automation, slices 2 to 7
+
+28 September 2026. Nine event classes, nine listeners and one provider. The
+system now tells people what happened without anybody asking it to.
+
+**Input.** A real Action completing a real transaction.
+
+**Process.** `StudentEnrolled`, `LessonStarted`, `LessonCompleted`, `QuizStarted`,
+`QuizGraded`, `CourseCompleted`, `CertificateRevoked`, `CertificateReissued` and
+`ContentPublished`, each implementing `ShouldDispatchAfterCommit`. Listeners in
+`app/Listeners/Notifications/`, wired by a hand written map in
+`App\Providers\EventServiceProvider` rather than by type hints.
+
+**Output.** A student is told when they pass or fail a quiz, and offered a retake
+only when the quiz's own `max_attempts` says one is left. An instructor is told
+when somebody enrolls, opens a lesson, finishes a lesson, starts a quiz or submits
+one. Everybody in a course is told when it is published. A student is told when
+their certificate is withdrawn, with the reason recorded by the administrator,
+and when a replacement is issued.
+
+### Four decisions worth stating
+
+**The after-commit rule lives on the event class, not at the call site.** Written
+as `->afterCommit()` on the dispatch it is one thing every caller has to
+remember, and the first caller that forgets produces a notification about a
+transaction that then rolled back. Implementing `ShouldDispatchAfterCommit` makes
+it impossible to dispatch one of these early, and a test asserts the interface on
+all nine rather than trusting nine call sites.
+
+**`LessonStarted` and `LessonCompleted` are dispatched from the affected row
+count, not from the call.** `RecordLessonActivity` advances the progress row from
+not started to in progress and captures how many rows that touched. Zero means
+the lesson was already open, so nothing fires. Opening the same lesson five times
+produces one notice because there is no second state change to hang a notice on,
+which is a fact about the database rather than a counter or a time window.
+
+**`MarkLessonComplete` reads the previous status first.** Its `upsert` reports
+affected rows, not whether the status changed, and it deliberately rewrites the
+status every time so a second press still repairs a half written row. That is
+right for the write and the wrong signal for a notice. Two requests arriving
+together can both read not-complete, and the unique index on the dedup key is
+the backstop, exactly as it is for the quiz rows.
+
+**`QuizGraded` is one event, not four.** The outcome is on the attempt, so a
+separate event per outcome would mean several dispatch sites in one Action and
+several chances to dispatch the wrong pair. The listener reads the graded result
+and decides what is true, so the pass, fail and retake notices cannot disagree
+about the same submission.
+
+### Three defects the tests found
+
+| Defect | Why it was not obvious |
+| --- | --- |
+| `LESSON_STARTED` and `LESSON_COMPLETED` shared one dedup key | The key is unique per recipient, so a student who opened a lesson and then finished it produced the second row against the first and the instructor heard about one of the two. The plan gives that key for both. |
+| `QUIZ_STARTED` and `QUIZ_COMPLETED` shared one dedup key | Same shape, and the plan gives `attempt:{id}` for both. An instructor would never learn that a quiz was handed in. |
+| The content fan-out dispatched from the `Create*` actions | All three write a draft, and a draft lesson answers 403, so the notice would point at a page that refuses. Nothing in the application publishes an individual lesson, so this would have announced something permanently invisible. The dispatch moved to `PublishCourse`, and the plan records why. |
+
+### The two plan amendments
+
+Both are recorded in `docs/messaging-plan.md` where the plan states them, with the
+measurement that forced them: the deduplicated keys above, and the content
+fan-out's dispatch point.
+
+### A pre-existing fault this work uncovered
+
+`use RefreshDatabase` had been stripped from a test file by the same mechanism
+that strips imports. A test class without it **commits every row it writes**, so
+its enrollments leaked into the 88 tests that ran after it in the webhook suite,
+with counts of active enrollments that grew by a few on every run and a total
+failure count that moved with execution order. Nothing in any failing test pointed
+at the cause; it took bisecting the suite to pairs.
+
+`tools/check-imports.php` now also fails on any test class that writes to the
+database and applies no isolation trait, next to the missing-import check. The
+rule was verified by removing the trait and confirming the scanner notices, and
+narrowed once after it produced a false positive on a test that only resolves a
+middleware out of the container. A guard that cries wolf is worse than none.
+
+This was worth recording because the failure looked like a broken feature. It
+was a broken test.
+
+---
+
+## 37. Announcements, slice 11
+
+28 September 2026. The last unbuilt slice of `docs/messaging-plan.md`.
+
+**Input.** An instructor with a course, or an administrator with the platform.
+
+**Process.** The `announcements` table, `AnnouncementScope`, `Announcement`,
+`AnnouncementPolicy`, `PublishAnnouncement`, `AnnouncementPublished`,
+`NotifyRecipientsOfAnnouncement`, `AnnouncementController`, two views, three new
+routes and two publish routes inside the role groups that already exist.
+
+**Output.** An instructor publishes to their own course; the students of that
+course are told. An administrator publishes to everybody; every active account is
+told. Anybody may read the announcements addressed to them, and only those.
+
+### The four answers the plan asks for, and how each is enforced
+
+- **A course announcement reaches only enrolled students.** The recipient set is
+  `LessonPolicy::authorizedStudentIdsForCourse`, the same batched query the
+  content fan-out uses, so cancelled and pending-payment enrollments are absent
+  and the cost is one query rather than one per student.
+- **A platform announcement reaches active accounts only.** One query over the
+  profile, filtered on account status. Students, instructors and administrators
+  alike, because an instructor who is never told about a maintenance window finds
+  out the hard way.
+- **A suspended account receives nothing.** The batched query checks account
+  status, which `StudentCourseAccess::allows()` does not, and the platform query
+  filters on it directly.
+- **Read state is the notification's read state.** There is no `read_at` on the
+  table, and a test asserts the column does not exist. Opening an announcement
+  marks that person's notice read, and `Announcement::isReadBy` asks the notice
+  rather than storing an answer, so the two cannot disagree.
+
+### One defect the tests caught, and it is the second of its kind
+
+`ANNOUNCEMENT` was marked as **not** course scoped in slice 1, on the reasoning
+that both announcement types were platform notices. The plan's own automation
+matrix lists `ANNOUNCEMENT` as course scope and `SYSTEM_ANNOUNCEMENT` as
+platform. So the write seam refused to store the notice for a course
+announcement, with `announcement belongs to a course, so a course is required`.
+
+That is the same shape as the `NEW_MESSAGE` split in slice 8: a scope rule
+written from a plausible assumption rather than from the plan, and the seam —
+working exactly as designed — refusing to write the row. The correction is
+recorded in `docs/messaging-plan.md`.
+
+### A design decision worth stating
+
+**The publish abilities are called directly rather than through Gate.** The
+`AnnouncementPolicy` is registered against `Announcement`, but `createCourse`
+takes a `Course` and `createPlatform` takes nothing. Gate would look for
+`CoursePolicy::createCourse`, find nothing and refuse everybody. This is the same
+situation as `ConversationPolicy::startCourseThread`, and it is why the Action
+asks the Policy directly for those two and uses Gate for `view` and `delete`,
+which do have a model.
+
+### Where the plan was corrected
+
+Three places, each recorded in `docs/messaging-plan.md` beside what it states:
+the deduplicated keys, the content fan-out's dispatch point, and now the
+`ANNOUNCEMENT` scope.
+
+### Still open
+
+- Slice 14's dashboard work beyond the nav entry and the topbar control.
+- Analytics and statistics. The dashboards carry counts and one bar chart. Trends,
+  distributions and a reporting view are not built, and this roadmap does not
+  claim otherwise.
+
+## 38. Outgoing email, and the enumeration hole it uncovered
+
+### Input
+
+A request to confirm whether the mailer actually sends, and to use the
+Administrator's Gmail account over Gmail SMTP for system email. Two accounts
+also exchanged addresses as part of the same request.
+
+### Process
+
+The question "is the mailer configured" was answered by running the real code
+path rather than by reading the configuration. `tools/probe-mailer.php` calls
+the same password broker the Forgot Password form calls, and then reports the
+transport the framework actually resolved.
+
+The answer was no. `MAIL_MAILER=log` with the literal string `null` as both
+username and password means nothing had ever been sent: a reset link was being
+written to `storage/logs/laravel.log` and nowhere else. Turning delivery on is
+what found the rest.
+
+**The enumeration hole.** The broker answers `passwords.sent` for an address
+that has an account and `passwords.user` for one that does not. Fortify's
+controller turns that difference into two different response classes, and only
+the failure branch had been hardened. The success branch still returned the
+package's own "We have emailed your password reset link." So a stranger could
+type addresses into a public form and learn who studies here. The log mailer
+had been concealing it, because nobody was reading the log who was not already
+inside.
+
+`SafePasswordResetLinkResponse` now implements both response contracts, so the
+two branches are one class and the sentence is one constant. The test that
+claimed to cover this asserted only that a session key was present, which is
+true of both branches; it now compares the actual text for a browser and for a
+JSON caller.
+
+**Three configuration traps, all silent.** This mailer rejects the old `tls`
+spelling for `MAIL_SCHEME` outright. An unquoted Gmail app password breaks the
+whole environment file rather than just the mail settings, because dotenv reads
+the spaces as a syntax error, so every `artisan` command stops working. And
+`MAIL_FROM_ADDRESS` must be the account the server authenticates as: Gmail
+accepts the connection and then discards the message.
+
+`lms:check-production` gained a **Mail is able to send** check for the last of
+those, because a deployment that looks healthy and silently loses every password
+reset is the worst shape this can fail in. It passes without comment when
+`MAIL_MAILER=log`, because a server that sends nothing has made no claim.
+
+**The exchange of addresses broke three more things,** all found by looking
+rather than by a test failing:
+
+- `CourseCatalogSeeder` binds the catalog to one address and set the role of
+  whoever sits there to Instructor. With the addresses swapped, `db:seed` would
+  have demoted the Administrator, who would then have been unable to sign in to
+  the dashboard that would have reported it. The seeder now refuses rather than
+  reshaping an account, in the same spirit as `owner:bootstrap`, which had
+  already refused to promote a non-Administrator.
+- `tools/seed-topbar-demo.php` and `tools/seed-dashboard-demo.php` found their
+  three accounts by address. Both now find them by role, so an address can
+  never change who gets seeded.
+- `OWNER_EMAIL` in the local `.env` pointed at the account that had just become
+  an Instructor, which made `owner:bootstrap` refuse. Corrected to the
+  Administrator.
+
+### Output
+
+- Real delivery through Gmail SMTP, verified by `passwords.sent` over the
+  `smtp` transport with 0 bytes reaching the log. A wrong app password throws
+  rather than reporting a false success.
+- The Administrator is `jayzeeb65@gmail.com` and the Instructor is
+  `bautista.jayzee@ncst.edu.ph`, read back from the database, with no duplicate
+  address and no row left on a parking value.
+- One answer from the Forgot Password form either way, in one class.
+- The test suite is unaffected by any of this: `phpunit.xml` pins
+  `MAIL_MAILER=array`, so a change to the local mail settings cannot reach a
+  test or send a real message.
+- `plan.md` excludes email, SMS and push for **notifications**. That is
+  unchanged. This is the transport that password reset and email verification
+  already required; no notification was given a new delivery channel.
+
+## 39. Defect pass before the analytics slices
+
+### Input
+
+Fix the defects until the system is sound, before starting the analytics and
+statistics work that was the last unmet request.
+
+### Process
+
+Two questions, asked of the running application rather than the source, because
+a static reading cannot answer either: does every page render for every role, and
+does every control and identifier actually do what it appears to do.
+
+- `tools/probe-routes.php` walked all 48 readable routes as a guest and as each
+  of the three roles. 192 requests, each reporting a status and a query count.
+  Authorization and performance came out of the same walk.
+- A browser sweep opened every page those requests resolved to, at 1440 and at
+  390 pixels, as all four roles, collecting console errors, failed subresources,
+  overflow, dead controls, unlabelled fields, nameless controls, missing `alt`,
+  repeated identifiers, unsafe `target=_blank` and undersized tap targets.
+
+The route walk reported no 500s other than the one below, and role separation was
+correct on every route: 403 across the board where a role does not belong, and the
+two deliberate exceptions are documented in `ConversationPolicy`. No page needed
+more than 38 queries, so there was no N+1 to fix.
+
+### Output
+
+Three real defects fixed, each reproduced before it was fixed.
+
+1. `/user/confirm-password` returned 500 for every signed-in person. The route is
+   registered whenever any Fortify view is enabled, but the response it returns is
+   an interface bound only by `confirmPasswordView`, which nothing had called.
+2. The Instructor course outline repeated thirty element identifiers, so eighteen
+   of nineteen `title` fields were announced with the wrong label and a script
+   looking one up would edit the wrong row.
+3. A course card was clickable only on its title row. The stretched link resolved
+   against an inner positioning context rather than the card, so the overlay
+   covered 316 by 26 of a 358 by 314 card and the rest activated nothing.
+
+A fourth finding was a test, not the application: `CourseCardHitAreaTest` asserted
+that two elements inside the card were positioned, which is what caused defect 3.
+The intent behind it was sound and has been kept; the second positioning context
+was not needed for it.
+
+Two weaknesses in the tests written during this pass were found by removing the
+code under test and watching the test pass, and both are recorded in
+`docs/qa-session-log.md`. One accepted a redirect as a refusal, which a successful
+write also returns. The other used a reorder payload that validation turned away,
+so the case never reached the Policy.
+
+### Still open
+
+- Analytics and statistics. The dashboards carry counts and one bar chart. Trends,
+  distributions and a reporting view are not built, and this roadmap does not
+  claim otherwise.
+- The material upload, store and download path has never run against a real file
+  in the development database, so it is worth one end-to-end pass before release.
+
+## 40. The approved reporting gaps, and two breadcrumb defects on the way
+
+### Input
+
+Build the analytics the plan approves, and keep reviewing the completed slices
+for defects rather than only working on the new work.
+
+### Process
+
+The scope came from `plan.md` rather than from the roadmap, because the roadmap
+had drifted. `plan.md` L799 states that V1 reports include "real counts, tables,
+statuses, and simple course-level progress", and L801 rules out "advanced
+business intelligence, predictive analytics, or fabricated sample metrics". An
+earlier note in the roadmap described the missing work as "trends and
+distributions", which is not what the plan approves. The approved gaps were
+measured against the running pages rather than assumed.
+
+Two approved items were missing, and they were added:
+
+1. The enrollment report had a table and statuses but **no counts and no
+   course-level progress**, which L799 approves.
+2. The Instructor had a panel naming the learners furthest behind and a panel of
+   recent results, and **no view of a learner's progress at all**, which L785 lists
+   under the Instructor dashboard.
+
+Both are the kind of thing that is only findable by reading the plan's list
+against the built pages one item at a time.
+
+### Output
+
+**The report** gained a strip of four count tiles and a per-course progress table.
+The mean in each row is the mean of the per-enrollment percentages a learner
+sees on their own course page, read through `ProgressCalculator`, so the report
+and the course page cannot disagree. A course with nobody enrolled says so
+rather than showing a zero, because a zero reads as a failure.
+
+**The Instructor gained a learner list** at `/instructor/courses/{course}/students`,
+guarded by a new `viewStudents` ability. The policy is asked for that name rather
+than `view` even though the two answer the same today, so the rule is written in
+one place and a later change to who may open a Course does not silently change who
+may read its roster. It lives on the Course because a dashboard can only carry a
+panel's worth of learners, and "how is this cohort doing" is a question about one
+Course.
+
+Both were checked for a query count that does not grow with the data, and both
+guards were verified by breaking the code and watching the test fail: the report
+went from 10 queries to 45 with ten enrollments and 85 with thirty under a
+per-enrollment read, and the learner list from 10 to 26 and 66.
+
+### Two defects found in completed work, in `Navigation`
+
+Both were found by opening pages and reading the breadcrumb, and both affected
+pages nobody had opened since they were written.
+
+1. **Every page in a section announced itself as the section.** `pageLabel`
+   returned the label of whichever navigation item *matched* the current route.
+   The Instructor sidebar has one item, "My courses", whose match list covers
+   `instructor.courses.*`, so the course outline, the edit form, the module
+   editor, the lesson editor and the new learner list all ended in the same two
+   words. The last crumb carries `aria-current="page"`, so a screen reader
+   announced the reader as being on "My courses" whatever page they were on.
+
+2. **Every page in the Account group was announced as living under Announcements.**
+   The section crumb was taken from the first item of whatever group the page was
+   in. In the Learning, Teaching and Operations groups the first item is the
+   Dashboard, which really is a section index. In the Account group the first item
+   is Announcements, so `/account/profile` read "Learning workspace >
+   Announcements > Profile" and `/messages` was presented as living under
+   Announcements. Those are siblings in one group, not a parent and a child, so
+   the trail was sending somebody to a page that does not contain theirs.
+
+The fix names every page from a written list rather than from the navigation,
+because a route name headlined into words produces things like "Attempts Show",
+which is how a person finds out that a string was split on a full stop. Only the
+role's own Dashboard is treated as a section index now. Every page reads
+`Workspace > Dashboard > the page it is`.
+
+### Two test weaknesses found in the new tests
+
+- The first version of the report test asserted the word `Courses`, whose only
+  capitalised occurrence was a tile later removed for a layout reason, so it
+  failed for a reason that had nothing to do with the counts. It asserts the
+  labels as written now.
+- The first sabotage attempt at the learner list query guard reported a pass,
+  because the replacement had not actually matched and the file had been left
+  with a parse error. A sabotaged file that does not parse tests nothing. The
+  sabotage was redone as whole-statement replacements and linted before running,
+  and only then did it report 26 against 66.
+
+### Not done, and why
+
+`plan.md` rules out predictive analytics, advanced business intelligence and
+fabricated metrics for this release, so there is no time series, no forecast and
+no invented figure anywhere in this work. A "trend" line would have been the
+obvious thing to add and is the one thing the plan does not approve.
+
+## 41. The reference, and the bar chart that was not a bar chart
+
+### Input
+
+The school quiz platform at `qyzen.space` was supplied as a design and workflow
+reference for the three dashboards, with an explicit instruction not to copy it
+blindly and to keep the LMS's own architecture and design direction.
+
+### Process
+
+The screenshots were studied one at a time, alongside the three dashboards as
+they actually render. Two things came out of that, and they are unrelated.
+
+#### The reference, and what was taken from it
+
+Taken: the shape of a dashboard that has a consistent right rail, so the page
+has an anchor rather than alternating two thirds and one thirds; the idea that a
+card's facts belong in a definition list with a pinned action; a table cell that
+stacks the raw score over the percentage.
+
+Not taken, and the reason in each case:
+
+- **The donut chart for "Average by subject".** A donut encodes part of a whole.
+  Average by subject is not parts of a whole, and their chart had one subject in
+  it, so it drew a ring. Our horizontal bars are the correct form for a handful
+  of values that share one unit, and copying the donut would have made the
+  figures harder to read.
+- **The square icon controls in their stat tiles.** They look pressable and may
+  not be. That is decoration pretending to be an affordance.
+- **Their orange chips, their subject, section and term filters, and a topbar
+  with no search box.** Those are their domain and their choices.
+- **The calendar.** Not approved in `plan.md`, and `plan.md` L929 explicitly
+  excludes scheduled publishing, so it waits on the plan rather than on the
+  reference.
+
+#### The bar chart
+
+Reading the dashboards against the reference is what put a finger on the chart,
+because a chart of counts has to compare counts.
+
+**Every bar in every chart was drawn at one hundred percent.**
+
+The cause was the application's own content security policy. `style-src 'self'`
+forbids the `style` attribute, and the bar fill carried its width as
+`style="width: 42%"`. The browser discarded the declaration, the fill fell back
+to its natural width, and every bar drew full. The browser reported eight CSP
+violations on the Administrator dashboard and rendered the page anyway.
+
+So "Enrollments by state" showed three states holding nothing as three full bars
+in a different colour, and a chart of counts encoded no counts at all.
+
+The sibling `progress` component already avoided this, and its comment says so:
+it uses a native `<progress>` and a generated width class, precisely because
+"the value never depends on a percentage painted in an inline style, which the
+content security policy does not allow". The same rule had been applied to one
+component and not to the other.
+
+The fix reuses the arrangement that was already in the project. `progress-step-*`
+sets a custom property and a new `.bar-fill` rule reads it, so no inline style
+is involved and the two kinds of bar cannot drift apart.
+
+### A second fault underneath it
+
+With the widths correct, the chart was still wrong. A row supplying no maximum
+was scaled against **its own value**, so every non-zero bar was still full width:
+a course with two learners and a course with one learner drew as two identical
+bars. `bar-chart` now computes one scale for the whole chart, and a row may
+still pin its own maximum, which is how the student progress chart stays on a
+fixed 0 to 100 scale.
+
+Measured after the fix, on the Instructor dashboard:
+
+| Course | Learners | Bar |
+|---|---|---|
+| Web Development Fundamentals | 0 | 0% |
+| Introduction to Cybersecurity | 0 | 0% |
+| Programming Fundamentals with Python | 0 | 0% |
+| Computer Fundamentals and Digital Literacy | 1 | 50% |
+| Introduction to Information Technology | 2 | 100% |
+
+### Why the existing chart test did not catch it
+
+`DashboardChartTest` opens with a comment saying its tests are about "the two
+ways a chart of real numbers most often goes wrong: showing a full bar for a
+zero, and showing a grid of nothing on a system that has no data yet."
+
+The first of those was exactly right, and the test for it covered a system with
+**no data at all**, where a chart of four zeros is replaced by an empty state and
+nothing is drawn. It said nothing about a system that has data, which is the only
+case where the bars were wrong. The test pinned the symptom that was anticipated
+and therefore missed the mechanism that was present.
+
+The new tests are written the other way round: one forbids the inline style
+outright, so the mechanism cannot come back, and one asserts that a zero row and
+a full row are drawn differently, so the symptom cannot come back either.
+
+### Output
+
+| | before | after |
+|---|---|---|
+| Bars per chart | all full width | proportional |
+| CSP violations on the Administrator dashboard | 8 | 0 |
+| A chart of counts encoded | nothing | the counts |
+
+Also, from the same review pass:
+
+- The Student's activity feed had no lesson source, while its own docblock listed
+  "a lesson finished" among its events. A learner with 21 completed lessons saw
+  "Nothing has happened on your account yet" two panels below the count.
+- `tools/seed-dashboard-demo.php` created active enrollments without
+  `activated_at`, by passing `status` as a factory attribute override, which
+  replaces the state that sets the date with it. That is a row the application
+  cannot produce, and every panel reading real dates treated the learner as
+  having never started. Fixed at the source, and the two existing rows repaired
+  by a new idempotent tool.
+- The Continue Learning card badged a lesson "Completed" over a button reading
+  "Resume this lesson". The service was left alone, because offering a finished
+  lesson is deliberate and covered; only the wording and the badge colour were
+  wrong.
+- Dashboard content cards were stretched to the height of the tallest card in
+  their row, leaving about 230 pixels of empty panel under the Student's
+  progress and Continue Learning cards.
+- The Administrator dashboard had two panels both called "Recent activity".
+  Renamed to "Latest changes" and "Account and role changes". Nothing was
+  removed: the mixed feed is chronological and the three categorised panels
+  below it are not, so it answers a question they do not.
+- "1 instructors · 1 administrators" on the Students tile. The count and its
+  noun were two fixed strings.
+
+## 42. The topbar: what the reference asked for, and what the data allowed
+
+### Input
+
+The school quiz platform supplied as a reference for the notification panel, the
+chat panel, the avatar menu and the topbar interactions.
+
+### Process
+
+The reference was compared against the built topbar rather than described. Four
+things came out of it: two genuine gaps, one thing the application could not
+honestly copy, and one thing it already had.
+
+#### The message panel could not say what a thread was about
+
+It listed a course title and a time. Two threads on two courses looked identical
+apart from those two facts, and the only unread figure anywhere was the total on
+the button, so a reader holding five threads with three unread could not tell
+which three.
+
+Both facts needed were already on the model. `Conversation` had a `lastMessage`
+method and an `unreadCountFor` method, and neither was in the query the shell ran.
+The panel was not showing data the application could not produce. It was not
+asking for it.
+
+`lastMessage` was `messages()->orderByDesc('id')->first()`, a method with a body
+rather than a relation, so it could not be eager loaded and cost a query per
+thread. `ConversationController` carried a comment explaining that it had to fetch
+message counts separately to avoid the pattern. That was a workaround for a shape
+the model did not need to be in. It is a `HasOne` with `latestOfMany` now, and
+the workaround is gone from both places at once.
+
+#### The unread rule was written twice
+
+`ConversationController::unreadByThread` and the topbar's badge aggregate were
+separate queries expressing the same rule. Two expressions of one rule is how a
+badge and the page directly beneath it come to disagree about how many messages
+are unread.
+
+It is one method on the model now, `Conversation::unreadCountsFor`, taking an
+optional set of ids so a paginated list and a topbar badge can both use it. The
+messages page no longer has a private copy, and the badge total is the sum of the
+same map the panel reads, so the number on the button and the numbers in the list
+are one read of the same rows.
+
+#### A stored column that was never read
+
+`notifications.type` is an enum of eighteen values. It was written, filtered,
+counted, and rendered nowhere. Every notice arrived as a title, a body and a
+time, so "Exam moved to Friday", "Your certificate is ready" and "You have a new
+message" were three unlabelled sentences a reader had to sort by reading them.
+
+`StatusLabel` exists precisely to turn stored state into words, and it carries a
+list, `coveredEnums`, whose stated purpose is to force a new enum to decide how it
+reads. `NotificationType` was not on it. All eighteen now have written sentences
+and a tone, on the same page as every other status, and the list includes it.
+
+The sentences say what happened rather than naming the column. A learner who did
+not pass is told "Quiz not passed", not "Quiz failed". A retake is "Retake
+available", not "Retake required", because there is an action waiting and the
+other reads as a reprimand.
+
+#### What was not copied, and why
+
+**Who sent each notification.** The reference names a person on every row. This
+application cannot: the table has `user_id`, which is the recipient, and no
+column for whoever triggered the notice. Rendering a sender would mean a migration
+and an audit of every writer in the application. That is a change to the data
+model, not to a panel, and it is not something a screenshot should decide.
+
+**A right hand drawer.** Both reference panels are full height drawers. Ours are
+dropdowns, and they already close on Escape, on a click outside, and return focus
+to the button that opened them. Rebuilding the shell's interaction primitive on
+the strength of a screenshot would be a large change with no evidence of benefit.
+
+**All and Inbox tabs.** A filter over five rows in a dropdown. The full centre
+page has the whole history and no filter, which is a reasonable place for one.
+
+**Delete all.** There is no delete in this notification model. There is read and
+there is archive, and inventing a destructive action to match a screenshot would
+be the wrong kind of adaptation.
+
+**New message in the chat header.** A general compose button needs a rule for who
+may be messaged cold, and there is no approved one. Students reach an instructor
+through the course they are enrolled on, which is the rule the application
+actually enforces.
+
+**The theme toggle inside the avatar menu.** We have one, and it is a topbar
+button rather than something buried two menus deep.
+
+### The cost, measured rather than argued
+
+The topbar is on every signed in page, and `TopbarMessagingCostTest` pins its
+conversation queries. The preview is not free, so it was measured on all three
+dashboards:
+
+| | before | after |
+|---|---|---|
+| student dashboard | 42 | 43 |
+| administrator dashboard | 38 | 39 |
+| instructor dashboard | 32 | 33 |
+
+Exactly one query, for the whole panel, on every page. That is the price of a
+message panel that says what was said.
+
+Two things were dropped to keep it at one. The author's name is not loaded in the
+dropdown: it is worth a query on the message list, where there is room and the
+reader is choosing a thread on purpose, and it is not worth a query on every page
+of the application for a five row shortcut.
+
+The message list page allowance moved from six conversation queries to seven. The
+test says a seventh "has to say why", so `tools/probe-message-page-queries.php`
+prints the actual statements and the seven are listed in the test. The
+authoritative assertion is the one that the cost does not move with the amount of
+data, and that still holds.
+
+One attempt to remove even that seventh was made and reverted: registering the
+view composer for the message list as well as the shell, so the page could read
+the badge's map instead of computing its own. The layout renders inside the child
+view, so a composer listed for both fires twice, and the page went from seven
+conversation queries to nine. That is recorded in the provider rather than left
+as a mystery, because the next person will try it.
+
+### A test that was wrong, and was corrected rather than satisfied
+
+The first version of the notification test asserted that no label equals the
+mechanical fallback, reasoning that a coincidence would prove no decision had been
+made. It failed on `course_completed`, where the sentence actually written for it
+is also what the fallback produces.
+
+That is not a defect in the sentence. "Course completed" is what the rest of the
+application calls that state, and a deliberately different wording would have been
+worse English to satisfy a test. The test was replaced with an explicit table of
+all eighteen readings, which is the form the design system actually wants: one
+agreed sentence per stored state, recorded where the agreement is kept.
+
+### Output
+
+- The message panel shows what was said, and how many of that thread's messages
+  are unread.
+- Every notification says what kind of notice it is, in the panel and on the
+  centre page, in the same words as every other status in the application.
+- The unread rule exists once, on the model, so the badge and the list cannot
+  disagree.
+- `lastMessage` is a relation, so both the panel and the list can load it in one
+  query instead of one each.
+- A dead accessor and a dead import removed with the code that needed them.

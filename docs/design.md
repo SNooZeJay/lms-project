@@ -248,6 +248,11 @@ Desktop
 └─────────────────────────────────────────────┘
 ```
 
+The shell lives in `resources/views/layouts/app-shell.blade.php`. The public
+site uses `resources/views/layouts/app.blade.php`, which is a different
+document on purpose: a guest has no workspace, so a guest must not be shown a
+sidebar with nothing in it.
+
 ### Sidebar
 
 - Persistent on desktop
@@ -256,6 +261,22 @@ Desktop
 - Current route visibly highlighted
 - Role-based navigation generated from Policies
 - Hidden links supplement server authorization and never replace it
+
+The rail is the approved reading of the compact-rail rule. From `lg` to `xl`
+the sidebar is 80 pixels wide and shows icons only. Every icon keeps an
+accessible name and a tooltip, and the visible text is still in the document
+for a screen reader, so the rail hides nothing from a keyboard or a reader.
+
+Navigation is built by `App\Support\Navigation`. Each item names the Policy
+ability that guards its destination, and the item is dropped unless the server
+already allows it. The Policy is asked with an empty model instance, never with
+`null`, because a Policy is resolved from the model it is asked about.
+
+### Brand in the shell
+
+The mark appears in the sidebar, the drawer, the mobile header, the public
+header, the public footer, the certificate, and the sign-in brand panel. It is
+never enlarged past 64 pixels and never used as page decoration.
 
 ### Header
 
@@ -282,6 +303,48 @@ V1 does not include a notification center.
 - Escape closes the drawer
 - Focus returns to the menu button
 - Background content does not scroll unexpectedly
+
+### Footer
+
+One component, `resources/views/components/footer.blade.php`, used by every
+layout. It is a component rather than markup written into each layout because
+the two footers had already drifted apart, and drift is what makes a footer look
+accidental.
+
+It has two densities, and the difference is deliberate:
+
+| Variant | Where | Contents |
+| --- | --- | --- |
+| `site` | Public pages | Brand, three link groups, copyright bar |
+| `workspace` | Signed in shell | Brand, legal terms, copyright bar |
+
+The workspace footer omits the navigation columns on purpose. Every destination
+they hold is already in the sidebar, and repeating it would make the footer a
+second, worse navigation. What the workspace still needs is the brand, the legal
+terms, and the copyright.
+
+Rules:
+
+- The mark is `sm`, 28 pixels, matching the scale table above.
+- Link groups are sized to their own content, not to a share of the page. The
+  site publishes a handful of public pages, so stretching a few short labels
+  across half the width leaves them floating rather than grouped.
+- Section headings use the same style as the navigation groups, so the two read
+  as one system.
+- Footer links use `.footer-link`. They do not stack `link-quiet` under another
+  colour utility, because which of two colour utilities wins is decided by
+  stylesheet order rather than by anything visible in the view.
+- The copyright is separated by a hairline so it reads as its own band.
+- On a coarse pointer a link is at least 44 pixels tall. It grows into the gap
+  the list already has, so the rhythm of the column does not change.
+- The workspace footer carries `data-print="hide"`, because a certificate and a
+  receipt are the only pages meant on paper.
+- Registration is never offered in the footer. A guest reaches it from the sign
+  in page, and `HomePageTest` pins that rule for the public pages.
+
+The footer has no social links. The product has no social accounts, so a link to
+one would be a dead button. The public reference design had them and they were
+left behind on purpose.
 
 ## 8. Page inventory
 
@@ -367,6 +430,15 @@ Authentication pages use a focused layout with one clear purpose per page:
 - Verification link sent state
 - Required password change
 
+The layout is a split panel. A brand panel states what the product is and
+shows the real path a student walks, and a form panel holds the single form.
+On a small screen the brand panel reduces to a compact header, because the form
+must stay the only focus and the product must still be identified.
+
+Every authentication card uses the same `card-accent-edge` surface: a surface, a
+four pixel primary rule along the top edge, and elevation. That one treatment
+is what makes the sign-in and sign-up pages read as a set.
+
 Every authentication form must include:
 
 - Visible labels
@@ -380,6 +452,46 @@ Every authentication form must include:
 - A link back to the previous safe step when useful
 
 Do not show a role selector, payment field, fake account, or unbuilt navigation item.
+
+### Money formatting
+
+Amounts are stored as integer minor units. A view never prints minor units
+directly and never divides them into a float. `App\Support\Money` is the only
+place a display string is built, and the interface shows the peso form
+`₱499.00` given in the Philippine context rules. A free course shows the word
+`Free` instead of `₱0.00`.
+
+A stored charge, such as a payment record, is never reported as `Free`. A
+payment carries no course type, so `Money::format()` formats it and the course
+type only decides the `Free` wording on a course price.
+
+The ISO code is printed beside the amount on the payment page, so the peso
+symbol reads as a symbol and `PHP` stays on the record.
+
+### Status wording
+
+Every stored state is written in words by one class, `App\Support\StatusLabel`,
+which returns both a sentence and a tone. A view never writes a state string by
+hand, so one state can never read two different ways on two pages.
+
+A tone is a colour token, never the whole message. Every badge carries a word,
+and the status colour table above is unchanged.
+
+An unrecognised state falls back to sentence case of its own value, so a new
+state is still readable instead of printing a raw database value.
+
+### Support classes for the interface
+
+Three small classes own interface decisions, so a view stays declarative:
+
+| Class | Owns |
+|---|---|
+| `App\Support\Money` | Formatting a stored amount for display |
+| `App\Support\StatusLabel` | The sentence and the tone for a stored state |
+| `App\Support\Navigation` | The role navigation, filtered by Policy |
+
+None of them authorizes anything. `Navigation` reads a Policy to decide what to
+draw; the route middleware and the Policy still decide what may be opened.
 
 ### Phase 3 role pages
 
@@ -887,6 +999,42 @@ Do not use:
 - Large entrance sequences
 - Decorative scroll effects
 
+### Behaviour hooks
+
+A behaviour that needs JavaScript is attached to a `data-` attribute and
+handled in `resources/js/app.js`. The attribute names the behaviour, so a view
+never carries an inline handler and never depends on a framework.
+
+| Attribute | Behaviour |
+|---|---|
+| `data-theme-toggle` | Switches the light and dark theme |
+| `data-dropdown`, `-trigger`, `-panel`, `-item` | Account menu open, close, and focus |
+| `data-drawer`, `-open`, `-close`, `-panel`, `-backdrop` | Mobile navigation drawer |
+| `data-print` and `data-print-button` | Print stylesheet and print action |
+| `data-pending`, `data-pending-button`, `data-pending-label` | Submit pending state |
+| `data-confirm` | Confirmation before a dangerous action |
+| `data-error-summary` | Focus target after a rejected form |
+| `data-table-toggle` | Show or hide a responsive table block |
+| `data-form-context` | The authoring form that must reopen after a rejection |
+| `data-brand-mark` | The brand mark image |
+
+The drawer and the account menu share one focus contract: Escape closes the
+open layer, focus returns to the control that opened it, Tab stays inside an
+open layer, and a click outside closes it. The page behind an open drawer is
+made inert and does not scroll.
+
+### Content security policy
+
+The security headers set a strict policy with no inline styles and no inline
+scripts. Every behaviour therefore lives in `resources/js/app.js`, which the
+policy allows as a same-origin file, and the two small inline scripts, the
+theme bootstrap and the payment poll, carry the per-request nonce the headers
+publish.
+
+One consequence is worth keeping: no view may use an inline `style` attribute.
+A progress bar is therefore a native `progress` element with a fixed set of CSS
+widths, not a div with a painted length.
+
 ## 24. Content rules
 
 - Use simple English.
@@ -921,7 +1069,52 @@ Rules:
 
 ## 26. Visual assets
 
-No logo, avatar, photograph, illustration, or brand mark is approved yet.
+### Approved mark
+
+The IT Learning Hub mark is approved. The source artwork is
+`resources/it-lms-logo-only.png`. The served derivatives live in
+`public/images/brand/`, and `public/images/brand/README.md` is the authority on
+which derivative is used where.
+
+The mark is a graduation cap over a cube, in the same blue as `primary`. The
+source file is never served, because the mark is displayed between 28 and 56
+pixels and the original is 800 pixels at 919 kilobytes. The files under
+`public/images/brand/` are the same artwork resampled to the sizes the
+interface actually asks for, so a page does not download a large image to draw
+a small one.
+
+The mark is a mark, not a lockup. The product name beside it is live text, not
+part of the artwork, so it takes the colour of the current theme, stays readable
+in both themes, and can be read and searched by a screen reader.
+
+Rules for the mark:
+
+- Display it between 28 and 56 pixels. Never stretch it and never use it as a
+  background.
+- Keep the mark's own proportions. The height is the widest dimension.
+- Never edit a derivative by hand. Change the source and regenerate.
+- The mark carries an empty alternative text when the name sits beside it, so a
+  screen reader announces the name once and not twice.
+- The mark is not restyled, recoloured, or given a drop shadow.
+
+Where the mark appears:
+
+| Place | Component size |
+|---|---|
+| Sidebar and drawer | `sm`, 28 pixels |
+| Public header and mobile header | `sm`, 28 pixels |
+| Public footer and account summary | `sm`, 28 pixels |
+| Authentication brand panel | `lg`, 44 pixels |
+| Certificate | `sm`, 28 pixels |
+| Favicon and touch icon | `public/favicon.png`, `public/images/brand/touch-icon.png` |
+
+The component chooses the derivative that matches the size it draws, so a small
+mark is never shipped as a large file.
+
+### Still not approved
+
+No avatar, photograph, illustration, course thumbnail, or institutional mark is
+approved.
 
 During development:
 
@@ -944,4 +1137,57 @@ The design is ready when:
 - Course, Lesson, Quiz, payment, and certificate workflows are complete
 - Philippine Peso formatting is consistent
 - No dead navigation or fake data remains
-- No copied branding or unlicensed assets remain
+- No copied branding or unlicensed assets remains
+
+## 28. Interface component set
+
+Reusable interface pieces live in `resources/views/components/`. A view uses
+these instead of writing a long class list, so a token change reaches every page
+at once.
+
+### Base components
+
+| Component | Purpose |
+|---|---|
+| `x-btn` | Button or link button, with a variant and a size |
+| `x-badge` | A short status or category chip |
+| `x-status` | A badge whose words and tone come from `StatusLabel` |
+| `x-note` | A tinted, left-ruled message panel |
+| `x-icon` | A 24 unit stroke icon on one grid |
+| `x-logo` | The brand lockup, mark plus product name |
+| `x-theme-toggle` | The light and dark control |
+| `x-amount` | A money amount, never raw minor units |
+| `x-progress` | A progress bar that always prints its number |
+| `x-form-errors` | The keyboard-focusable error summary |
+| `x-form-field` | Label, control, hint, and error for one input |
+| `x-error-state` | A safe error page body |
+| `x-breadcrumbs` | The trail of where the current page sits |
+| `x-page-header` | Eyebrow, title, description, and actions |
+| `x-stat` | One counted number, with a label that says what is counted |
+| `x-empty-state` | A named empty state that offers the next action |
+| `x-card` family | `card`, `card-muted`, `card-raised`, `card-accent-edge` |
+
+### Layout components
+
+| Component | Purpose |
+|---|---|
+| `x-app.nav` | Role navigation, grouped and Policy-filtered |
+| `x-app.user-menu` | The account menu with role, profile, and sign out |
+
+### Local partials
+
+| Partial | Purpose |
+|---|---|
+| `admin/users/user-card` | One account as a stacked mobile card |
+| `instructor/courses/course-card` | One owned course as a stacked mobile card |
+
+### Rules for new interface pieces
+
+- A new button, badge, note, or field goes into `app.css` and is used through
+  these components. Do not add a new colour in a Blade file.
+- A new reusable element is a Blade component with a `@props` block and a short
+  comment explaining what it is for.
+- A component that needs an injected service or real behaviour becomes a class
+  under `app/View/Components/`.
+- A page that needs a behaviour that is not HTML uses a `data-` attribute and a
+  few lines in `resources/js/app.js`. No framework, and no new dependency.

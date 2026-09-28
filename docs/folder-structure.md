@@ -45,8 +45,7 @@ A browser sends requests to Laravel. Laravel returns HTML, redirects, validation
 lms-project/
 ├── app/
 │   ├── Actions/
-│   │   ├── Account/
-│   │   │   └── ChangePassword.php
+│   │   ├── Account/│   │   │   └── ChangePassword.php
 │   │   ├── Authentication/
 │   │   │   ├── AssignUserRole.php
 │   │   │   └── UpdateAccountStatus.php
@@ -70,6 +69,8 @@ lms-project/
 │   │   │   │   ├── UpdateLesson.php
 │   │   │   │   ├── UpdateModule.php
 │   │   │   │   └── ReorderCurriculum.php
+│   │   ├── Announcements/
+│   │   │   └── PublishAnnouncement.php
 │   │   ├── Enrollment/
 │   │   │   └── EnrollStudent.php
 │   │   ├── Fortify/
@@ -79,6 +80,14 @@ lms-project/
 │   │   ├── Learning/
 │   │   │   ├── MarkLessonComplete.php
 │   │   │   └── RecordLessonActivity.php
+│   │   ├── Messaging/
+│   │   │   ├── PostMessage.php
+│   │   │   ├── StartConversation.php
+│   │   │   └── ThreadState.php
+│   │   ├── Notifications/
+│   │   │   ├── MarkAllNotificationsRead.php
+│   │   │   ├── MarkNotificationRead.php
+│   │   │   └── RecordNotification.php
 │   │   ├── Payments/
 │   │   │   ├── CreatePayMongoCheckout.php
 │   │   │   └── ProcessPayMongoEvent.php
@@ -90,10 +99,22 @@ lms-project/
 │   ├── Console/
 │   │   └── Commands/
 │   │   │   ├── BootstrapOwner.php
-│   │   │   └── CheckProductionReadiness.php
+│   │   │   ├── CheckProductionReadiness.php
+│   │   │   └── SyncLucideIcons.php
 │   ├── Contracts/
 │   │   ├── LocalSecretStore.php
 │   │   └── PayMongoClient.php
+│   ├── Events/
+│   │   ├── AnnouncementPublished.php
+│   │   ├── CertificateReissued.php
+│   │   ├── CertificateRevoked.php
+│   │   ├── ContentPublished.php
+│   │   ├── CourseCompleted.php
+│   │   ├── LessonCompleted.php
+│   │   ├── LessonStarted.php
+│   │   ├── QuizGraded.php
+│   │   ├── QuizStarted.php
+│   │   └── StudentEnrolled.php
 │   ├── Enums/
 │   │   ├── ActivityEventType.php
 │   │   ├── UserRole.php
@@ -110,12 +131,28 @@ lms-project/
 │   │   ├── CertificateStatus.php
 │   │   ├── PaymentEventStatus.php
 │   │   ├── QuestionType.php
-│   │   └── QuizStatus.php
+│   │   ├── QuizStatus.php
+│   │   └── NotificationType.php
+│   │   ├── ConversationKind.php
+│   │   ├── AnnouncementScope.php
+│   │   └── ConversationStatus.php
+│   ├── Listeners/
+│   │   └── Notifications/
+│   │       ├── NotifyEnrolledStudentsOfContent.php
+│   │       ├── NotifyInstructorOfEnrollment.php
+│   │       ├── NotifyInstructorOfLessonActivity.php
+│   │       ├── NotifyInstructorOfQuizActivity.php
+│   │       ├── NotifyRecipientsOfAnnouncement.php
+│   │       ├── NotifyStudentOfCertificateChange.php
+│   │       ├── NotifyStudentOfCourseCompletion.php
+│   │       └── NotifyStudentOfQuizResult.php
 │   ├── Http/
+
 │   │   ├── Controllers/
 │   │   │   ├── Account/
 │   │   │   │   ├── PasswordController.php
 │   │   │   │   └── ProfileController.php
+│   │   │   ├── AnnouncementController.php
 │   │   │   ├── Admin/
 │   │   │   │   ├── ActivityLogController.php
 │   │   │   │   ├── UserController.php
@@ -130,6 +167,14 @@ lms-project/
 │   │   │   │   ├── CurriculumController.php
 │   │   │   │   └── QuizController.php
 │   │   │   ├── MaterialDownloadController.php
+│   │   │   ├── Notification/
+│   │   │   │   ├── NotificationCentreController.php
+│   │   │   │   └── NotificationReadController.php
+│   │   │   ├── Messaging/
+│   │   │   │   ├── ConversationController.php
+│   │   │   │   └── SupportRequestController.php
+│   │   │   ├── Announcements/
+│   │   │   │   └── StoreAnnouncementRequest.php
 │   │   │   ├── Role/
 │   │   │   │   ├── AdministratorController.php
 │   │   │   │   ├── InstructorController.php
@@ -145,8 +190,10 @@ lms-project/
 │   │   │   ├── RequirePasswordChange.php
 │   │   │   ├── EnsureAccountIsActive.php
 │   │   │   ├── ConfineDebugOutput.php
+│   │   │   ├── RefuseWhenProjectIsWebReadable.php
 │   │   │   ├── SecureSessionCookies.php
 │   │   │   ├── SecurityHeaders.php
+│   │   │   ├── ThrottleWrites.php
 │   │   │   └── EnsureUserHasRole.php
 │   │   ├── Requests/
 │   │   │   ├── Account/
@@ -156,7 +203,6 @@ lms-project/
 │   │   │   │   ├── UpdateAccountStatusRequest.php
 │   │   │   │   └── UpdateUserRoleRequest.php
 │   │   │   ├── Catalog/
-│   │   │   │   ├── CourseCatalogRequest.php
 │   │   │   │   └── CourseCatalogRequest.php
 │   │   │   ├── Certificates/
 │   │   │   │   └── RevokeCertificateRequest.php
@@ -171,6 +217,8 @@ lms-project/
 │   │   │   │   ├── UpdateModuleRequest.php
 │   │   │   │   ├── ReorderLessonsRequest.php
 │   │   │   │   └── ReorderModulesRequest.php
+│   │   │   ├── Messaging/
+│   │   │   │   └── PostMessageRequest.php
 │   │   │   └── Quizzes/
 │   │   │   │   ├── StoreQuizQuestionRequest.php
 │   │   │   │   ├── StoreQuizRequest.php
@@ -197,6 +245,11 @@ lms-project/
 │   │   ├── QuizAnswer.php
 │   │   ├── Certificate.php
 │   │   ├── CourseRequirement.php
+│   │   ├── Notification.php
+│   │   ├── Announcement.php
+│   │   ├── Conversation.php
+│   │   ├── ConversationMessage.php
+│   │   ├── ConversationParticipant.php
 │   │   └── ActivityLog.php
 │   ├── Policies/
 │   │   ├── ActivityLogPolicy.php
@@ -206,11 +259,15 @@ lms-project/
 │   │   ├── ModulePolicy.php
 │   │   ├── EnrollmentPolicy.php
 │   │   ├── LearningMaterialPolicy.php
+│   │   ├── NotificationPolicy.php
+│   │   ├── AnnouncementPolicy.php
+│   │   ├── ConversationPolicy.php
 │   │   ├── QuizPolicy.php
 │   │   ├── CertificatePolicy.php
 │   │   └── QuizAttemptPolicy.php
 │   ├── Providers/
 │   │   ├── AppServiceProvider.php
+│   │   ├── EventServiceProvider.php
 │   │   └── FortifyServiceProvider.php
 │   ├── Services/
 │   │   ├── ProgressCalculator.php
@@ -238,6 +295,7 @@ lms-project/
 │   │   ├── MaterialFileRules.php
 │   │   ├── Money.php
 │   │   ├── Navigation.php
+│   │   ├── Position.php
 │   │   ├── PublicHttps.php
 │   │   ├── PublishedCourses.php
 │   │   ├── StatusLabel.php
@@ -396,6 +454,10 @@ Application business logic does not belong here.
 
 Contains framework configuration.
 
+`config/icons.php` maps each icon name the views use to the Lucide drawing
+behind it. It is the single place the choice of drawing is made.
+`php artisan icons:sync` bakes the result into `resources/icons/lucide.php`.
+
 Secrets come from environment variables. Secret values do not belong in committed config files.
 
 ### `database/`
@@ -416,6 +478,11 @@ The production web server must use `public/` as its document root.
 
 Protected learning files never belong in `public/`.
 
+The brand mark lives in `public/images/brand/`, because a view needs an address
+for it. `public/favicon.png` and `public/images/brand/touch-icon.png` are the
+icon copies. `public/images/brand/README.md` records which derivative is used
+where.
+
 ### `resources/`
 
 Contains source files processed or rendered by Laravel:
@@ -423,6 +490,11 @@ Contains source files processed or rendered by Laravel:
 - Blade views
 - CSS
 - Small JavaScript files
+- The source brand artwork
+
+The source artwork is the only image in `resources/`. It is never served, and it
+is the file to edit when the mark changes. Everything a browser downloads lives
+under `public/`.
 
 ### `routes/`
 
@@ -439,6 +511,50 @@ Most content in this directory is generated and ignored by Git.
 ### `tests/`
 
 Contains automated Feature and Unit tests.
+
+`tests/Support/QueryCounter.php` counts the queries a piece of work runs, so a
+performance change is judged against a number rather than an impression.
+
+### `tools/`
+
+Contains runnable verification scripts. These are tools rather than tests because
+they write to the configured database, hold locks open, and report numbers on
+screen instead of asserting them.
+
+- `verify-concurrency.php` proves the position row lock using two separate
+  database sessions
+- `verify-large-dataset.php` reports the query count per page with a few hundred
+  courses present
+- `verify-cleanup.php` removes the rows those two created
+- `probe-mailer.php` sends a real password reset through the configured mailer
+  and reports the transport, so "mail is switched on" is measured rather than
+  assumed. The reset token is never printed
+- `swap-account-emails.php` exchanges two accounts' addresses without tripping
+  the unique index, parking both rows on addresses nobody can own first. It
+  refuses rather than guesses when an address has no account
+- `inspect-schema.php` reports which tables a database has without writing to
+  it, for answering "is the schema still there" without making it worse
+- `probe-routes.php` walks every readable route as a guest and as each role and
+  reports the status and query cost of each, so authorization and performance are
+  measured rather than assumed
+- `probe-one-route.php` prints the reason behind one route's status
+- `probe-message-page-queries.php` prints every conversation query the message list
+  page runs, with the count. `TopbarMessagingCostTest` pins how many are allowed
+  and asks that anything beyond the documented set be justified; justifying it by
+  eye is a guess, so this prints the statements instead
+- `why-404.php` shows the body a status code would have thrown away, because a
+  404 from the router, from model binding and from the controller differ
+- `repair-enrollment-activations.php` fills in a missing `activated_at` on an
+  enrollment that is already live. A live enrollment always has one: the real
+  flows set the status and the date together, so a row with a status and no date
+  can only come from somewhere that wrote the status on its own, and every panel
+  that reads real dates then reads that learner as having never started. It only
+  ever fills a date that is absent, takes it from the learner's own earliest
+  lesson progress, and changes nothing on a second run. `--dry` reports without
+  writing
+- `seed-dashboard-demo.php` builds the demonstration catalog, progress, quizzes
+  and results. It uses the factory states rather than overriding `status`,
+  because an override replaces the state that sets `activated_at` with it
 
 ### `vendor/`
 
@@ -537,20 +653,32 @@ Views are grouped by user area and shared components.
 
 ```text
 resources/views/
-├── components/
-├── layouts/
-├── auth/
-├── courses/
-├── dashboard/
-├── student/
-├── instructor/
-├── admin/
-├── learning/
-├── quizzes/
-├── payments/
-├── certificates/
-└── errors/
+├── components/          Shared interface components
+│   ├── app/             Layout components: nav and user menu
+│   └── *.blade.php      Base interface components
+├── layouts/             app, app-shell, and auth
+├── public/              Home page
+├── auth/                Sign in, register, recovery, verification
+├── account/             Own profile and password
+├── roles/               The three role dashboards
+├── catalog/             Public course catalog and course page
+├── student/             Courses, lessons, quizzes, certificates, payments
+├── instructor/          Course authoring and the course outline
+├── admin/               Users, activity, certificates, reports
+└── errors/              Public error pages
 ```
+
+Two layouts are used, and the split is deliberate:
+
+| Layout | Used by | Reason |
+|---|---|---|
+| `layouts/app` | Public pages | A guest has no workspace, so a guest sees no sidebar |
+| `layouts/app-shell` | Every signed in page | One shell, one sidebar, one header for all three roles |
+| `layouts/auth` | Authentication pages | Wraps `layouts/app` with the split brand panel |
+
+A page that needs a second or third copy of a repeated row, such as a table row
+and its mobile card, uses a local partial beside the page rather than a
+component, because it is not reused elsewhere.
 
 Blade views render safe data and collect input.
 

@@ -163,6 +163,61 @@ it looks like a provider problem and it is not.
 When `PAYMONGO_ENABLED=false`, leave both secret values empty. A half
 configured payment setup is a failing check too.
 
+### Sending email through Gmail
+
+The default is `MAIL_MAILER=log`, which writes messages to
+`storage/logs/laravel.log` and sends nothing. A fresh deployment cannot send
+mail by accident, and nothing is spent while the details are still being filled
+in.
+
+To send for real:
+
+```dotenv
+MAIL_MAILER=smtp
+MAIL_SCHEME=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=owner@ncst.edu.ph
+MAIL_PASSWORD=       # paste the app password here, wrapped in quotes if it has spaces
+MAIL_FROM_ADDRESS="owner@ncst.edu.ph"
+```
+
+Five things go wrong here, and every one of them is silent:
+
+| Setting | What goes wrong if you get it wrong |
+|---|---|
+| `MAIL_SCHEME` | The value is `smtp` or `smtps` only. The older `tls` spelling is rejected outright with `UnsupportedSchemeException`. Port 587 starts TLS by itself. |
+| `MAIL_PASSWORD` | An unquoted value fails to parse. dotenv reads the spaces in a Gmail app password as a syntax error, which breaks the **whole** environment file, so every `artisan` command stops working, not just mail. Quote it. |
+| `MAIL_FROM_ADDRESS` | It must be the same address as `MAIL_USERNAME`. Gmail authenticates the connection and then discards the message because the From header names a mailbox it did not log in as. The deployment looks healthy and the mail never arrives. |
+| `MAIL_USERNAME` | The literal string `null` is not "unset". It is sent as a username and the login fails. |
+| The app password | It requires 2-Step Verification on the Google account, and it is a real secret. It belongs in `.env` only, never in `.env.example` and never in git. |
+
+A Gmail app password is 16 characters. It is not the account password, and
+Google will not accept the account password over SMTP.
+
+`php artisan lms:check-production` fails on this check, with that explanation,
+whenever `MAIL_MAILER=smtp` and the pair above does not agree. It passes without
+further questions when `MAIL_MAILER=log`, because a server that sends nothing
+has made no claim to break.
+
+**Gmail's daily limit.** A free Gmail account is capped at 500 messages a day,
+and a Workspace account at 2,000. Password resets are nowhere near that.
+Standard SMTP also carries occasional delay, which does not matter for a link a
+person clicks by hand. If time-sensitive one-time codes are added later, they
+need a transactional provider such as Postmark or SendGrid rather than a
+personal mailbox.
+
+To prove the mailer works before going live, without reading a token off a
+screen:
+
+```bash
+php tools/probe-mailer.php owner@ncst.edu.ph
+```
+
+`broker status passwords.sent` together with `transport smtp` and `log grew by
+0 bytes` means a real message left the machine. A wrong app password throws
+rather than reporting a false success.
+
 ## 5. Database
 
 ```bash
@@ -518,6 +573,7 @@ Then confirm by hand:
 | Try a private material URL directly | Denied |
 | Send a signed webhook replay | Recorded, nothing changes |
 | Send a webhook with a wrong signature | Recorded as ignored, nothing changes |
+| Request a password reset | The neutral message appears, and a link arrives in the mailbox |
 | `APP_DEBUG=false` | A failure shows a plain error page, not a stack trace |
 
 ## 13. Rollback
