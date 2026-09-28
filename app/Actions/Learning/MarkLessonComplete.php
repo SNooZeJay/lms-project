@@ -61,6 +61,31 @@ class MarkLessonComplete
             // The row is written already completed rather than created as
             // started and then updated, which is the same end state in one
             // statement rather than two.
+            /*
+             | Only the columns an upsert is allowed to overwrite. created_at is
+             | absent, because a row is not born twice.
+             |
+             | completed_at is absent for the same reason it is present below: a
+             | second press must not move the moment the learner finished. Left
+             | out unconditionally, though, it meant a row that already existed
+             | took the update path, which does not write it at all. Opening a
+             | lesson first is what a learner does, so the ordinary journey
+             | produced a lesson recorded as finished with no date beside it.
+             | Every test in LessonProgressTest pressed the button straight
+             | after enrolling and so never took that path, which is why the
+             | suite was green. Two live rows were found by auditing the table.
+             |
+             | So the column joins the overwrite list exactly when the row is
+             | being moved onto completed, which is the one time the date has to
+             | be written. When the lesson was already finished the list is as it
+             | was and the original time stands.
+             */
+            $overwrite = ['status', 'last_viewed_at', 'student_id', 'updated_at'];
+
+            if (! $wasCompleted) {
+                $overwrite[] = 'completed_at';
+            }
+
             LessonProgress::query()->upsert(
                 [[
                     'enrollment_id' => $enrollment->id,
@@ -74,10 +99,7 @@ class MarkLessonComplete
                     'updated_at' => $now,
                 ]],
                 ['enrollment_id', 'lesson_id'],
-                // Only the columns an upsert is allowed to overwrite. created_at
-                // is absent, and so is completed_at: a second press must not
-                // move the moment the student actually finished.
-                ['status', 'last_viewed_at', 'student_id', 'updated_at']
+                $overwrite
             );
 
             $progress = LessonProgress::query()

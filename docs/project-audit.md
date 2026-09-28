@@ -598,6 +598,7 @@ These quality checks exist and all pass:
 | Card alignment and component attributes | 1514 | 6898 |
 | Verification confirmation and countdown | 1700 | 7550 |
 | Demonstration accounts, notification link scope, announcement list scope | 1713 | 7567 |
+| Database normalization and integrity audit | 1745 | 7656 |
 
 ### Security audit
 
@@ -713,6 +714,32 @@ it, and both passed every check that existed before them.
 Both were invisible to the suite for the same reason, which is worth recording: the
 test environment set `APP_URL` to `http://127.0.0.1:8000` and the test client
 requested exactly that, so the code path that refused was never reached.
+
+### Defects found by auditing the database rather than the code
+
+September 29, 2026. Fifty seven checks, each asking a question no foreign key and no
+check constraint can answer, run over every row. Three findings, two of them
+application faults that the whole suite had passed.
+
+- **A lesson finished through the update path kept no completion date.**
+  `MarkLessonComplete` left `completed_at` out of the columns an upsert may overwrite,
+  so a second press could not move the moment the learner finished. A row that
+  already existed therefore took the update path, which does not write the column at
+  all, and opening a lesson is what a learner does before marking it finished. Every
+  test pressed the button straight after enrolling and never took that path.
+- **Withdrawing an announcement left the notices that announced it.**
+  `subject_type` and `subject_id` are a polymorphic reference no foreign key can hold,
+  so nothing cascades, and the withdraw action deleted the announcement alone. Three
+  students held a notice whose link answered 404.
+- **Two profile rows belonged to accounts that no longer existed.** The key is
+  enforced, proven by asking the server to refuse the insert, so these came from a
+  load with the checks turned off rather than from a gap. Removed by
+  `tools/repair-impossible-rows.php`, which also filled the two missing dates from
+  `last_viewed_at` and removed the three stale notices.
+
+Six columns are transitive dependencies on the enrollment they name, kept deliberately
+for query cost and written down as such in `DatabaseIntegrityTest`, which now reads
+every row for all twelve rules of that shape.
 
 ### Interface system pass
 

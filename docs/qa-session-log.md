@@ -1,4 +1,4 @@
-# QA session log â€” adversarial pass
+# QA session log Ã¢â‚¬â€ adversarial pass
 
 Date: September 27, 2026
 Target: `IT Learning Hub` (BSIT Academic LMS), Laravel 13, Blade, MySQL.
@@ -72,9 +72,9 @@ Reused across every field so a class is defined once and applied everywhere.
 | Symbol | `!@#$%^&*()_+-={}[]\|;:"'<>,.?/` | Escaping, header construction, HTML |
 | HTML | `<script>`, `"><img onerror>`, `<b>` | Output encoding |
 | SQL-shaped | `' OR '1'='1`, `'; DROP TABLE` | Parameter binding |
-| Unicode | `ã“ã‚“ã«ã¡ã¯`, `Ù…Ø±Ø­Ø¨Ø§`, `ÐŸÑ€Ð¸Ð²ÐµÑ‚` | Multi-byte length counting, collation |
-| Emoji | `ðŸ˜€ðŸš€ðŸ”¥ðŸ’»ðŸŽ“` | Multi-byte length, surrogate pairs |
-| RTL | `â€®abcâ€¬` | Visual spoofing, display order |
+| Unicode | `Ã£Ââ€œÃ£â€šâ€œÃ£ÂÂ«Ã£ÂÂ¡Ã£ÂÂ¯`, `Ã™â€¦Ã˜Â±Ã˜Â­Ã˜Â¨Ã˜Â§`, `ÃÅ¸Ã‘â‚¬ÃÂ¸ÃÂ²ÃÂµÃ‘â€š` | Multi-byte length counting, collation |
+| Emoji | `Ã°Å¸Ëœâ‚¬Ã°Å¸Å¡â‚¬Ã°Å¸â€Â¥Ã°Å¸â€™Â»Ã°Å¸Å½â€œ` | Multi-byte length, surrogate pairs |
+| RTL | `Ã¢â‚¬Â®abcÃ¢â‚¬Â¬` | Visual spoofing, display order |
 | Zero-width | `a\u{200B}b`, `a\u{FEFF}b` | Length counted differently from display |
 | Long | 100, 160, 161, 500, 1000, 5000, 5001, 10000 chars | The boundary, either side of the rule |
 | Type-confused | `123`, `true`, `null`, `[]`, `{}`, `1.5`, `NaN`, `Infinity` | Wrong type where a string is expected |
@@ -87,7 +87,7 @@ Tagged as BUG, QUESTION, IDEA, RISK, or NOTE. Times are the order of discovery.
 
 | # | Tag | Charter | Observation | Evidence |
 | --- | --- | --- | --- | --- |
-| 1 | NOTE | â€” | Baseline before the pass: 813 tests, 3814 assertions, Pint clean, composer audit clean, build clean | recorded in `docs/project-audit.md` |
+| 1 | NOTE | Ã¢â‚¬â€ | Baseline before the pass: 813 tests, 3814 assertions, Pint clean, composer audit clean, build clean | recorded in `docs/project-audit.md` |
 | 2 | BUG | C1 | **Every `max:` rule on course creation was reported unenforced.** A 161-character title, a 5001-character description, and a 101-character category were all accepted. | `tests/Feature/Qa/LengthRuleEnforcementTest.php` failed on all three. |
 | 3 | NOTE | C1 | Observation 2 was **not a defect in the application.** The validator fails correctly in isolation, and a browser form POST is refused with a redirect carrying the error in the session. The 302 was being read as acceptance because a refused form POST answers 302 exactly as a successful one does. Split into `LengthRuleEnforcementTest`, which asserts the session rather than the status, and a second case proving the JSON shape answers 422. | diagnostic showed validator FAILS, request 302 to `/`, `session errors: []` on the wrong probe, and the real error present on the correct one |
 | 4 | BUG | C1 | A course title of 10,000 characters causes the course page to render at an unusable width. Not a crash: the page renders, but the text overflows its container. | recorded as a layout risk; the value is stored and rendered as given |
@@ -99,15 +99,15 @@ Tagged as BUG, QUESTION, IDEA, RISK, or NOTE. Times are the order of discovery.
 | 10 | NOTE | C2 | **The final-administrator guard in `AssignUserRole` is unreachable.** It requires the target to be an active administrator with the active count at one, but `UserPolicy` already refuses a self-directed role change, so the actor is always a *different* active administrator and the count is at least two. It is defence in depth behind the policy, not a bug, but it cannot be tested directly. The property is now asserted where it is enforced. | diagnostic drove the system to one administrator and printed `demote the only admin -> HTTP 403`; the 403 came from the policy |
 | 11 | NOTE | C2 | Three separate attempts to read a flashed error all failed before the assertion worked: the response object's own session, then the global `session()` helper, then the response after it had been sent. The client tracks the session for the request it made, so `assertSessionHasErrors` on the response is the only correct reader. | four readings of the same request disagreed |
 | 12 | NOTE | C2 | A fixture for a completion test must mark the lesson `is_required`. The completion rule counts required lessons, so an optional lesson completes nothing and two certificate tests silently skipped. The two skips were replaced with a hard assertion that names the unmet rule. | `No certificate was issued` on two tests; fixed by `is_required => true` plus an explicit completion request |
-| 13 | BUG | C5 | **Fixed: a settled amount was never checked against the amount owed.** `ProcessPayMongoEvent::markPaid` marked the Payment as paid and activated the enrollment without reading `amount` or `currency` from the event, and `PayMongoEventEnvelope` did not carry them at all. `docs/architecture.md` listed "Amount or currency mismatch" as a webhook test case, but no such test existed. A provider delivery of â‚±1,000 would unlock a course priced at â‚±125,000. Amount and currency are now read from the event and compared before the payment is applied. | `test_an_amount_that_does_not_match_is_not_applied` and the currency companion both failed before the fix; envelope diagnostic confirmed `amountMinor` was `null` |
+| 13 | BUG | C5 | **Fixed: a settled amount was never checked against the amount owed.** `ProcessPayMongoEvent::markPaid` marked the Payment as paid and activated the enrollment without reading `amount` or `currency` from the event, and `PayMongoEventEnvelope` did not carry them at all. `docs/architecture.md` listed "Amount or currency mismatch" as a webhook test case, but no such test existed. A provider delivery of Ã¢â€šÂ±1,000 would unlock a course priced at Ã¢â€šÂ±125,000. Amount and currency are now read from the event and compared before the payment is applied. | `test_an_amount_that_does_not_match_is_not_applied` and the currency companion both failed before the fix; envelope diagnostic confirmed `amountMinor` was `null` |
 | 14 | NOTE | C5 | A payment does not issue a certificate, because the course is not finished. A replay test asserting one certificate was failing on correct behaviour. Replaced with a comparison against the count before the replay. | first delivery activated correctly; the certificate assertion was the failure |
 | 15 | NOTE | C5 | The webhook endpoint does not check the declared content type, so a correctly signed body labelled `text/plain` is applied. **Not a weakness.** The signature is the boundary and cannot be produced without the secret, and refusing on the declared type would risk dropping real deliveries where an intermediary rewrote the header. Replaced with two tests: an unsigned body is refused whatever the type claims, and a signed one is applied whatever the type claims. | a signed `text/plain` delivery returned 200 and activated the enrollment |
 | 16 | NOTE | C5 | An event whose `reference_number` is hostile is still applied, because the payment is identified by the provider checkout id as a fallback. **Not a weakness.** An earlier version of this test asserted the enrollment stayed pending and failed on correct matching. Split into two cases: one where the checkout id is intact and application is expected, and one where both identifiers are hostile and nothing may be applied. | `resolvePayment` matches on `idempotency_key` first, then `provider_checkout_id` or `provider_payment_id` |
-| 17 | BUG | â€” | **Found in my own harness, worth recording because it is easy to ship:** the webhook tests encoded the payload once to sign it and again to send it. `json_encode` with different flags produces different bytes, so a payload containing a slash or a multi-byte character produced a signature that did not match for reasons unrelated to the check under test. Replaced with a `sign()` helper that encodes once and returns both the body and its signature. | 38 failures traced to this, not to the application |
+| 17 | BUG | Ã¢â‚¬â€ | **Found in my own harness, worth recording because it is easy to ship:** the webhook tests encoded the payload once to sign it and again to send it. `json_encode` with different flags produces different bytes, so a payload containing a slash or a multi-byte character produced a signature that did not match for reasons unrelated to the check under test. Replaced with a `sign()` helper that encodes once and returns both the body and its signature. | 38 failures traced to this, not to the application |
 | 18 | NOTE | C3 | Six addresses that looked like malformed input are correctly answered with 200. `//courses` normalises, `/courses#frag` never reaches the server, and `?search[]=a` is an unknown parameter. Requiring a refusal for these asserts the application is *stricter* than it needs to be, which is its own kind of wrong. Split into "unresolvable" and "normalises" sets. | ten cases initially failed as `array contains 200` |
-| 19 | BUG | â€” | **Fixed: the sign in, register, and forgot password pages each had two `h1` elements.** The decorative brand panel rendered its marketing line as a page heading alongside the form's own heading, so a screen reader announced "Learn IT. Build practical skills." before it said what the page was for. `docs/project-audit.md` states "exactly one `h1` per page" as verified; that claim came from a browser measurement which covered the workspace and catalog pages but not the three auth pages, so it had quietly stopped being true. The panel line is now a paragraph; the aside keeps its accessible name because `aria-labelledby` accepts any element. | `/login`, `/register`, `/forgot-password` each reported `h1 count: 2`; `/` and `/courses` reported 1 |
-| 20 | RISK | â€” | The h1 claim in the audit was a browser measurement with no test behind it. `OneHeadingPerPageTest` now asserts it on all 19 public, student, instructor, and administrator pages, so the claim cannot quietly stop being true again. | 13 tests, 44 assertions |
-| 21 | NOTE | â€” | **The first two browser "findings" were measurement artefacts, not defects.** Every signed-in page reported 144px of horizontal overflow and the create-course form reported no fields. The cause was the measurement setup: `PublicHttps` derives the scheme from `APP_URL`, which is `https` because the application is served over a tunnel, so every redirect to the sign in page pointed at an `https` address on a plain-http measurement port. Chrome then failed the TLS handshake and reported `ERR_CONNECTION_REFUSED`, and the probe was measuring Chrome's error page, which has no `overflow-x-hidden` and a fixed 1280px width. Reproduced outside the browser with a raw socket to prove it was the server response and not the probe. | raw response was `302 Found` with `Location: https://127.0.0.1:8011/login` against a plain-http server |
+| 19 | BUG | Ã¢â‚¬â€ | **Fixed: the sign in, register, and forgot password pages each had two `h1` elements.** The decorative brand panel rendered its marketing line as a page heading alongside the form's own heading, so a screen reader announced "Learn IT. Build practical skills." before it said what the page was for. `docs/project-audit.md` states "exactly one `h1` per page" as verified; that claim came from a browser measurement which covered the workspace and catalog pages but not the three auth pages, so it had quietly stopped being true. The panel line is now a paragraph; the aside keeps its accessible name because `aria-labelledby` accepts any element. | `/login`, `/register`, `/forgot-password` each reported `h1 count: 2`; `/` and `/courses` reported 1 |
+| 20 | RISK | Ã¢â‚¬â€ | The h1 claim in the audit was a browser measurement with no test behind it. `OneHeadingPerPageTest` now asserts it on all 19 public, student, instructor, and administrator pages, so the claim cannot quietly stop being true again. | 13 tests, 44 assertions |
+| 21 | NOTE | Ã¢â‚¬â€ | **The first two browser "findings" were measurement artefacts, not defects.** Every signed-in page reported 144px of horizontal overflow and the create-course form reported no fields. The cause was the measurement setup: `PublicHttps` derives the scheme from `APP_URL`, which is `https` because the application is served over a tunnel, so every redirect to the sign in page pointed at an `https` address on a plain-http measurement port. Chrome then failed the TLS handshake and reported `ERR_CONNECTION_REFUSED`, and the probe was measuring Chrome's error page, which has no `overflow-x-hidden` and a fixed 1280px width. Reproduced outside the browser with a raw socket to prove it was the server response and not the probe. | raw response was `302 Found` with `Location: https://127.0.0.1:8011/login` against a plain-http server |
 | 22 | NOTE | C2 | The final chaos pass, after the measurement environment was corrected, reported **zero bugs** across all three roles: no console errors, no uncaught exceptions, no failed requests, no horizontal overflow at 320, 360, 390, 768 or 1440, no spinner left on screen, no permanently disabled button, and every protected address redirecting a guest away. A 353-character value mixing emoji, Japanese, a right-to-left override and a script tag was typed into a real form, kept in full, and submitted without error. | `bugs: 0, notes: 1, shots: 21` for the instructor run; `0 / 2 / 20` for student and administrator |
 
 ## Debrief
@@ -830,3 +830,137 @@ courses finished and 2 certificates.
 
 The workflow probe mutates that state, so it is run before this shape is restored
 rather than after.
+
+## Eighth pass: the database audit
+
+Date: September 29, 2026
+Scope: the schema, the data in it, and whether either of them is sound. Asked for as
+a normalization and integrity audit, with the instruction not to normalize blindly
+and to fix rather than report.
+
+### What was read, and what was not
+
+The live schema through `SHOW CREATE TABLE` rather than the migration files, because
+the migrations are what the schema was meant to be. 23 application tables and 8
+framework tables. `assignments`, `submissions` and `grades` are named in the brief
+and do not exist: the plan defers them, and a test now says so, so a half built one
+cannot arrive as a stray migration.
+
+MySQL 8.4.11, so the `CHECK` constraints in the schema are enforced rather than
+parsed and ignored. That matters: three of them, including the one that keeps a free
+course from carrying a price, would have been decoration on an older server.
+
+### Fifty seven checks, and three rows that should not have existed
+
+A foreign key proves a row points at an existing row. It does not prove it points at
+the right one, and most of the rules that matter here are the second kind. Every check
+asked a question the schema cannot answer, over every row, and named the rows that
+failed rather than counting them.
+
+Three findings, all found by reading the data rather than the code:
+
+- Two lesson progress rows read as finished with no date beside them.
+- Two profile rows belonged to accounts that no longer existed.
+- Three notices pointed at an announcement that had been withdrawn.
+
+### Two of the three were application faults, and both passed the suite
+
+**A lesson finished through the update path kept no completion date.**
+`MarkLessonComplete` leaves `completed_at` out of the columns an upsert may overwrite,
+so a second press cannot move the moment the learner finished. That is right, and it
+had a second effect nobody measured: a row that already existed took the update path,
+which does not write the column at all. Opening a lesson is what a learner does before
+marking it finished, so the ordinary journey produced a lesson recorded as finished at
+no time. Every test in `LessonProgressTest` pressed the button straight after
+enrolling and so never took that path. Fixed by adding the column to the overwrite
+list exactly when the row is moving onto completed, with three tests: the date is
+written on the visit-first path, a second press does not move it, and the path that
+already worked still does.
+
+**Withdrawing an announcement left the notices that announced it behind.**
+`notifications.subject_type` and `subject_id` point at an announcement, a quiz, a
+certificate and a conversation, so the reference is polymorphic and no foreign key
+can hold it. Nothing cascades. Deleting the announcement alone left every student who
+had been told holding a notice whose link answers 404. The withdraw action now
+removes the notices in the same transaction, keyed on the subject so one withdrawal
+cannot take another's notices, with a test for each half.
+
+**The two orphan profiles were not a gap in the schema.** `profiles.user_id` is a
+foreign key with a cascade and it is enforced, proven by asking the server to refuse
+the insert. Those rows cannot have been written while it was in place, so they came
+from a load with the checks turned off. `tools/repair-impossible-rows.php` removed
+them, along with the three stale notices and the two missing dates, taking the date
+from `last_viewed_at` because that is the closest evidence the row still holds. It
+reports every row before it writes and does nothing on a second run.
+
+### Four faults in the audit itself, which are worth more than the findings
+
+A trustworthy instrument was needed before any finding could be believed, and the
+first version was not one.
+
+- Two aggregate checks answered with one row per table carrying a count, and counting
+  rows reported six findings when the answer was six zeroes. Filtering them on a
+  column that the other fifty five checks do not have turned a finding into silence,
+  which is worse than the mistake it replaced, so the filter is scoped to the
+  aggregates.
+- A check demanded that every conversation have two members. A support thread has
+  one until an administrator joins it through `/admin/support/{conversation}/join`,
+  which is the design. The check was wrong and a healthy unclaimed request was being
+  reported as a fault.
+- The index audit compared a composite's leading column against every single column
+  index in the schema and reported 49 redundancies, which is nonsense:
+  `announcements.author_id` does not have an index called
+  `conversation_messages_author_id_foreign`. Scoped to the same table and the same
+  column, the answer is none.
+- The plan measurement ran a query inside the loop that built its own test data, 3,600
+  of them, and reused one variable for both a count and the array of rows, so the loop
+  never ended. Both are the mistake the application's own query budget tests exist to
+  catch, made in a tool rather than in the product.
+
+### Normalization: what was deliberately left alone
+
+Six columns are each determined by the enrollment they name, which is a transitive
+dependency and a breach of third normal form taken literally:
+`lesson_progress.student_id`, `quiz_attempts.student_id`, `certificates.student_id`,
+`certificates.course_id`, `payments.student_id` and `payments.course_id`.
+
+They stay. Every learner facing screen filters on one of them directly, and removing
+them would turn the hottest queries in the product into a join to enrollments on every
+row of every page, in exchange for removing a possibility the write path already
+prevents. That is a bad trade, so the duplication is kept and the reason is written
+down. The mechanism that makes it safe is `DatabaseIntegrityTest`, which reads every
+row for all twelve rules of this shape and builds a course with a lesson and a learner
+first, so a passing assertion is never an empty table agreeing with itself.
+
+The same applies to the derived figures that are deliberately stored: the grade on an
+attempt, the pass flag, the last message time on a conversation, and the name and
+title a certificate keeps. Each is checked against the thing it was computed from,
+and each is a copy taken once and not rewritten.
+
+### Indexes: measured, and none added
+
+The structural answer was that all 46 foreign keys have an index leading on their own
+column, all 26 named access paths filter on a column that leads an index, and no
+index repeats another. Then the same queries were run against a synthetic catalog of
+4,000 courses, written inside a transaction that is rolled back: 13 of 14 query shapes
+use an index.
+
+The one that does not is an instructor's own course list, because the index is on
+`instructor_id` and the list is ordered by the date it was last touched. The synthetic
+data gave one instructor all 4,000 courses, which is not a shape this application
+sees; the real one owns five and the page is fifteen long. An index was not added,
+because the evidence does not ask for one, and "avoid adding indexes everywhere without
+a reason" is easier to honour when the reason is measured rather than imagined.
+
+### Where it ended
+
+- Fifty seven integrity checks, none with rows to look at. Thirty five index checks,
+  none uncovered.
+- 1745 tests, 7567 assertions, up 32. Pint 393 files. `composer audit` clean. 106
+  routes. Migrations reproduce from nothing, which the passing suite proves because
+  every test builds its database from them.
+- The live workflows again, after all of it: 31 of 31 on the accounts and the roles,
+  41 of 41 on the learning path, the announcement lifecycle, messaging, notices,
+  certificates and role separation.
+- The demonstration state restored afterwards, because the workflow probe enrolls and
+  completes as it goes.

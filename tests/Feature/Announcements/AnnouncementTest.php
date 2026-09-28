@@ -475,6 +475,101 @@ class AnnouncementTest extends TestCase
         );
     }
 
+    /**
+     * Withdrawing an announcement takes its notices with it.
+     *
+     * A notice is a row in notifications pointing at an announcement through
+     * subject_type and subject_id. There is no foreign key between them and there
+     * cannot be: the same two columns point at a quiz, a certificate and a
+     * conversation as well, so the reference is polymorphic and the database has
+     * nothing to hang a constraint on. Nothing cascades, and the withdraw action
+     * deleted the announcement and nothing else, so every student who had been
+     * told kept a notice whose link now answers 404.
+     *
+     * This is the one place in the schema where the database cannot help and the
+     * application has to, which makes the test the mechanism rather than a
+     * convenience. It was found by auditing notifications for subjects that no
+     * longer exist, on three live rows.
+     */
+    public function test_withdrawing_an_announcement_withdraws_its_notices(): void
+    {
+        $instructor = $this->instructor();
+        $course = $this->publishedCourse($instructor);
+        $student = $this->student();
+        $this->enroll($student, $course);
+
+        $announcement = app(PublishAnnouncement::class)
+            ->courseAnnouncement($instructor, $course, 'Exam moved', 'Friday instead.');
+
+        $this->assertSame(
+            1,
+            $this->noticesFor($student, NotificationType::Announcement),
+            'The student was not told, so there is nothing for this test to withdraw.'
+        );
+
+        $this->actingAs($instructor)
+            ->from(route('announcements.index'))
+            ->delete(route('announcements.destroy', $announcement))
+            ->assertRedirect();
+
+        $this->assertNull(Announcement::query()->find($announcement->id));
+
+        $this->assertSame(
+            0,
+            $this->noticesFor($student, NotificationType::Announcement),
+            'The student still holds a notice about an announcement that no longer exists, and following it answers 404.'
+        );
+
+        $this->assertSame(
+            0,
+            Notification::query()
+                ->where('subject_type', 'announcement')
+                ->where('subject_id', $announcement->id)
+                ->count(),
+            'A notice still points at the withdrawn announcement. subject_id is not a foreign key, so nothing else would have removed it.'
+        );
+    }
+
+    /**
+     * Withdrawing one announcement leaves the notices for the others alone.
+     *
+     * Without this, a fix that removed every notice rather than the ones about
+     * this announcement would pass the test above and silently swallow unrelated
+     * mail. The subject is what separates them, so the delete is keyed on it.
+     */
+    public function test_withdrawing_one_announcement_leaves_the_notices_for_another(): void
+    {
+        $instructor = $this->instructor();
+        $course = $this->publishedCourse($instructor);
+        $student = $this->student();
+        $this->enroll($student, $course);
+
+        $withdrawn = app(PublishAnnouncement::class)
+            ->courseAnnouncement($instructor, $course, 'Exam moved', 'Friday instead.');
+
+        $kept = app(PublishAnnouncement::class)
+            ->courseAnnouncement($instructor, $course, 'Room change', 'The annexe this week.');
+
+        $this->assertSame(2, $this->noticesFor($student, NotificationType::Announcement));
+
+        $this->actingAs($instructor)
+            ->from(route('announcements.index'))
+            ->delete(route('announcements.destroy', $withdrawn))
+            ->assertRedirect();
+
+        $remaining = Notification::query()
+            ->where('user_id', $student->id)
+            ->where('subject_type', 'announcement')
+            ->pluck('subject_id')
+            ->all();
+
+        $this->assertSame(
+            [$kept->id],
+            $remaining,
+            'Withdrawing one announcement took a notice that was about a different one.'
+        );
+    }
+
     /* ------------------------------------------------------------- read state */
 
     public function test_read_state_is_the_notifications_read_state_and_not_a_second_column(): void

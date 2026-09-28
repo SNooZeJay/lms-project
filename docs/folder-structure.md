@@ -513,6 +513,17 @@ Most content in this directory is generated and ignored by Git.
 
 Contains automated Feature and Unit tests.
 
+
+`tests/Feature/DatabaseIntegrityTest.php` holds the rules the database cannot enforce.
+A foreign key proves a row points at an existing row, not at the right one, and a check
+constraint cannot reach another table, so the rules that two columns holding one fact
+must agree, that an answer names an option of the question it answers, and that a
+notice does not outlive the announcement it announces, are kept by the write path and
+pinned here. The copied columns are read over every row, and the arrangement builds a
+course with a lesson and a learner first, so a passing assertion is never an empty
+table agreeing with itself. It also asserts the relationship chain the plan draws,
+read out of `information_schema` rather than out of the models, that the constraints
+are live rather than merely declared, and that the tables the plan defers are absent.
 `tests/Support/QueryCounter.php` counts the queries a piece of work runs, so a
 performance change is judged against a number rather than an impression.
 
@@ -563,6 +574,14 @@ screen instead of asserting them.
   the application answers with its 404 page, and the browser is handed HTML where
   it asked for CSS, so the page renders unstyled. It lives in the repository so
   there is one copy of the rule and it survives a reboot
+- `repair-impossible-rows.php` repairs the rows an audit of the live database found to
+  be impossible: a lesson progress row marked finished with no date beside it, a
+  profile row belonging to an account that no longer exists, and a notice pointing at
+  an announcement that was withdrawn. It reports every row before it writes, never
+  overwrites a good row, and does nothing on a second run, because a repair whose
+  first run writes is a repair nobody will run against a copy first. A lesson's missing
+  date is taken from `last_viewed_at`, the closest evidence the row still holds, rather
+  than invented from `created_at`
 - `serve-concurrently.php` serves the application from a pool of workers behind
 - `cleanup-probe-announcements.php` removes the duplicate announcements the form
   probe leaves behind, and the notices that were generated with them. Posting a real

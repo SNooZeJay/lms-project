@@ -6,6 +6,7 @@ use App\Enums\AnnouncementScope;
 use App\Events\AnnouncementPublished;
 use App\Models\Announcement;
 use App\Models\Course;
+use App\Models\Notification;
 use App\Models\User;
 use App\Policies\AnnouncementPolicy;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -73,13 +74,36 @@ class PublishAnnouncement
     }
 
     /**
-     * Withdraw one, by its author.
+     * Withdraw one, by its author, and the notices that announced it.
+     *
+     * A notice points at the announcement through subject_type and subject_id,
+     * which is a reference no foreign key can hold: the same two columns point at a
+     * quiz, a certificate and a conversation, so it is polymorphic and the database
+     * has nothing to hang a constraint on. Nothing cascades, so deleting the
+     * announcement alone left every student who had been told holding a notice
+     * whose link answers 404. Three such rows were live before this was found by
+     * auditing notifications for subjects that no longer exist.
+     *
+     * Both writes are in one transaction, so a withdrawal either takes the notice
+     * with it or does not happen. Doing them in order, the notice first, means a
+     * failure between the two leaves the announcement without a notice, which is a
+     * withdrawal that has not been announced rather than a notice about nothing.
+     *
+     * The delete is keyed on the subject, not on the type alone, so withdrawing one
+     * announcement cannot take a notice that was about a different one.
      */
     public function withdraw(User $actor, Announcement $announcement): void
     {
         Gate::forUser($actor)->authorize('delete', $announcement);
 
-        $announcement->delete();
+        DB::transaction(function () use ($announcement): void {
+            Notification::query()
+                ->where('subject_type', 'announcement')
+                ->where('subject_id', $announcement->id)
+                ->delete();
+
+            $announcement->delete();
+        });
     }
 
     private function publish(

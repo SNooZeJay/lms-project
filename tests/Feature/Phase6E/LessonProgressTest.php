@@ -492,4 +492,96 @@ class LessonProgressTest extends TestCase
     {
         return $this->lessonUrl($course, $lesson).'/complete';
     }
+
+    /**
+     * A learner reads a lesson and then marks it finished.
+     *
+     * This is the order the interface produces and the order every earlier test in
+     * this file avoided: they all posted the completion straight after enrolling,
+     * with no visit in between, so the row did not exist and the write took the
+     * insert path.
+     *
+     * MarkLessonComplete deliberately leaves completed_at out of the columns an
+     * upsert is allowed to overwrite, so that pressing the button a second time
+     * cannot move the moment the learner actually finished. That is right, and it
+     * has a second effect nobody measured: a row that already exists is updated
+     * rather than inserted, so the status becomes completed and the date beside it
+     * is never written. The learner is recorded as having finished the lesson at
+     * no time at all, which is the same fault repair-enrollment-activations.php
+     * exists to undo for enrollments.
+     *
+     * Found by auditing the table rather than the code, on two live rows.
+     */
+    public function test_completing_a_lesson_that_was_opened_records_when_it_was_finished(): void
+    {
+        [$student, $course, , $lesson] = $this->makeEnrolledCourse();
+
+        // The visit. This is the step every other test here skips, and it is the
+        // ordinary way a learner reaches a lesson: from the course, by clicking it.
+        $this->actingAs($student)->get($this->lessonUrl($course, $lesson))->assertOk();
+
+        $opened = LessonProgress::query()->firstOrFail();
+
+        $this->assertSame(LessonProgressStatus::InProgress, $opened->status, 'The visit should leave the lesson open, not finished.');
+        $this->assertNull($opened->completed_at, 'An open lesson has no completion date, which is what makes the next line a real test rather than a formality.');
+
+        $this->actingAs($student)
+            ->from($this->lessonUrl($course, $lesson))
+            ->post($this->completeUrl($course, $lesson))
+            ->assertRedirect($this->lessonUrl($course, $lesson));
+
+        $progress = LessonProgress::query()->firstOrFail();
+
+        $this->assertSame(LessonProgressStatus::Completed, $progress->status);
+        $this->assertNotNull(
+            $progress->completed_at,
+            'The lesson reads as finished with no record of when it was finished.'
+        );
+    }
+
+    /**
+     * The date is written once, and pressing the button again does not move it.
+     *
+     * The two halves together are the whole rule. Writing the date on the update
+     * path is only safe because the row is only ever updated onto completed once,
+     * and a fix that put completed_at into the overwrite list without this would
+     * pass the test above and break this one.
+     */
+    public function test_completing_an_opened_lesson_twice_keeps_the_first_completion_time(): void
+    {
+        [$student, $course, , $lesson] = $this->makeEnrolledCourse();
+
+        $this->actingAs($student)->get($this->lessonUrl($course, $lesson))->assertOk();
+        $this->actingAs($student)->post($this->completeUrl($course, $lesson));
+        $first = LessonProgress::query()->firstOrFail()->completed_at;
+
+        $this->assertNotNull($first);
+
+        $this->actingAs($student)->post($this->completeUrl($course, $lesson));
+
+        $progress = LessonProgress::query()->firstOrFail();
+
+        $this->assertSame(1, LessonProgress::query()->count());
+        $this->assertEquals($first, $progress->completed_at, 'A second press moved the moment the learner finished.');
+    }
+
+    /**
+     * A learner who goes straight to the button, with no visit, is recorded the
+     * same way.
+     *
+     * Pinned because the two paths are separate statements to the database and a
+     * change that fixed one and broke the other would be invisible to the first
+     * test, which only exercises the visit-first order.
+     */
+    public function test_completing_without_opening_first_still_records_the_time(): void
+    {
+        [$student, $course, , $lesson] = $this->makeEnrolledCourse();
+
+        $this->actingAs($student)->post($this->completeUrl($course, $lesson));
+
+        $this->assertNotNull(
+            LessonProgress::query()->firstOrFail()->completed_at,
+            'The insert path stopped recording the completion date.'
+        );
+    }
 }

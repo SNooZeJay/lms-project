@@ -93,7 +93,7 @@ Use a vertical slice whenever possible.
 Example:
 
 ```text
-Registration â†’ login â†’ Student dashboard
+Registration Ã¢â€ â€™ login Ã¢â€ â€™ Student dashboard
 ```
 
 A vertical slice proves the full path from browser input to database record and back.
@@ -104,13 +104,13 @@ Every feature and phase must follow this cycle:
 
 ```text
 Data gathering
-â†’ Create or update ERD and flowcharts
-â†’ Develop
-â†’ Build
-â†’ Test
-â†’ Find bugs
-â†’ Fix
-â†’ Test again
+Ã¢â€ â€™ Create or update ERD and flowcharts
+Ã¢â€ â€™ Develop
+Ã¢â€ â€™ Build
+Ã¢â€ â€™ Test
+Ã¢â€ â€™ Find bugs
+Ã¢â€ â€™ Fix
+Ã¢â€ â€™ Test again
 ```
 
 Required evidence for each cycle:
@@ -131,7 +131,7 @@ Required evidence for each cycle:
 Document every feature using:
 
 ```text
-Input â†’ Process â†’ Output
+Input Ã¢â€ â€™ Process Ã¢â€ â€™ Output
 ```
 
 **Input**
@@ -592,7 +592,7 @@ flowchart TD
 Bugs found and fixed during this phase:
 
 - The local owner name needed quoting in `.env`.
-- Fortifyâ€™s default unknown-email reset response exposed account state, so the project now uses a safe generic response.
+- FortifyÃ¢â‚¬â„¢s default unknown-email reset response exposed account state, so the project now uses a safe generic response.
 - The owner command test initially reused the real local secret path, so the test now uses a unique temporary path outside the repository.
 - The password-change middleware initially allowed the page route but not its POST route, so the gate now permits both password-change endpoints.
 - Registration normalization initially assumed name and email keys existed, so missing-field validation now returns errors instead of a server error.
@@ -1159,7 +1159,7 @@ flowchart TD
 **Output**
 
 - Ordered Module, Lesson, and Learning Material records
-- Course â†’ Module â†’ Lesson â†’ Material relationships
+- Course Ã¢â€ â€™ Module Ã¢â€ â€™ Lesson Ã¢â€ â€™ Material relationships
 - No public curriculum route
 - No upload or private download behavior
 - No enrollment or payment record
@@ -1190,7 +1190,7 @@ flowchart TD
   - Verify: focused migration and model tests.
 
 - [x] Task 4: Add Module and Lesson factories and relationships
-  - Acceptance: factories create valid parent-scoped records; Course â†’ Module â†’ Lesson relationships resolve correctly.
+  - Acceptance: factories create valid parent-scoped records; Course Ã¢â€ â€™ Module Ã¢â€ â€™ Lesson relationships resolve correctly.
   - Verify: focused factory and relationship tests.
 
 - [x] Task 5: Add failing Learning Material tests
@@ -1209,7 +1209,7 @@ flowchart TD
 
 - Added `ContentStatus` and the Module and Lesson migrations.
 - Enforced positive, parent-scoped positions and Lesson slug uniqueness.
-- Added Module and Lesson models with Course â†’ Module â†’ Lesson relationships.
+- Added Module and Lesson models with Course Ã¢â€ â€™ Module Ã¢â€ â€™ Lesson relationships.
 - Added Module and Lesson factories with safe draft defaults.
 - Added server-owned field mass-assignment tests.
 - The full suite passes 70 tests and 279 assertions.
@@ -3360,8 +3360,8 @@ platform. So the write seam refused to store the notice for a course
 announcement, with `announcement belongs to a course, so a course is required`.
 
 That is the same shape as the `NEW_MESSAGE` split in slice 8: a scope rule
-written from a plausible assumption rather than from the plan, and the seam â€”
-working exactly as designed â€” refusing to write the row. The correction is
+written from a plausible assumption rather than from the plan, and the seam Ã¢â‚¬â€
+working exactly as designed Ã¢â‚¬â€ refusing to write the row. The correction is
 recorded in `docs/messaging-plan.md`.
 
 ### A design decision worth stating
@@ -3747,7 +3747,7 @@ Also, from the same review pass:
   Renamed to "Latest changes" and "Account and role changes". Nothing was
   removed: the mixed feed is chronological and the three categorised panels
   below it are not, so it answers a question they do not.
-- "1 instructors Â· 1 administrators" on the Students tile. The count and its
+- "1 instructors Ã‚Â· 1 administrators" on the Students tile. The count and its
   noun were two fixed strings.
 
 ## 42. The topbar: what the reference asked for, and what the data allowed
@@ -4075,3 +4075,39 @@ serve, then walk the demonstration workflows each role would perform.
   was returning HTTP 500 on eleven listeners whenever the application was reached by
   any name other than the one it believes it is published at.
 - 1713 tests, 7567 assertions. Pint 391 files. `composer audit` clean. 106 routes.
+
+## The database audit
+
+Date: September 29, 2026
+
+### Input
+
+A normalization and integrity audit of the whole database: schema, data, relationships,
+constraints and indexes, with the instruction not to normalize blindly, to fix rather
+than report, and not to add indexes without a reason.
+
+### Process
+
+Read the live schema rather than the migration files, so the audit is of what exists.
+Ask, over every row, the questions a foreign key cannot answer: does a row point at
+the right thing, does the state it is in match the state it claims, is the same fact
+stored twice able to disagree, is anything duplicated that should be unique, is
+anything left behind. Then check the indexes structurally and measure the same queries
+against a synthetic catalog built inside a rolled back transaction.
+
+### Output
+
+- Two application faults, both of which the whole suite had passed. A lesson finished
+  through the update path kept no completion date, because `completed_at` was left out
+  of the columns an upsert may overwrite; and withdrawing an announcement left the
+  notices that announced it, because a polymorphic reference has no foreign key to
+  cascade. Both fixed, both with tests that pin the two halves of each rule.
+- Three classes of impossible row repaired by `tools/repair-impossible-rows.php`, which
+  reports before it writes and is safe to run twice.
+- Six transitive dependencies kept deliberately, the reason written down, and the
+  consistency made permanent by `DatabaseIntegrityTest`, which reads every row for all
+  twelve rules of that shape.
+- No schema change and no index added. Fifty seven integrity checks and thirty five
+  index checks, none with anything to look at; 13 of 14 query shapes use an index at
+  4,000 courses, and the one that does not does not warrant one.
+- 1745 tests, 7656 assertions. Pint 393 files. `composer audit` clean. 106 routes.
