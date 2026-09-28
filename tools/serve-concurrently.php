@@ -79,7 +79,7 @@
  |                probe can hold a session over http://127.0.0.1. Never use this
  |                for the public address, which is https.
  |
- | The Apache configuration it writes lives in storage/app/apache/ and is
+ | The Apache configuration it writes lives in storage/app/apache/PORT/ and is
  | generated, because it depends on which modules this machine's Apache has.
  | Committing a copy would guarantee it was wrong somewhere.
  */
@@ -122,8 +122,13 @@ for ($index = 0; $index < $state['workers']; $index++) {
 
 $router = $root.'/tools/server-router.php';
 $public = $root.'/public';
-$configDirectory = $root.'/storage/app/apache';
-$config = $configDirectory.'/httpd-lms.conf';
+// The configuration and everything Apache writes at runtime live under a
+// directory named for the port. One shared directory cannot host two instances,
+// because the balancer's shared memory file is created once and refuses to be
+// created again.
+$runtimeDirectory = $root.'/storage/app/apache/'.$state['port'];
+$configDirectory = $runtimeDirectory;
+$config = $runtimeDirectory.'/httpd-lms.conf';
 $httpd = $state['apache'].'/bin/httpd.exe';
 $httpdConf = $state['apache'].'/conf/httpd.conf';
 $php = PHP_BINARY;
@@ -266,13 +271,20 @@ function buildConfiguration(array $state, array $workerPorts, string $apache, st
     $out[] = '# Regenerated every time the application is started, because it depends';
     $out[] = '# on which modules this machine\'s Apache has and on what is in public/.';
     $out[] = '';
+    $out[] = '# Everything writable is under a directory named for the port, so two';
+    $out[] = '# instances never fight. mod_proxy_balancer keeps its membership in a';
+    $out[] = '# shared memory file inside DefaultRuntimeDir and refuses to start when';
+    $out[] = '# that file already exists, so one shared directory means a second';
+    $out[] = '# instance fails to start with "balancer slotmem_create failed" and';
+    $out[] = '# nothing in the message says why. A probe instance on its own port is';
+    $out[] = '# the ordinary reason to want two, so this is not a corner case.';
     $out[] = 'ServerRoot "'.$apache.'"';
     $out[] = 'Listen '.$listen;
     $out[] = 'TypesConfig conf/mime.types';
-    $out[] = 'DefaultRuntimeDir "'.$forward.'/storage/app/apache"';
-    $out[] = 'PidFile "'.$forward.'/storage/app/apache/httpd.pid"';
-    $out[] = 'ErrorLog "'.$forward.'/storage/app/apache/error.log"';
-    $out[] = 'CustomLog "'.$forward.'/storage/app/apache/access.log" common';
+    $out[] = 'DefaultRuntimeDir "'.$forward.'/storage/app/apache/'.$listen.'"';
+    $out[] = 'PidFile "'.$forward.'/storage/app/apache/'.$listen.'/httpd.pid"';
+    $out[] = 'ErrorLog "'.$forward.'/storage/app/apache/'.$listen.'/error.log"';
+    $out[] = 'CustomLog "'.$forward.'/storage/app/apache/'.$listen.'/access.log" common';
     $out[] = 'LogLevel warn';
     $out[] = 'ServerName localhost';
     $out[] = 'DirectoryIndex index.php';
@@ -410,7 +422,7 @@ if ($command === 'start') {
     startDetached('"'.$httpd.'" -f "'.$config.'"');
     if (! waitForPort($state['port'], 15.0)) {
         line('  Apache never took port '.$state['port']);
-        line('  its own error log is at storage/app/apache/error.log');
+        line('  its own error log is at storage/app/apache/'.$state['port'].'/error.log');
         exit(1);
     }
 
@@ -479,7 +491,7 @@ if ($command === 'status') {
         line('  config     : not written yet, the application has not been started');
     }
 
-    $log = $root.'/storage/app/apache/error.log';
+    $log = $runtimeDirectory.'/error.log';
     if (is_file($log) && filesize($log) > 0) {
         $recent = [];
         exec('powershell -NoProfile -NonInteractive -Command "Get-Content -Tail 5 -Path \''.str_replace("'", "''", $log).'\'" 2>NUL', $recent);

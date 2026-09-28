@@ -20,11 +20,18 @@ use Illuminate\Validation\ValidationException;
 /**
  * Opening a thread.
  *
- * There is exactly one course thread per student and instructor per course, and
- * that is a property of the unique index on (kind, course_id, requester_id)
- * rather than of a check. Two people who both press the button at the same
- * moment race here, one wins, and the other is handed the thread the winner
- * created instead of opening a second one.
+ * There is exactly one course thread per student, per instructor, per course.
+ * Two people who both press the button at the same moment race here, one wins,
+ * and the other is handed the thread the winner created instead of opening a
+ * second one.
+ *
+ * This was documented as coming from "the unique index on (kind, course_id,
+ * requester_id)". There is no such index. The one that exists is on (kind,
+ * thread_key), and thread_key was the pair alone, so the index did not know which
+ * course a thread was about and could not have refused anything. A docblock that
+ * describes an index which is not there is worse than one that describes nothing:
+ * it made a real gap look like a guarantee. The course is in the key now, and the
+ * claim below is about that key.
  *
  * Both participants are added here rather than by the caller, because a thread
  * with one person in it is a thread nobody can reply to.
@@ -32,30 +39,35 @@ use Illuminate\Validation\ValidationException;
 class StartConversation
 {
     /**
-     * Open the one thread between a student and an instructor about a course,
-     * or hand back the one that already exists.
+     * Open the thread between a student and an instructor about a course, or hand
+     * back the one that already exists.
+     *
+     * The course is the one the request was made from, and it is used as given.
+     *
+     * An earlier version resolved the course here instead, with first() over the
+     * pair's shared courses, on the reasoning that the rule judges the pair and the
+     * course together. The consequence was that the course in the address was
+     * decorative. A Student enrolled in two courses by the same Instructor who
+     * asked about the second one was handed a thread stamped with the first, so
+     * the page they pressed the button on said one course and the thread they
+     * landed in said another.
+     *
+     * The rule still judges the pair and the course together. It now judges the
+     * course that was asked about, and the check below proves the pair really
+     * does share that one rather than some other course they have in common.
      */
-    public function startCourseThread(User $requester, User $counterpart): Conversation
+    public function startCourseThread(User $requester, User $counterpart, Course $course): Conversation
     {
-        /*
-         | The course is resolved before the check rather than passed in, because
-         | the rule judges the pair and the course together: a student may open a
-         | thread with the instructor of a course they are enrolled in, and with
-         | nobody else.
-         */
-        $course = $this->sharedCourse($requester, $counterpart);
-
-        if ($course === null) {
+        if (! $this->shareThisCourse($requester, $counterpart, $course)) {
             throw ValidationException::withMessages([
                 'course' => 'You share no course with this person, so there is nobody here to message.',
             ]);
         }
 
-        // The policy is asked directly rather than through Gate. These two
-        // abilities have no single model to bind to, since the question is about
-        // a pair of people and a course at once, and a Gate string would have to
-        // guess which one. The model-bound abilities, view, reply and close, all
-        // go through Gate as usual.
+        // The policy is asked directly rather than through Gate. This ability has
+        // no single model to bind to, since the question is about a pair of people
+        // and a course at once, and a Gate string would have to guess which one.
+        // The model-bound abilities, view, reply and close, all go through Gate.
         if (! app(ConversationPolicy::class)->startCourseThread($requester, $counterpart, $course->id)) {
             throw ValidationException::withMessages([
                 'course' => 'You cannot open a conversation with this person about this course.',
@@ -70,7 +82,7 @@ class StartConversation
      */
     public function open(ConversationKind $kind, User $requester, ?User $counterpart, ?int $courseId): Conversation
     {
-        $threadKey = $this->threadKey($kind, $requester, $counterpart);
+        $threadKey = $this->threadKey($kind, $requester, $counterpart, $courseId);
 
         try {
             return DB::transaction(function () use ($kind, $requester, $counterpart, $courseId, $threadKey): Conversation {
@@ -151,14 +163,6 @@ class StartConversation
     }
 
     /**
-     * A course the two of them genuinely share.
-     *
-     * Resolved through the counterpart's courses and the requester's
-     * enrollment, so a thread can only be opened for a relationship that already
-     * exists. A student who is not enrolled has no course in common with an
-     * instructor and gets nothing back.
-     */
-    /**
      * The deterministic identity of a thread.
      *
      | A course thread is identified by its pair, written in a fixed order, so
@@ -175,7 +179,7 @@ class StartConversation
      | index never has anything to refuse, which is the correct outcome rather
      | than a gap in the design.
      */
-    private function threadKey(ConversationKind $kind, User $requester, ?User $counterpart): string
+    private function threadKey(ConversationKind $kind, User $requester, ?User $counterpart, ?int $courseId): string
     {
         if ($kind === ConversationKind::Support) {
             return 'support:'.Str::uuid()->toString();
@@ -184,46 +188,67 @@ class StartConversation
         $ids = [$requester->id, $counterpart?->id ?? 0];
         sort($ids, SORT_NUMERIC);
 
-        return 'course:'.$ids[0].'-'.$ids[1];
+        /*
+         | The course is part of the identity, not decoration.
+         |
+         | The key used to be the pair alone, which reads as "one conversation per
+         | student and instructor" and behaved that way. A Student taking two
+         | courses by the same Instructor asked about the second one and was handed
+         | the first course's thread: the page said course two and the thread it
+         | opened said course one. The index could not have caught it, because the
+         | index is on this string and the string did not say which course.
+         |
+         | Putting the course in the key is the fix and needs no migration, since
+         | the column and the index already exist and only the value changes. A
+         | thread opened for the same pair about the same course still computes the
+         | same key, so the duplicate the index exists to refuse is still refused.
+         */
+        return 'course:'.$ids[0].'-'.$ids[1].'-'.($courseId ?? 0);
     }
 
     /**
-     * A course the two of them genuinely share.
+     * Do these two people actually share the course that was asked about?
      *
-     * Resolved by role rather than by "whoever asked", because a student may
-     * open a thread with the instructor of a course they are enrolled in and an
-     * instructor may open one with a student of their own course, and in the
-     * second case the counterpart is the student. The first version asked for a
-     * course taught by the counterpart, which silently returned nothing when an
-     * instructor was the one reaching out.
+     * Resolved by role rather than by "whoever asked", because a student may open
+     * a thread with the instructor of a course they are enrolled in and an
+     * instructor may open one with a student of their own course, and in the second
+     * case the counterpart is the student.
+     *
+     * The course is a parameter and is the one being asked about. The earlier
+     * version ignored it and returned the first course the pair happened to share,
+     * which meant a Student with two courses by the same Instructor was given a
+     * thread about the wrong one. The name says what it checks now: this course,
+     * not a course.
      *
      * The status list is the same one StudentCourseAccess uses, so a cancelled
      * enrollment closes the thread as well as the course.
      */
-    private function sharedCourse(User $requester, User $counterpart): ?Course
+    private function shareThisCourse(User $requester, User $counterpart, Course $course): bool
     {
         [$student, $instructor] = match ($requester->profile?->role) {
             UserRole::Student => [$requester, $counterpart],
             UserRole::Instructor => [$counterpart, $requester],
-            // Not a pair that can share a course thread. The Policy refuses
-            // these anyway, and refusing here means the message says the pair is
-            // wrong rather than that no course happens to be shared.
+            // Not a pair that can share a course thread. The Policy refuses these
+            // anyway, and refusing here means the message says the pair is wrong
+            // rather than that no course happens to be shared.
             default => [null, null],
         };
 
         if ($student === null || $instructor === null) {
-            return null;
+            return false;
         }
 
-        return Course::query()
-            ->where('instructor_id', $instructor->id)
-            ->whereHas('enrollments', fn ($query) => $query
-                ->where('student_id', $student->id)
-                ->whereIn('status', [
-                    EnrollmentStatus::Active,
-                    EnrollmentStatus::Completed,
-                ]))
-            ->first();
+        if ((int) $course->instructor_id !== (int) $instructor->id) {
+            return false;
+        }
+
+        return $course->enrollments()
+            ->where('student_id', $student->id)
+            ->whereIn('status', [
+                EnrollmentStatus::Active,
+                EnrollmentStatus::Completed,
+            ])
+            ->exists();
     }
 
     private function isDuplicateThread(QueryException $e): bool

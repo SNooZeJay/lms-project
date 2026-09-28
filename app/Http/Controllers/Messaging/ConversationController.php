@@ -124,7 +124,7 @@ class ConversationController extends Controller
             ->whereKey($course->instructor_id)
             ->firstOrFail();
 
-        $conversation = app(StartConversation::class)->startCourseThread($request->user(), $counterpart);
+        $conversation = app(StartConversation::class)->startCourseThread($request->user(), $counterpart, $course);
 
         return redirect()->route('conversations.show', $conversation);
     }

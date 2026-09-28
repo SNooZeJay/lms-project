@@ -38,6 +38,46 @@
                 </div>
             </dl>
 
+                {{--
+                    Talking to the person teaching this course.
+
+                    Opening the thread has been possible since direct messaging was
+                    approved, and no page posted to it. A Student could open a support
+                    request and could reply inside a thread, and could never once
+                    start one with the instructor of the course they are taking, which
+                    is the conversation the plan lists first.
+
+                    One of two things, never both: the button when there is no thread,
+                    and a link to the thread when there is. Offering the button while
+                    a thread is open would ask somebody to start a conversation they
+                    are already in.
+
+                    The gate is the policy's own answer, so the rule about who may
+                    open this thread stays in one place.
+                --}}
+                <div class="mt-6 flex flex-wrap items-center gap-3">
+                    @if ($courseThread)
+                        <x-btn :href="route('conversations.show', $courseThread)" variant="secondary" size="md">
+                            <x-icon name="message-square" size="sm" />
+                            Open your conversation with the instructor
+                        </x-btn>
+                        <p class="text-sm text-ink-muted">
+                            You already have a thread about this course.
+                        </p>
+                    @else
+                        <form method="POST" action="{{ route('conversations.course.store', $course) }}" data-pending>
+                            @csrf
+                            <x-btn type="submit" variant="secondary" size="md" data-pending-button>
+                                <x-icon name="message-square" size="sm" />
+                                <span data-pending-text>Ask the instructor a question</span>
+                            </x-btn>
+                        </form>
+                        <p class="text-sm text-ink-muted">
+                            Opens one conversation with {{ $course->instructor?->name ?? 'the instructor' }} about this course.
+                        </p>
+                    @endif
+                </div>
+
             @if ($course->status !== \App\Enums\CourseStatus::Published)
                 <x-note tone="warning" class="mt-6">
                     This course is not published right now. Your enrollment and your completed lessons are kept,

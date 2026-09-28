@@ -6,11 +6,13 @@ use App\Actions\Enrollment\EnrollStudent;
 use App\Actions\Learning\MarkLessonComplete;
 use App\Actions\Learning\RecordLessonActivity;
 use App\Enums\ContentStatus;
+use App\Enums\ConversationKind;
 use App\Enums\CourseStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\QuizAttemptStatus;
 use App\Enums\QuizStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Conversation;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Lesson;
@@ -118,6 +120,31 @@ class EnrollmentController extends Controller
             };
         }
 
+        /*
+         | The course thread, if this Student already has one with this course's
+         | instructor.
+         |
+         | The route that opens it has existed since direct messaging was approved,
+         | and no page posted to it, so a Student could read the support desk and
+         | reply inside a thread but could never open one with the person teaching
+         | the course they are taking. That is the conversation the plan describes
+         | first, and it was the one with no way in.
+         |
+         | It is read here rather than in the view so the page can offer one of two
+         | things and never both: the button to open a thread, or a link to the
+         | thread that already exists. Rendering the button when a thread is already
+         | open would tell a Student to start a conversation they are already in.
+         |
+         | Found by requester and course rather than through the participant scope,
+         | because this is the one thread this Student asked for, and the pair is
+         | unique by index. The instructor is the other participant either way.
+         */
+        $courseThread = Conversation::query()
+            ->where('kind', ConversationKind::Course)
+            ->where('course_id', $course->id)
+            ->where('requester_id', $request->user()->id)
+            ->first();
+
         return view('student.courses.show', [
             'course' => $course,
             'enrollment' => $enrollment,
@@ -128,6 +155,7 @@ class EnrollmentController extends Controller
             'quizState' => $quizState,
             'completion' => $completion,
             'certificate' => $enrollment->certificate()->first(),
+            'courseThread' => $courseThread,
         ]);
     }
 

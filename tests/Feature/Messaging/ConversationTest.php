@@ -88,9 +88,9 @@ class ConversationTest extends TestCase
         return [$course, $instructor, $student];
     }
 
-    private function courseThread(User $requester, User $counterpart): Conversation
+    private function courseThread(User $requester, User $counterpart, Course $course): Conversation
     {
-        return app(StartConversation::class)->startCourseThread($requester, $counterpart);
+        return app(StartConversation::class)->startCourseThread($requester, $counterpart, $course);
     }
 
     /* ------------------------------------------------------------ the matrix */
@@ -99,21 +99,104 @@ class ConversationTest extends TestCase
     {
         [$course, $instructor, $student] = $this->courseWithPair();
 
-        $first = $this->courseThread($student, $instructor);
-        $second = $this->courseThread($instructor, $student);
+        $first = $this->courseThread($student, $instructor, $course);
+        $second = $this->courseThread($instructor, $student, $course);
 
         $this->assertSame($first->id, $second->id, 'A second thread was opened for the same pair and course.');
         $this->assertSame(1, Conversation::query()->count());
         $this->assertSame(2, $first->participants()->count());
     }
 
+    /**
+     * Two courses, one pair, two threads.
+     *
+     * The thread key used to be the pair alone, so a Student taking two courses
+     * by the same Instructor who asked about the second was handed the first
+     * course's thread. The page said one course and the thread said another, and
+     * no status code or error showed it.
+     *
+     * The course is in the key now. This is the assertion that says so.
+     */
+    public function test_a_pair_gets_one_thread_per_course(): void
+    {
+        [$firstCourse, $instructor, $student] = $this->courseWithPair();
+
+        $secondCourse = Course::factory()->create([
+            'instructor_id' => $instructor->id,
+            'status' => CourseStatus::Published,
+            'course_type' => CourseType::Free,
+            'price_minor' => 0,
+        ]);
+
+        Enrollment::factory()->create([
+            'student_id' => $student->id,
+            'course_id' => $secondCourse->id,
+            'status' => EnrollmentStatus::Active,
+        ]);
+
+        $aboutFirst = $this->courseThread($student, $instructor, $firstCourse);
+        $aboutSecond = $this->courseThread($student, $instructor, $secondCourse);
+
+        $this->assertNotSame(
+            $aboutFirst->id,
+            $aboutSecond->id,
+            'A Student in two courses of one Instructor was handed the same thread for both.'
+        );
+
+        $this->assertSame($firstCourse->id, $aboutFirst->fresh()->course_id);
+        $this->assertSame($secondCourse->id, $aboutSecond->fresh()->course_id);
+
+        // The same pair about the same course still shares one thread, which is
+        // what the key exists to guarantee.
+        $again = $this->courseThread($instructor, $student, $firstCourse);
+        $this->assertSame($aboutFirst->id, $again->id);
+        $this->assertSame(2, Conversation::query()->count());
+    }
+
+    /**
+     * The thread a Student opens names the course they asked about.
+     *
+     * The course used to be looked up from the pair with first(), so a Student
+     * enrolled in two courses by one Instructor was given a thread stamped with
+     * whichever course came first, whichever page they pressed the button on.
+     */
+    public function test_the_thread_names_the_course_that_was_asked_about(): void
+    {
+        [$firstCourse, $instructor, $student] = $this->courseWithPair();
+
+        $secondCourse = Course::factory()->create([
+            'instructor_id' => $instructor->id,
+            'status' => CourseStatus::Published,
+            'course_type' => CourseType::Free,
+            'price_minor' => 0,
+        ]);
+
+        Enrollment::factory()->create([
+            'student_id' => $student->id,
+            'course_id' => $secondCourse->id,
+            'status' => EnrollmentStatus::Active,
+        ]);
+
+        $this->actingAs($student)
+            ->post(route('conversations.course.store', $secondCourse))
+            ->assertRedirect();
+
+        $thread = Conversation::query()->where('kind', 'course')->latest('id')->firstOrFail();
+
+        $this->assertSame(
+            $secondCourse->id,
+            (int) $thread->course_id,
+            'The thread was stamped with a course other than the one the request was made from.'
+        );
+    }
+
     public function test_a_student_may_open_a_thread_with_their_instructor(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
+        [$course, $instructor, $student] = $this->courseWithPair();
 
         $this->actingAs($student)->get(route('conversations.index'))->assertOk()->assertSee('No conversations yet');
 
-        app(PostMessage::class)->handle($student, $this->courseThread($student, $instructor), 'Hello, I have a question about lesson three.');
+        app(PostMessage::class)->handle($student, $this->courseThread($student, $instructor, $course), 'Hello, I have a question about lesson three.');
 
         $this->actingAs($student)->get(route('conversations.index'))->assertOk()->assertSee('Hello');
     }
@@ -124,20 +207,20 @@ class ConversationTest extends TestCase
         $stranger = $this->student();
 
         // A course exists, but the student is not enrolled in it.
-        Course::factory()->create(['instructor_id' => $instructor->id, 'status' => CourseStatus::Published]);
+        $course = Course::factory()->create(['instructor_id' => $instructor->id, 'status' => CourseStatus::Published]);
 
         $this->expectException(ValidationException::class);
 
-        app(StartConversation::class)->startCourseThread($stranger, $instructor);
+        app(StartConversation::class)->startCourseThread($stranger, $instructor, $course);
     }
 
     public function test_a_student_with_a_cancelled_enrollment_cannot_open_a_thread(): void
     {
-        [, $instructor, $student] = $this->courseWithPair(EnrollmentStatus::Cancelled);
+        [$course, $instructor, $student] = $this->courseWithPair(EnrollmentStatus::Cancelled);
 
         $this->expectException(ValidationException::class);
 
-        app(StartConversation::class)->startCourseThread($student, $instructor);
+        app(StartConversation::class)->startCourseThread($student, $instructor, $course);
     }
 
     public function test_a_student_cannot_open_another_students_thread(): void
@@ -146,7 +229,7 @@ class ConversationTest extends TestCase
         $other = $this->student();
         Enrollment::factory()->create(['student_id' => $other->id, 'course_id' => $course->id]);
 
-        $thread = $this->courseThread($student, $instructor);
+        $thread = $this->courseThread($student, $instructor, $course);
 
         $this->actingAs($other)
             ->get(route('conversations.show', $thread))
@@ -164,7 +247,7 @@ class ConversationTest extends TestCase
 
         $this->expectException(ValidationException::class);
 
-        app(StartConversation::class)->startCourseThread($impostor, $student);
+        app(StartConversation::class)->startCourseThread($impostor, $student, $course);
     }
 
     public function test_an_administrator_cannot_post_into_a_course_thread(): void
@@ -172,7 +255,7 @@ class ConversationTest extends TestCase
         [$course, $instructor, $student] = $this->courseWithPair();
         $admin = $this->admin();
 
-        $thread = $this->courseThread($student, $instructor);
+        $thread = $this->courseThread($student, $instructor, $course);
 
         $this->actingAs($admin)
             ->from(route('conversations.show', $thread))
@@ -184,8 +267,8 @@ class ConversationTest extends TestCase
 
     public function test_an_administrator_cannot_read_a_course_thread_they_are_not_in(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
 
         $this->actingAs($this->admin())
             ->get(route('conversations.show', $thread))
@@ -280,8 +363,8 @@ class ConversationTest extends TestCase
 
     public function test_the_same_client_token_produces_one_message(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
         $action = new PostMessage(app(RecordNotification::class));
 
         $token = (string) Str::uuid();
@@ -297,8 +380,8 @@ class ConversationTest extends TestCase
 
     public function test_different_tokens_produce_different_messages(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
         $action = new PostMessage(app(RecordNotification::class));
 
         $action->handle($student, $thread, 'One.', (string) Str::uuid());
@@ -347,10 +430,10 @@ class ConversationTest extends TestCase
 
     public function test_the_thread_key_does_not_depend_on_who_opened_the_thread(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
+        [$course, $instructor, $student] = $this->courseWithPair();
 
-        $fromStudent = $this->courseThread($student, $instructor);
-        $fromInstructor = $this->courseThread($instructor, $student);
+        $fromStudent = $this->courseThread($student, $instructor, $course);
+        $fromInstructor = $this->courseThread($instructor, $student, $course);
 
         $this->assertSame($fromStudent->thread_key, $fromInstructor->thread_key);
         $this->assertSame(1, Conversation::query()->count());
@@ -372,10 +455,10 @@ class ConversationTest extends TestCase
 
     public function test_a_message_notifies_the_other_participants_and_nobody_else(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
+        [$course, $instructor, $student] = $this->courseWithPair();
         $bystander = $this->student();
 
-        $thread = $this->courseThread($student, $instructor);
+        $thread = $this->courseThread($student, $instructor, $course);
         app(PostMessage::class)->handle($student, $thread, 'A question about lesson three.');
 
         $this->assertSame(1, Notification::query()->where('user_id', $instructor->id)->count());
@@ -385,8 +468,8 @@ class ConversationTest extends TestCase
 
     public function test_the_notification_link_is_stored_because_the_recipient_is_in_the_thread(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
 
         app(PostMessage::class)->handle($student, $thread, 'A question.');
 
@@ -486,8 +569,8 @@ class ConversationTest extends TestCase
 
     public function test_a_course_thread_cannot_be_picked_up_as_a_support_request(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
 
         $this->actingAs($this->admin())
             ->post(route('admin.support.join', $thread))
@@ -509,7 +592,7 @@ class ConversationTest extends TestCase
          | working, and these two types are the fix.
          */
         $student = $this->student();
-        [, $instructor, $studentInCourse] = $this->courseWithPair();
+        [$pairedCourse, $instructor, $studentInCourse] = $this->courseWithPair();
         $admin = $this->admin();
 
         $support = app(StartConversation::class)->startSupportThread($student, 'A problem');
@@ -524,8 +607,8 @@ class ConversationTest extends TestCase
         $this->actingAs($admin)->post(route('admin.support.join', $support));
         app(PostMessage::class)->handle($student, $support, 'Still about the platform.');
 
-        $course = $this->courseThread($studentInCourse, $instructor);
-        app(PostMessage::class)->handle($studentInCourse, $course, 'About lesson three.');
+        $courseThread = $this->courseThread($studentInCourse, $instructor, $pairedCourse);
+        app(PostMessage::class)->handle($studentInCourse, $courseThread, 'About lesson three.');
 
         // Addressed to the recipient, which for a support thread is the
         // administrator who picked it up. The person who wrote it is not
@@ -545,15 +628,15 @@ class ConversationTest extends TestCase
             ->where('type', NotificationType::CourseMessage)
             ->firstOrFail();
 
-        $this->assertSame($course->course_id, $courseNotice->course_id);
+        $this->assertSame($pairedCourse->id, $courseNotice->course_id);
     }
 
     /* ------------------------------------------------------------- read state */
 
     public function test_unread_is_counted_from_the_messages_not_stored(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
 
         app(PostMessage::class)->handle($student, $thread, 'One.');
         app(PostMessage::class)->handle($instructor, $thread, 'Two.');
@@ -577,8 +660,8 @@ class ConversationTest extends TestCase
      */
     public function test_a_suspended_account_is_signed_out_of_a_thread(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
 
         $student->profile->forceFill(['account_status' => UserAccountStatus::Suspended])->save();
 
@@ -593,8 +676,8 @@ class ConversationTest extends TestCase
 
     public function test_a_thread_row_shows_real_figures_rather_than_a_count_of_nothing(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
 
         app(PostMessage::class)->handle($student, $thread, 'One.');
         app(PostMessage::class)->handle($instructor, $thread, 'Two.');
@@ -641,8 +724,8 @@ class ConversationTest extends TestCase
      */
     public function test_the_composer_is_a_textarea_named_body(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
 
         $html = (string) $this->actingAs($student)
             ->get(route('conversations.show', $thread))
@@ -705,8 +788,8 @@ class ConversationTest extends TestCase
 
     public function test_a_message_body_is_stored_as_written_and_escaped_on_output(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
 
         $hostile = '<script>alert(1)</script> & "quoted"';
 
@@ -727,8 +810,8 @@ class ConversationTest extends TestCase
 
     public function test_an_empty_message_is_refused(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
 
         $this->expectException(ValidationException::class);
 
@@ -737,8 +820,8 @@ class ConversationTest extends TestCase
 
     public function test_a_message_over_the_limit_is_refused(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
 
         $this->actingAs($student)
             ->from(route('conversations.show', $thread))
@@ -750,8 +833,8 @@ class ConversationTest extends TestCase
 
     public function test_a_guest_cannot_reach_any_thread_route(): void
     {
-        [, $instructor, $student] = $this->courseWithPair();
-        $thread = $this->courseThread($student, $instructor);
+        [$course, $instructor, $student] = $this->courseWithPair();
+        $thread = $this->courseThread($student, $instructor, $course);
 
         $this->get(route('conversations.index'))->assertRedirect(route('login'));
         $this->get(route('conversations.show', $thread))->assertRedirect(route('login'));

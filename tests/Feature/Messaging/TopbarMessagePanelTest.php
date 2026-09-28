@@ -172,9 +172,11 @@ class TopbarMessagePanelTest extends TestCase
     /**
      * A published course, an enrolled learner, and the thread those two share.
      *
-     * The enrollment is not optional. `startCourseThread` derives the course from
-     * the reader's enrollment rather than taking one, which is what stops a
-     * thread being started for a course somebody is not in.
+     * The enrollment is not optional and the course is passed in, because
+     * startCourseThread now takes the course the thread is about rather than
+     * working it out from the pair. An earlier version derived it, and the docblock
+     * here said so; the action no longer does, and a docblock that describes the
+     * old behaviour is worse than none.
      */
     private function courseThread(string $title, ?User $student = null): Conversation
     {
@@ -192,7 +194,7 @@ class TopbarMessagePanelTest extends TestCase
             'course_id' => $course->id,
         ]);
 
-        return app(StartConversation::class)->startCourseThread($student, $this->instructor);
+        return app(StartConversation::class)->startCourseThread($student, $this->instructor, $course);
     }
 
     private function say(User $author, string $body, ?Conversation $thread = null): void

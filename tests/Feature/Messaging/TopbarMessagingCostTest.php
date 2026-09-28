@@ -119,7 +119,7 @@ class TopbarMessagingCostTest extends TestCase
                 'status' => EnrollmentStatus::Active,
             ]);
 
-            $thread = app(StartConversation::class)->startCourseThread($student, $teacher);
+            $thread = app(StartConversation::class)->startCourseThread($student, $teacher, $course);
 
             for ($i = 0; $i < $messages; $i++) {
                 app(PostMessage::class)->handle(

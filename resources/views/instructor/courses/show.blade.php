@@ -821,5 +821,39 @@
                 </x-btn>
             </form>
         </section>
+        {{--
+            Announcing something to this course.
+
+            The route, the controller method and the validated request have all
+            existed since announcements were approved, and nothing pointed at them:
+            an Instructor could build a whole course and could not say a word to the
+            people taking it. It lives here rather than on the announcements list
+            because this is the page an Instructor is already on when something
+            needs saying, and because the audience is the people in this course.
+
+            The scope is never a field. It is decided by which form was submitted,
+            so a request cannot announce itself to the whole platform.
+        --}}
+        @can('createCourse', [\App\Models\Announcement::class, $course])
+            <section class="mt-8 border-t border-line pt-8" aria-labelledby="course-announcement-heading">
+                <h2 id="course-announcement-heading" class="text-lg font-semibold text-ink">
+                    Announce something to this course
+                </h2>
+                <p class="mt-2 text-sm leading-6 text-ink-muted">
+                    Everyone enrolled here will see it and will get a notification.
+                </p>
+
+                <div class="card mt-5 max-w-2xl p-5">
+                    <x-announcement-composer
+                        :action="route('instructor.courses.announcements.store', $course)"
+                        :scope="'course-'.$course->id"
+                        heading="Announce something to this course"
+                        description="Everyone enrolled here will see it and will get a notification."
+                        audience="Only people enrolled in this course will see it. It is published the moment you press the button, and you can withdraw it afterwards."
+                        submit-label="Publish to this course"
+                    />
+                </div>
+            </section>
+        @endcan
     </div>
 @endsection
