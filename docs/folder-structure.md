@@ -555,6 +555,20 @@ screen instead of asserting them.
 - `seed-dashboard-demo.php` builds the demonstration catalog, progress, quizzes
   and results. It uses the factory states rather than overriding `status`,
   because an override replaces the state that sets `activated_at` with it
+- `seed-topbar-demo.php` builds the conversations and notifications the topbar
+  panel reads, so the panel is exercised with something in it
+- `server-router.php` is the router that lets PHP's built in web server serve this
+  application. Without one, `php -S` hands a request for a stylesheet to Laravel,
+  the application answers with its 404 page, and the browser is handed HTML where
+  it asked for CSS, so the page renders unstyled. It lives in the repository so
+  there is one copy of the rule and it survives a reboot
+- `serve-concurrently.php` serves the application from a pool of workers behind
+  Apache, which is how the public address is reached. `start` writes the Apache
+  configuration, starts the workers and the front door, and proves the sign in
+  page renders before reporting success; `stop`, `status` and `check` are the
+  other commands. It is needed because PHP's built in web server answers one
+  request at a time and `PHP_CLI_SERVER_WORKERS`, which would change that, needs
+  `fork()`, which Windows does not have
 
 ### `vendor/`
 

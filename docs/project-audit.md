@@ -347,6 +347,7 @@ Checked on September 25, 2026:
 | LMS database user | `lms_user` with database-scoped privileges | Ready |
 | Credential storage | DPAPI-encrypted file under `C:\Users\Administrator\.secrets\lms-mysql.json` | Ready |
 | XAMPP database | MariaDB 10.4.32 remains on port 3306 | Preserved and not used by the LMS |
+| Public address serving | Apache on port 8000 in front of a pool of six application workers, `tools/serve-concurrently.php` | Ready, verified over the tunnel |
 
 Phase 1 environment prerequisites, the Laravel foundation, and the human-approved Phase 2, Phase 3, Phase 4A, Phase 4B, Phase 5A through Phase 5F, Phase 6A, Phase 6B, and Phase 6C slices are ready. Phase 6D lesson progress foundation is implemented and awaiting schema confirmation.
 

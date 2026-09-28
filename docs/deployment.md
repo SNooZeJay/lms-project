@@ -466,9 +466,18 @@ The endpoint must be reachable over public HTTPS, so `localhost` does not work.
 This project runs on an ngrok tunnel and is not being deployed to a host.
 
 ```bash
-php artisan serve
+php tools/serve-concurrently.php start
 ngrok http 8000 --domain <reserved-domain>
 ```
+
+`start` brings up Apache on port 8000 in front of a pool of application workers.
+`php artisan serve` was what this used to be, and it is not sufficient: the built
+in web server answers exactly one request at a time, and the setting that would
+change that, `PHP_CLI_SERVER_WORKERS`, needs `fork()`, which Windows does not
+have. A queue of that depth shows up as a page that never finishes, and the
+figures are in `docs/architecture.md` under "The public address is served by a
+pool of workers". Use `php tools/serve-concurrently.php status` to see what is
+running and `stop` to shut it down.
 
 A reserved ngrok domain is used rather than the random URL that a free account
 gets on every start, because the provider has the endpoint URL saved. A changing

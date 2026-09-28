@@ -414,3 +414,123 @@ regression. All three were self-inflicted and all three were re-run clean.
 The rule is simple and was still broken three times: nothing that the suite reads
 gets touched while the suite runs. It is recorded here because the failure mode is
 convincing enough to send somebody hunting a bug that does not exist.
+## Fifth pass: the site that went unresponsive under refresh
+
+### The report, and the first wrong guess
+
+Refresh the public address repeatedly and eventually the interface crashes. Sometimes
+the whole site stops answering until the page is reloaded. It was reported as a
+possibility of a memory leak, an unhandled exception, a database problem or a race,
+and the first two hours were spent ruling those out one at a time.
+
+Every one of them was wrong, and every one of them was ruled out by measuring
+rather than by reading:
+
+| Possibility | What was measured |
+|---|---|
+| Memory leak | 54 MB, flat, over 13 hours and about 6000 requests |
+| Handle leak | 181, flat |
+| Storage growing per request | Sessions and cache are in the database; no file growth |
+| Unhandled exceptions | The live server wrote 0 bytes to the log for the whole session |
+| Disk exhaustion | 20.8 GB free, though only 9 percent |
+| The application | 1680 tests, green |
+
+The answer was in the process table and needed none of that. The public address was
+being served by PHP's built in web server, one process, and that server answers one
+request at a time.
+
+The cheap fix was tested before anything was built. `PHP_CLI_SERVER_WORKERS` would
+have done it, and PHP refused it in as many words: *"forking is not supported on
+this platform"*. Windows has no `fork()`.
+
+The signature, measured rather than assumed: throughput was identical at every
+level of concurrency. 23 requests a second at one connection, 23 at two, 23 at
+forty eight. Latency rose in a straight line, from 40 ms to 2119 ms. Adding
+concurrency bought exactly nothing but waiting, which is what a queue looks like
+from the outside.
+
+One page view costs four requests. Ten quick refreshes put forty requests into a
+queue draining nine deep. Through a tunnel those multi second answers trip the
+tunnel's own timeouts, and what a browser shows is a page that never finished. Stop
+and the queue drained, which is why reloading sometimes brought it back.
+
+### Three arrangements, and two that had to be thrown away
+
+The FastCGI one was built first and worked. Setting the script name was the whole
+trick, and it took three attempts:
+
+`SetHandler "proxy:fcgi://..."` makes mod_proxy rewrite the request filename to the
+proxy URL before the script fixup runs, so PHP was asked to open a file named
+`proxy:fcgi://127.0.0.1:9000/C:/xampp/.../index.php`. It answered 404 with a body
+of "No input file specified", and the application log said nothing at all. A small
+FastCGI listener that prints the parameters it is given is what made it visible; a
+`SetEnv SCRIPT_FILENAME` fixed it.
+
+A correct `SCRIPT_FILENAME` was still not enough. php-cgi prefers
+`PATH_TRANSLATED` over `SCRIPT_FILENAME` when it chooses a file to run, Apache
+sends it, and the value it sends is the URL. `SetEnv PATH_TRANSLATED` was the
+missing half.
+
+Then six php-cgi processes behind a balancer: throughput 23 to 84 a second. And
+then it collapsed past sixteen concurrent requests, answering 503, with the log
+full of *"Got bogus version 0"*. php-cgi answers one request on a connection and
+misreads whatever arrives next on it, and Apache reuses connections.
+`ProxySet keepalive=Off` is the documented remedy. This Apache build refuses it in
+a virtual host, where it is routed to the balancer manager, and in a per member
+section, which a balancer member never matches.
+
+That is the point at which the ceiling moved rather than disappeared, and a fix
+that moves a ceiling is not a fix. php-cgi was dropped.
+
+What is running now is Apache in front, and a pool of the same `php -S` workers the
+project always used, behind Apache's balancer. Apache serves the stylesheet, the
+script, the images and the icon from disk, so a page view does not spend a worker
+on any of it.
+
+| Measurement | One worker | Pool of six |
+|---|---|---|
+| Sign in page, throughput | 23 a second | 77 a second |
+| Sign in page, at 48 connections, worst case | 2455 ms | 900 ms |
+| Sign in page, failures at 48 connections | 0 | 0 |
+| Dashboard, throughput | 9 a second | 26 a second |
+| Dashboard, at 16 connections | 1756 ms | 596 ms |
+
+### The fault the tests could not see
+
+With the pool in place every page returned 200 and every page arrived with **no
+stylesheet**. Apache replaces the `Host` header with the worker's own address
+unless told not to, so every asset address the application generated pointed at
+`https://127.0.0.1:8101/...`, and the content security policy, doing its job,
+refused them.
+
+Nothing in the test suite would have seen this, because the suite runs the
+application without a web server in front of it. Nor would
+`tools/probe-routes.php`, for the same reason. The browser test that drove the
+public address found it, and only because it checked whether a stylesheet had
+actually applied rather than whether the page had words on it. That check is now
+part of the harness, and "unstyled" counts as a failure alongside blank.
+
+`ProxyPreserveHost On` is the whole fix. The comment in the generated configuration
+says so, because the symptom is a rendering fault in a browser and the cause is a
+header in a file nobody thinks to look at.
+
+### Two measurements that were wrong before they were right
+
+The first load harness sent `Connection: close` and found nothing, then reported
+every failure as "status 0", which cannot tell a refused connection from a timeout
+from an empty reply. Both were the harness, not the server. Fixed before any
+conclusion was drawn from it.
+
+The route sweep reported an identical tally for all three roles, which is possible
+and is also what a broken sign in looks like. It was a broken sign in: the cookie
+function was being passed as a header value, so no cookies were ever sent and every
+authenticated page answered as a guest. Caught by asking each role for a page that
+belongs to another role, which is the only way to tell the two explanations apart.
+
+### What is left
+
+C: is at 9 percent free. Not the cause of anything today, and worth watching.
+
+The `ngrok` authtoken was printed in the clear while reading its configuration
+file. That was careless and is recorded here rather than quietly dropped. It lives
+outside the repository so it was not committed. Rotate it.

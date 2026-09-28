@@ -3897,3 +3897,74 @@ agreed sentence per stored state, recorded where the agreement is kept.
 - `lastMessage` is a relation, so both the panel and the list can load it in one
   query instead of one each.
 - A dead accessor and a dead import removed with the code that needed them.
+## 43. The site that went unresponsive under refresh
+
+### Input
+
+A report about the public address: refresh it repeatedly and eventually the
+interface crashes, and sometimes the whole site stops answering until the page is
+reloaded. It listed eleven things it might be, from memory leaks to race
+conditions, and asked for the underlying fault rather than a workaround.
+
+### Process
+
+The list of possibilities was worked through by measurement, not by reading, and
+every candidate was wrong. Memory was 54 MB and flat over thirteen hours. Handles
+were 181 and flat. Sessions and cache are in the database, so nothing grew on
+disk. The live server wrote 0 bytes to the log across the whole session. The
+application was green at 1680 tests.
+
+The answer was one line of the process table. The public address was served by
+PHP's built in web server, one process, and that server answers one request at a
+time. `PHP_CLI_SERVER_WORKERS` would change that and Windows cannot do it, because
+the setting needs `fork()`.
+
+The signature was measured rather than assumed, and it is unambiguous: throughput
+was 23 requests a second at one connection and 23 requests a second at
+forty-eight. Only the waiting changed. A queue is exactly a server that adds
+concurrency and gets none of it.
+
+Three arrangements were built. php-cgi over FastCGI worked, once the script name
+was stated in both the forms php-cgi looks at, and six of them lifted throughput
+from 23 to 84 a second before collapsing past sixteen concurrent requests with 503s
+and "Got bogus version 0". The documented remedy is refused by this Apache build,
+so that ceiling moved instead of disappearing and the arrangement was dropped.
+
+What runs now is Apache in front and a pool of the same workers the project always
+used, balanced across. Apache answers the stylesheet, the script, the images and
+the icon from disk, so a page view spends a worker on the page and nothing else.
+
+### The fault that arrived with the fix
+
+With the pool in place every page returned 200 and every page arrived with no
+stylesheet. Apache replaces the `Host` header with the worker's own address, so
+every asset address the application generated pointed at `127.0.0.1:8101` and the
+content security policy refused them.
+
+Neither the test suite nor `tools/probe-routes.php` can see this, because both run
+the application without a web server in front of it. A browser test found it, and
+only because it checks whether the stylesheet applied rather than whether the page
+had words on it. That check is now part of the harness, and an unstyled page counts
+as a failure next to a blank one.
+
+### Output
+
+| Measurement | One worker | Pool of six |
+|---|---|---|
+| Sign in page, throughput | 23 a second | 77 a second |
+| Sign in page, worst case at 48 connections | 2455 ms | 900 ms |
+| Sign in page, failures at 48 connections | 0 | 0 |
+| Dashboard, throughput | 9 a second | 26 a second |
+| Dashboard, at 16 connections | 1756 ms | 596 ms |
+
+- 200 reloads of a signed in dashboard through the public address: every one came
+  back whole, styled, with the session intact, no failed requests, no console
+  errors and no uncaught exceptions. Slowest 536 ms.
+- 87 pages across 29 routes and 3 roles over real HTTP: no server errors, no asset
+  pointing at a worker address, and the three roles correctly distinguished
+  (200 for their own area, 403 for another role's).
+- `tools/serve-concurrently.php` builds the arrangement, starts it, proves the sign
+  in page renders, and can stop it. `tools/server-router.php` moved into the
+  repository so it survives a reboot and there is one copy of the rule.
+- No application code was changed, so no feature behaviour moved. The 1680 test
+  suite is the gate.
