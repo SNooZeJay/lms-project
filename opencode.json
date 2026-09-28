@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "formatter": true,
+  "lsp": true,
+  "watcher": {
+    "ignore": [
+      ".next/**",
+      ".vercel/**",
+      "FOR_UI/**",
+      "coverage/**",
+      "node_modules/**",
+      "playwright-report/**",
+      "test-results/**"
+    ]
+  }
+}

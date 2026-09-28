@@ -71,3 +71,18 @@ Thumbs.db
 # never imported from.
 /references
 /FOR_UI
+# Agent harness state, and the compiled throwaway files inside the reference
+# material.
+#
+# /.opencode holds per-machine session state: what this installation has loaded
+# and what it has been told. It is not project content and is not portable between
+# machines, so a second machine would carry a directory describing the first.
+#
+# /skills-lock.json is the resolved skill manifest, which is regenerated from
+# /.agents by the tool that reads it. Committing it records one machine's
+# resolution as though it were the project's intent, and the next install
+# overwrites it anyway.
+__pycache__/
+*.pyc
+/.opencode
+/skills-lock.json
