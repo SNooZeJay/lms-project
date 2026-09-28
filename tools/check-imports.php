@@ -26,8 +26,20 @@ $app->make(Kernel::class)->bootstrap();
 
 $root = dirname(__DIR__);
 
-/** The trees to walk. app/ and tests/, because a stripped import in a test fails the same way. */
-$trees = [$root.'/app', $root.'/tests'];
+/*
+ | The trees to walk. app/, tests/ and tools/.
+ |
+ | A stripped import fails the same way wherever it is, and a tool is exactly as
+ | much a program as a controller is. Several of the tools/ scripts were written
+ | with a missing import and reported "Class X not found", which reads as a broken
+ | project rather than a broken script, and the guard that exists to catch this
+ | was not looking there.
+ |
+ | tools/ is included rather than left out because those scripts are the ones most
+ | likely to be written in a hurry, and they are the ones whose failure is least
+ | likely to be read as a real fault.
+ */
+$trees = [$root.'/app', $root.'/tests', $root.'/tools'];
 
 /** Names PHP itself provides, so a false positive does not crowd out a real one. */
 $known = [
@@ -181,7 +193,14 @@ foreach ($appFiles as $path) {
         }
 
         // A class named in prose is not a reference to a class.
-        if (in_array($t[0], [T_COMMENT, T_DOC_COMMENT], true)) {
+        //
+        // Comments are prose. So is the inside of a string: an echoed sentence that
+        // says a rule lives in SomePolicy::viewForStudent is describing a class,
+        // not using one, and it is exactly the shape the name patterns below match.
+        // Skipping only comments left a false positive in tools/ once that tree was
+        // walked, and a guard that reports things that are not faults is a guard
+        // people learn to skip.
+        if (in_array($t[0], [T_COMMENT, T_DOC_COMMENT, T_CONSTANT_ENCAPSED_STRING, T_ENCAPSED_AND_WHITESPACE], true)) {
             continue;
         }
 

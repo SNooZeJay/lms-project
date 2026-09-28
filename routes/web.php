@@ -52,6 +52,21 @@ Route::middleware($authenticated)->group(function (): void {
     Route::get('/account/password', [PasswordController::class, 'show'])->name('account.password');
     Route::post('/account/password', [PasswordController::class, 'update'])->name('account.password.update');
 
+    // Where a person lands after confirming an address.
+    //
+    // The link in the verification email redirects here rather than to the
+    // verification notice. That page belongs to an account that has not been
+    // confirmed, and it answers a visit from somebody who has with a redirect
+    // away from it, so a confirmation placed there could never be rendered. This
+    // is a third thing: an acknowledgement with a way onward, and a countdown that
+    // takes the person to their own workspace rather than to a form.
+    //
+    // It is a view route for the same reason /terms and /privacy are: it takes no
+    // input and decides nothing. Where to continue to is worked out by the view
+    // from the reader's role, and the page is behind verified because its whole
+    // content is a claim that the address is confirmed.
+    Route::view('/email/confirmed', 'auth.email-confirmed')->name('verification.confirmed');
+
     // Read state is available to every signed in role, so these sit in the
     // shared group rather than in any one role's group. A PATCH rather than a
     // POST, because marking a notice read changes a stored row and is not a

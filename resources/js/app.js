@@ -5,13 +5,14 @@
  * control is a button or a link with an accessible name, so the page still
  * works with this file blocked, and no behaviour depends on a framework.
  *
- * The file covers four things:
+ * The file covers five things:
  *
  *   1. The light and dark theme, chosen before the first paint by the layout.
  *   2. The account menu, which opens, closes on Escape or an outside click, and
  *      returns focus to the button that opened it.
  *   3. The mobile navigation drawer, with the same focus and Escape contract.
- *   4. Form safety: a confirmed action, an error summary that takes focus, and a
+ *   4. The countdown that carries a newly verified person into their workspace.
+ *   5. Form safety: a confirmed action, an error summary that takes focus, and a
  *      pending state so a slow submission is not a silent one.
  */
 
@@ -552,3 +553,122 @@ const rotateSentences = (node) => {
 };
 
 document.querySelectorAll('[data-rotate-sentences]').forEach(rotateSentences);
+
+/**
+ * The countdown that carries a newly verified person into their workspace.
+ *
+ * This is an enhancement and never the mechanism. The button it sits beside is a
+ * real link with a real destination and an accessible name, so the page works with
+ * this file blocked, and the timer only removes one click from somebody who was
+ * already on their way.
+ *
+ * Three decisions are deliberate, and each has a reason that shows up when it is
+ * got wrong.
+ *
+ * The countdown starts at eight seconds rather than three. The message it follows
+ * is the last thing read before the application takes over, and a person who needs
+ * to read it, or who is navigating by keyboard or a screen reader, is exactly the
+ * person a three second timer strands.
+ *
+ * Stopping is one way. A countdown that can be stopped and then starts again is
+ * worse than one that cannot be stopped at all, because a person who presses the
+ * control and then finds the page has gone anyway will not press it a second time.
+ *
+ * There is deliberately no check on prefers-reduced-motion, and that is not an
+ * oversight. The project has already ruled on it: AuthPanelRotatingLineTest
+ * asserts the bundle contains no such guard, because one hid its own effect three
+ * times over and left a panel that looked like a plain paragraph. A number
+ * counting down and a page changing are not animation, so gating either on a
+ * preference about animation would remove a feature on the strength of a setting
+ * about something else. The concerns that are real here, a change nobody asked for
+ * and not enough time to read it, are answered by the eight seconds, the live
+ * region and the control that stops it.
+ */
+(() => {
+  const SECOND = 1000;
+
+  document.querySelectorAll('[data-auto-continue]').forEach((root) => {
+    const now = root.querySelector('[data-auto-continue-now]');
+    const cancel = root.querySelector('[data-auto-continue-cancel]');
+    const status = root.querySelector('[data-auto-continue-status]');
+    const count = root.querySelector('[data-auto-continue-count]');
+    const href = root.dataset.href;
+
+    if (!href || !now) {
+      return;
+    }
+
+    // Read the wait from the markup rather than hard coding it here, so the view
+    // owns how long a person is given.
+    const total = Number.parseInt(root.dataset.seconds || '8', 10);
+
+    if (!Number.isFinite(total) || total < 1) {
+      return;
+    }
+
+    let remaining = total;
+    let handle = null;
+    let stopped = false;
+
+    const stop = (sayIt) => {
+      if (stopped) {
+        return;
+      }
+
+      stopped = true;
+
+      if (handle !== null) {
+        window.clearInterval(handle);
+        handle = null;
+      }
+
+      if (count) {
+        count.textContent = '0';
+      }
+
+      if (status) {
+        status.textContent = sayIt
+          ? 'Automatic step cancelled. Use the button above whenever you are ready.'
+          : '';
+      }
+
+      if (cancel) {
+        cancel.hidden = true;
+      }
+    };
+
+    if (cancel) {
+      cancel.hidden = false;
+      cancel.addEventListener('click', (event) => {
+        event.preventDefault();
+        stop(true);
+      });
+    }
+
+    handle = window.setInterval(() => {
+      remaining -= 1;
+
+      // Only the number is written, never the whole status line. The count lives
+      // in a span inside the status line, so assigning textContent to the line
+      // replaces its contents, that span included, and every write after the first
+      // lands on a node that is no longer on the page. The visible result looked
+      // right on the first tick and then quietly was not a real element any more,
+      // which is the kind of fault that stays invisible until something else goes
+      // looking for it.
+      //
+      // Changing a descendant of an aria-live region is announced, so the sentence
+      // is still read aloud as the number falls.
+      if (count) {
+        count.textContent = String(Math.max(remaining, 0));
+      }
+
+      if (remaining <= 0) {
+        if (status) {
+          status.textContent = 'Continuing now.';
+        }
+
+        window.location.assign(href);
+      }
+    }, SECOND);
+  });
+})();

@@ -17,6 +17,7 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\FailedPasswordResetLinkRequestResponse as FailedPasswordResetLinkRequestResponseContract;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
 use Laravel\Fortify\Contracts\SuccessfulPasswordResetLinkRequestResponse as SuccessfulPasswordResetLinkRequestResponseContract;
+use Laravel\Fortify\Contracts\VerifyEmailResponse;
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -70,6 +71,19 @@ class FortifyServiceProvider extends ServiceProvider
         // returns has to be bound. Left unbound, the container is asked to build
         // an interface and every signed-in person who opened the page got a 500.
         Fortify::confirmPasswordView('auth.confirm-password');
+
+        // Where a verified person lands, bound rather than configured.
+        //
+        // The address is read from config('fortify.redirects.email-verification')
+        // and three places read that one value: this redirect, the resend, and the
+        // notice. Pointing it at the confirmation page would send somebody who has
+        // just asked for another email to a page congratulating them on an address
+        // they have not confirmed. The response contract covers this redirect and
+        // nothing else, so the other two are left alone.
+        $this->app->singleton(
+            VerifyEmailResponse::class,
+            \App\Http\Responses\VerifyEmailResponse::class,
+        );
 
         RateLimiter::for('login', function (Request $request): Limit {
             $key = Str::transliterate(Str::lower((string) $request->input(Fortify::username())))

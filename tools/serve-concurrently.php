@@ -443,6 +443,40 @@ if ($command === 'start') {
         exit(1);
     }
 
+    /*
+     | An instance started with APP_URL forced at a loopback address emails unusable links.
+     |
+     | The verification link is a signed URL, and the signature covers the host it was
+     | built for, which comes from APP_URL. So an instance on 127.0.0.1 sends a real
+     | email to a real inbox containing a link that only opens on this machine, and the
+     | person who receives it cannot get into the account at all.
+     |
+     | This is not hypothetical. Three instances were running at once, the live pool
+     | behind the tunnel plus two loopback ones, and an account was registered against
+     | one of the loopback ones during a demonstration. The email arrived, the link
+     | pointed at 127.0.0.1, and the account could not be opened.
+     |
+     | The warning is here because the mistake is easy to make and invisible from the
+     | outside: the instance serves every page correctly and only the emailed link is
+     | wrong, so nothing looks broken until somebody tries to use the account.
+     */
+    $addressed = (string) (getenv('APP_URL') ?: '');
+
+    if ($addressed !== '' && preg_match('#^https?://(127\.0\.0\.1|localhost|\[::1\])(:\d+)?(/|$)#i', $addressed) === 1) {
+        line('  CAREFUL: this instance will email links that only open on this machine.');
+        line('      '.$addressed);
+        line();
+        line('  A verification link is a signed URL and the signature covers the host it');
+        line('  was built for, which comes from APP_URL. A person who receives a link');
+        line('  pointing at a loopback address cannot open it, so the account they were');
+        line('  sent an email for stays closed.');
+        line();
+        line('  That is fine for probing, and wrong for anything a person signs in to.');
+        line('  Register against the tunnel instead:');
+        line();
+        line('      php tools/serve-concurrently.php start --port=8000 --workers=6 --base=8100');
+        line();
+    }
     line();
     line('  point the tunnel at port '.$state['port'].' and nothing needs changing else.');
     line();

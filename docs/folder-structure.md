@@ -227,6 +227,7 @@ lms-project/
 │   │   └── Responses/
 │   │   │   ├── RoleBasedLoginResponse.php
 │   │   │   └── SafePasswordResetLinkResponse.php
+│   │   │   └── VerifyEmailResponse.php
 │   ├── Models/
 │   │   ├── User.php
 │   │   ├── Profile.php
