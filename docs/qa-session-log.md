@@ -1153,3 +1153,125 @@ The credit line inside the card became one quiet sentence: subject, modules,
 lessons, level, separated by rules rather than by four small icons. The instructor's
 name came off it. Four icons in a row read as a toolbar and made the card look like
 a panel of controls; it is now the four facts a student compares courses on.
+
+
+## Tenth pass: loading the approved design direction, and finding nothing to fix in it
+
+This pass started from an instruction to always use `skills-lock.json`. The lock
+file records eleven skills, two of which govern interface work, and the project
+has its own approved direction in `docs/design.md`, which is 1193 lines and says
+it is the source of truth for the visual and interaction direction.
+
+None of it had been read before the home page and the About page were built.
+
+### What that cost
+
+`docs/design.md` section 22 sets two requirements as hard, and section 23 sets
+motion as a limit. Two of the three turned out to be already met, and the third
+was a direct conflict with an explicit request.
+
+### The two that were already met, after being measured wrong twice
+
+**Touch targets at 44 pixels.** Section 22 says 44. WCAG 2.5.8, which is AA, only
+asks for 24, and the first pass over the pages reported a dozen controls at 19 to
+42 pixels and called the rest false positives without checking which. Two things
+were wrong with that.
+
+The first was treating WCAG's 24 as the bar. This project chose 44 in its own
+document, which is WCAG 2.5.5 and AAA, so 24 is a pass against WCAG and a failure
+against this project.
+
+The second was the measurement. Every footer link reads as 20 pixels tall because
+the rule that grows it to 44 is inside `@media (pointer: coarse)` and a headless
+browser reports a fine pointer. Emulating touch on the same pages gives **zero**
+undersized targets on all four pages at both 390 and 1440 pixels. The twelve
+failures were the harness, and so were most of the remaining set: inline links in
+a sentence, which WCAG exempts, and a card title, whose hit area is a stretched
+pseudo element a measurement of the anchor cannot see.
+
+**Colour contrast.** The same pass reported two failures on the sign in page: the
+subheading at 3.69 to 1 and the copyright at 3.83 to 1, both against `#2563EB`.
+
+Both were the harness again, twice over. It read `background-color` and walked up
+the tree, and the auth panel paints a linear gradient over a flat fallback, so
+every sample came back as the fallback and neither element had been measured
+against the gradient. It also could not parse the colour, which is written in
+`oklab()` by the Tailwind build, so the foreground was read as three channels of
+`0.999994, 0.00004, 0.00002` and treated as near black.
+
+Measured against what is actually painted at the text's own position, both sit
+below the gradient's 82 percent stop and therefore on the deep end: **11 to 1 and
+12 to 1**.
+
+The panel's own comment recorded 4.2 and 4.8. Those are the ratios against the
+flat fallback, and the comment was careful enough to say so. It was still a
+different claim from the one a reader would take from it, so the measured values
+are now written down beside it.
+
+### The one that is a real conflict
+
+Section 2 sets the dial at **MOTION 1**, and section 23 limits motion to theme,
+drawer, dropdown, pending feedback and small hover transitions, and says not to
+use large entrance sequences or decorative scroll effects.
+
+The scroll reveal is both of those things. It was asked for, so it stays, and
+section 2 now reads MOTION 2 with the departure named in the place that sets the
+dial, and section 23 lists the reveal as allowed with five boundaries: one
+animation per section rather than per element, a fade and a small rise, once only,
+off under a reduced motion preference by the library's own switch rather than by
+running faster, and hidden only by code that has already proved it will reveal
+the element.
+
+Recording the override in the document is what stops the two places disagreeing
+quietly. The alternative, which is what happened for as long as the reveal
+existed, is that the next person to follow the document deletes the animation.
+
+### The spacing scale, which was genuinely wrong
+
+Section 6 gives 4, 8, 12, 16, 20, 24, 32, 40, 48, 64. The layout classes were
+using 56 and 80.
+
+Both were chosen by measurement, which is the test: the desktop gap looked too
+wide at 64 and too tight at 48, so it became 56. A closing band wanted more room
+than a middle one, so it became 80. A scale that is adjusted to taste is not a
+scale, and the first value measured against it is the one the next person copies.
+
+The desktop step is 64 now, which is eight pixels more than the 56 it was. That
+is five bands, forty pixels, on a page over four thousand five hundred tall.
+
+`SpacingScaleTest` reads the scale out of the document rather than restating it,
+so changing the scale is a change to the document and the test follows. It is
+proved by putting 56 back and watching it fail. It is not in `HomePageRhythmTest`
+because it needs no database, and a `RefreshDatabase` class made a check about
+arithmetic in a stylesheet fail on a migration deadlock, which is a real failure
+hiding behind an unrelated one.
+
+### The click-through, which had been claimed and not done
+
+"Every public page was reviewed" had been said on the strength of screenshots. A
+screenshot cannot click anything.
+
+Sixty destinations are now walked: every visible control on the home page, About,
+the catalog, sign in, create account, forgot password, the terms and the privacy
+notice, including the five course pages and both filtered catalog views. **Zero
+problems.** Every destination answers a non-error status, has its own `h1`, and
+logs no console error and no exception on the way.
+
+The first version of the walk reported two 404s that were its own: the legal pages
+are `/terms` and `/privacy`, and Laravel's `route()` emits absolute URLs, so every
+same-origin link was being classified as external and skipped. Sixty controls, two
+navigated. A walk that checks a fifth of what it claims to check and reports the
+result as a pass is worse than no walk, and it was the same class of mistake as
+the contrast harness: a measurement that could not see the thing it was measuring.
+
+### What the gate says
+
+- 1801 tests, 8079 assertions. Pint 408 files. `composer audit` clean. 108 routes.
+- The suite was run from a rebuilt test database, and the reason is recorded in
+  `tools/rebuild-the-test-database.php`: `migrate:fresh` reported "Dropping all
+  tables DONE" and then failed on a table that had survived the drop, and a later
+  run deadlocked on the drop statement and left a half dropped schema that made
+  every following run fail on a foreign key pointing at a table that was no longer
+  there. Six failures in one run were that, not code.
+- The demonstration database was checked after every rebuild that could have
+  touched it, and held 5 published courses and 62 lessons throughout.
