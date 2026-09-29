@@ -22,7 +22,11 @@ Technical implementation remains in `architecture.md`.
 
 ## 2. Design read
 
-Reading this as: a practical academic web application for BSIT Students, Instructors, and Administrators, with a calm institutional voice, dial **ENERGY 1 / RHYTHM 2 / MOTION 1**.
+Reading this as: a practical academic web application for BSIT Students, Instructors, and Administrators, with a calm institutional voice, dial **ENERGY 1 / RHYTHM 2 / MOTION 2**.
+
+The motion dial was raised from 1 for the scroll reveal in section 23. That is a
+departure from this dial rather than an accident, it was asked for, and the
+reason and the boundaries are recorded in section 23 so the two places agree.
 
 The interface should feel:
 
@@ -990,6 +994,7 @@ Motion is limited to:
 - Dropdown and modal appearance
 - Button pending feedback
 - Small hover transitions
+- **One restrained entrance per section, as it is scrolled to**
 
 Do not use:
 
@@ -997,7 +1002,36 @@ Do not use:
 - Floating decorative objects
 - Constant motion
 - Large entrance sequences
-- Decorative scroll effects
+- Per element motion inside a section
+- Motion on anything the reader may still be trying to click
+
+### The scroll reveal, and why it is here
+
+A section that settles in as it is scrolled to was added on request and it is a
+departure from the dial in section 2, which is recorded here rather than left for
+the next person to find as a contradiction.
+
+What is allowed is narrower than it sounds:
+
+- One animation per section, not per element. A page that fades each heading,
+  each paragraph and each icon separately is unreadable while it happens.
+- Fade and a small rise, so the page is showing where it is rather than
+  performing.
+- The animation runs once. A band that replays every time it crosses the viewport
+  is a band that cannot be scrolled past quickly.
+- It is off for a reader who has asked for reduced motion, and it is off for that
+  reader by the library's own switch rather than by running faster, so the motion
+  is not in the document at all.
+- It is hidden by code that has already proved it will reveal the element. A
+  stylesheet that hides a marked element unconditionally leaves the page blank
+  when the script does not run, and nothing throws or logs when that happens.
+
+`ScrollAnimationTest` pins those five, because the machine this was built on
+reports a reduced motion preference and so every browser pass exercised the
+disabled path. The animated path was asserted rather than observed, and that is
+stated in the test rather than left implied.
+
+
 
 ### Behaviour hooks
 

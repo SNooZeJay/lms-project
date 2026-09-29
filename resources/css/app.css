@@ -470,12 +470,35 @@
      | open with a rule, and a tighter top, because the content is already at the
      | top of the document and a large margin above it only pushes it down.
      */
+
+    /*
+     | The spacing scale, from docs/design.md section 6.
+     |
+     | 4, 8, 12, 16, 20, 24, 32, 40, 48, 64.
+     |
+     | These four rules were written with 56 and 80, neither of which is on it. 56
+     | was a step chosen to sit between the scale's 48 and 64 because the gap
+     | looked too large at 64 and too tight at 48, and 80 was chosen because a
+     | closing band wants more room than a middle one.
+     |
+     | Both are the reasoning a designer would use and neither is the answer the
+     | project gave. A scale exists so that a value can be chosen by naming its
+     | position rather than by measuring, and a value that is not on it can only
+     | be reached by measuring. That is exactly how 48 becomes 56 in one place and
+     | 48 in the next.
+     |
+     | The desktop step is 64, which is eight pixels more than the 56 it was. That
+     | is five bands, forty pixels, on a page over four thousand five hundred tall.
+     | It is not a visible change and it is the right one, because the next person
+     | to pick a gap has a list to pick it from.
+     */
+
     .band {
-        @apply border-t border-line py-10 sm:py-12 lg:py-14;
+        @apply border-t border-line py-10 sm:py-12 lg:py-16;
     }
 
     .band-first {
-        @apply pt-8 pb-10 sm:pt-12 sm:pb-12 lg:pt-16 lg:pb-14;
+        @apply pt-8 pb-10 sm:pt-12 sm:pb-12 lg:pt-16 lg:pb-16;
     }
 
     /*
@@ -491,7 +514,7 @@
      | least. `HomePageRhythmTest` found it, which is what that test is for.
      */
     .band-last {
-        @apply border-t border-line pt-10 pb-14 sm:pt-12 sm:pb-16 lg:pt-14 lg:pb-20;
+        @apply border-t border-line pt-10 pb-16 sm:pt-12 sm:pb-16 lg:pt-16 lg:pb-16;
     }
 
 
@@ -744,7 +767,19 @@
            it can sit over the lighter blue, while the small text at the foot of
            the panel needs the full 4.5 to 1 and so has to sit over the deep end.
            Running the gradient the other way put the lightest blue directly
-           behind the smallest text, which failed in the dark theme at 3.83 to 1. */
+           behind the smallest text, which failed in the dark theme at 3.83 to 1.
+
+           The two figures above are the ones a text element over this panel has
+           to clear, and neither is close. Measured against what is actually
+           painted at the text's own position, the subheading measures 11 to 1 and
+           the caption 12 to 1, because both sit below the gradient's 82 percent stop
+           and therefore on the deep end rather than on the blue.
+
+           That is worth writing down, because the ratio everyone reaches for is the
+           one against the flat fallback colour behind the gradient, which is the
+           lightest point on the panel and measures 4.2 and 4.8. A panel that passes
+           against its own fallback is not the same claim as a panel that passes
+           against its own gradient, and only the second one is about this page. */
         background-color: var(--color-primary);
         background-image: linear-gradient(
             to bottom,
