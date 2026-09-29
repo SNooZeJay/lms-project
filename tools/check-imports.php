@@ -53,7 +53,12 @@ $known = [
     'DateTimeException', 'SplFileObject', 'NumberFormatter', 'IntlDateFormatter',
     // Global SPL classes, referenced without a namespace.
     'RecursiveDirectoryIterator', 'RecursiveIteratorIterator', 'DirectoryIterator',
-    'DOMDocument', 'DOMElement', 'DOMNodeList',
+    // The libxml family. DOMXPath was missing from this list and the course card
+    // hit area test walks a parsed document with it, so the scanner reported a
+    // missing import for a class PHP has always provided. The rest are here for
+    // the same reason: a query that can return any of these node types is one
+    // edit away from naming one of them.
+    'DOMDocument', 'DOMElement', 'DOMNodeList', 'DOMXPath', 'DOMNode', 'DOMAttr',
     // Windows only. SecureString comes from the DPAPI extension, and String is
     // the interface it implements.
     'SecureString', 'String',

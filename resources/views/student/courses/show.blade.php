@@ -5,6 +5,20 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        {{--
+            The course this page is about, and its cover. Same component as the
+            catalog and the two lists, so a learner moving between them sees one
+            course rather than three renderings of it. Eager, because the page has
+            been chosen and the picture is at the top of it.
+        --}}
+        <x-course-cover
+            :course="$course"
+            :width="1200"
+            :height="400"
+            :eager="true"
+            class="mb-6 aspect-[3/1] w-full"
+        />
+
         <header class="border-b border-line pb-8">
             <div class="flex flex-wrap items-center gap-2">
                 <p class="eyebrow">Enrolled course</p>

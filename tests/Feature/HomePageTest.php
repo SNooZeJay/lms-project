@@ -22,7 +22,11 @@ class HomePageTest extends TestCase
         $response
             ->assertOk()
             ->assertSee('IT Learning Hub')
-            ->assertSee('Learn IT. Build practical skills.')
+            // The headline. It was "Learn IT. Build practical skills.", which is two
+            // clauses and no subject: it says what the site is for and nothing about
+            // what a reader can do afterwards. This one names the thing being built,
+            // which is the promise the rest of the page then has to keep.
+            ->assertSee('Learn IT by building the skills the work asks for.')
             ->assertSee('Browse courses')
             ->assertSee('Sign in')
             ->assertSee('Skip to main content')
@@ -140,10 +144,15 @@ class HomePageTest extends TestCase
 
         // The approved public pages, written as paths so a link is compared by
         // where it goes rather than by how the address was built.
+        // /about is here because the page exists and is linked from the footer and
+        // the header menu. It is listed rather than allowed by pattern, because the
+        // value of this test is that adding a link forces a decision about whether
+        // the destination is a real page, and a pattern would hide that decision.
         $approved = [
             '/' => true,
             '/login' => true,
             '/courses' => true,
+            '/about' => true,
             '/terms' => true,
             '/privacy' => true,
         ];

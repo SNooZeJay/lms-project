@@ -49,18 +49,23 @@ class PublicHeaderMenuTest extends TestCase
         $this->assertStringContainsString(route('courses.index'), $body);
         $this->assertStringContainsString(route('login'), $body);
 
-        // Every item in the panel is a real link, not a dead control.
+        /*
+         | Three, not two.
+         |
+         | About was added between Courses and the account actions. It is a page
+         | about the platform rather than a destination inside it, and somebody
+         | deciding whether this is worth signing in for looks for it before they
+         | look for the sign in link.
+         |
+         | The count is still worth pinning. Every item in the panel is a real link
+         | rather than a dead control, and a number that has to be raised each time
+         | is what makes somebody read the list before changing it.
+         */
         $this->assertSame(
-            2,
+            3,
             preg_match_all('/data-dropdown-item/', $body),
-            'The guest menu should carry exactly two items: Courses and Sign in.'
+            'The guest menu should carry exactly three items: Courses, About and Sign in.'
         );
-    }
-
-    public function test_the_navigation_is_not_also_duplicated_in_the_header(): void
-    {
-        $body = (string) $this->get(route('home'))->assertOk()->getContent();
-
         // Scoped to the header. The catalog is also linked from the hero and the
         // footer, which is fine, but inside the header it should appear once,
         // inside the menu. A second copy in a visible row is what the menu

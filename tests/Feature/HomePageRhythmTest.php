@@ -50,29 +50,56 @@ class HomePageRhythmTest extends TestCase
 
         $html = $this->home();
 
-        // The padding is the rhythm. It is declared once on the section
-        // component, so every band has to reference the same declaration rather
-        // than repeating a value that can then drift.
+        /*
+         | The padding is the rhythm, and it now has a name.
+         |
+         | It used to be a literal, `py-12 sm:py-14 lg:py-16`, written on the
+         | section component and checked here by string. That held while the
+         | component was the only place it appeared. The About page then needed the
+         | same rhythm, and repeating the literal in a second file is how the two
+         | drift apart, which is the fault this test was written to prevent.
+         |
+         | So the step is `.band`, declared once in the stylesheet, and the rule is
+         | now stronger: every band on every public page is that class, and there
+         | is exactly one declaration of it. A band that reaches for its own
+         | padding is a band the page has stopped being a page about.
+         */
+        $css = (string) file_get_contents(resource_path('css/app.css'));
+
         $this->assertSame(
             1,
-            substr_count(
-                (string) file_get_contents(resource_path('views/components/home/section.blade.php')),
-                'py-12 sm:py-14 lg:py-16'
-            ),
-            'The section padding must be declared once, on the section component.'
+            preg_match_all('/^\s*\.band\s*\{/m', $css),
+            'The band step must be declared exactly once, in the stylesheet.'
         );
 
-        // And the rendered sections must all be the same height of padding, so
-        // no section has quietly gained its own.
-        preg_match_all('/<section[^>]*class="([^"]*border-t[^"]*)"/', $html, $matches);
+        $this->assertStringContainsString(
+            'band',
+            (string) file_get_contents(resource_path('views/components/home/section.blade.php')),
+            'The section component should use the shared .band step rather than its own padding.'
+        );
 
-        $this->assertGreaterThanOrEqual(3, count($matches[1]), 'Expected several bordered sections on the home page.');
+        // And every rendered band is that class, so no section has quietly gained
+        // its own.
+        preg_match_all('/<section\b[^>]*class="([^"]*)"[^>]*aria-labelledby="[^"]+"/', $html, $matches);
+
+        $this->assertGreaterThanOrEqual(4, count($matches[1]), 'Expected several labelled bands on the home page.');
 
         foreach ($matches[1] as $class) {
+            if (str_contains($class, 'band-first')) {
+                continue;
+            }
+
             $this->assertStringContainsString(
-                'py-12 sm:py-14 lg:py-16',
+                'band',
                 $class,
-                "A home page section does not use the shared padding: {$class}"
+                "A home page band does not use the shared step: {$class}"
+            );
+
+            $this->assertDoesNotMatchRegularExpression(
+                '/\b[ps]{1,2}y-\d/',
+                $class,
+                "A band carries its own vertical padding rather than the shared step: {$class}. "
+                .'The rhythm lives in .band and nowhere else.'
             );
         }
     }
@@ -83,21 +110,86 @@ class HomePageRhythmTest extends TestCase
 
         $html = $this->home();
 
-        // The hero is the entry to the page, so it may open with more air than a
-        // section does. It must not also close with more, because that makes the
-        // gap between the hero and the first band wider than every other gap on
-        // the page, and that is the fault this test exists to catch.
-        $this->assertMatchesRegularExpression(
-            '/<section[^>]*class="[^"]*\bpt-12\b[^"]*\bpb-12\b[^"]*"/',
-            $html,
-            'The hero must open and close with the same spacing below the small breakpoint.'
+        /*
+         | The hero may open with more air than a band. It must not close with
+         | more.
+         |
+         | A wide margin below the hero makes the gap between it and the first band
+         | wider than every other gap on the page, and that is the fault this test
+         | exists to catch. The hero has its own class now, `.band-first`, which is
+         | the same idea as before with the value in one place: no hairline, because
+         | a page does not open with a rule, and a tighter top, because the content
+         | is already at the top of the document.
+         |
+         | The two closing values are compared against each other rather than
+         | against numbers written here. A test that restates the value it is
+         | checking has to be edited every time the value is, and the edit is the
+         | moment the check stops being made. Reading both out of the stylesheet
+         | means this can only fail if the two genuinely disagree.
+         */
+        $this->assertStringContainsString('band-first', $html, 'The hero does not use the opening class.');
+
+        $css = (string) file_get_contents(resource_path('css/app.css'));
+
+        $this->assertSame(
+            1,
+            preg_match('/\.band\s*\{[^}]*\}/', $css, $band),
+            'The .band step was not found in the stylesheet.'
         );
 
-        $this->assertMatchesRegularExpression(
-            '/<section[^>]*class="[^"]*\blg:pt-20\b[^"]*\blg:pb-16\b[^"]*"/',
-            $html,
-            'The hero may open with more space than a section, but it must close with the same space a section closes with.'
+        $this->assertSame(
+            1,
+            preg_match('/\.band-first\s*\{[^}]*\}/', $css, $first),
+            'The .band-first opening step was not found in the stylesheet.'
         );
+
+        $bandBottom = $this->bottomPadding($band[0]);
+        $heroBottom = $this->bottomPadding($first[0]);
+
+        $this->assertNotSame([], $bandBottom, 'The .band step declares no bottom padding.');
+        $this->assertNotSame([], $heroBottom, 'The .band-first step declares no bottom padding.');
+
+        $this->assertSame(
+            $bandBottom,
+            $heroBottom,
+            'The hero closes with different space from a band, so the first gap on the page '
+            .'is a different size from every other one. A band resolved to '
+            .json_encode($bandBottom).' and the hero to '.json_encode($heroBottom).'.'
+        );
+    }
+
+    /**
+     * The bottom padding a rule actually produces, at every breakpoint.
+     *
+     * `py-*` sets both edges, so a rule written `py-10 sm:py-12 lg:py-14` closes
+     * at 10, 12 and 14 without ever naming a bottom value. A `pb-*` in the same
+     * rule overrides it for the edges it names, so this reads the cascade rather
+     * than searching for a token.
+     *
+     * That resolution is the whole reason the comparison can be made: `.band` and
+     * `.band-first` are written in different notations and produce the same
+     * bottom spacing, which is exactly the case a string comparison gets wrong.
+     *
+     * @return array<string, string> breakpoint prefix => value
+     */
+    private function bottomPadding(string $rule): array
+    {
+        $padding = [];
+
+        preg_match_all(
+            '~(?:^|\s)((?:sm:|md:|lg:|xl:)?)(py|pb)-([^\s;]+)~',
+            $rule,
+            $matches,
+            PREG_SET_ORDER
+        );
+
+        foreach ($matches as [, $breakpoint, $property, $value]) {
+            $padding[$breakpoint] = $value;
+        }
+
+        ksort($padding);
+
+        return $padding;
     }
 
     public function test_every_section_is_labelled_by_its_own_heading(): void
@@ -156,13 +248,28 @@ class HomePageRhythmTest extends TestCase
         // A student is the visitor this page was written for, but an instructor
         // opening the same link is deciding whether this is a place they can
         // teach. A page that never mentions teaching answers that by omission.
-        $this->assertStringContainsString('Teaching here', $html);
-        $this->assertStringContainsString('How it works', $html);
+        /*
+         | The wording changed and the requirement did not.
+         |
+         | "Teaching here" and "How it works" named a topic rather than saying
+         | something. They are now "If you teach here" and "From a course to a
+         | certificate", which say the same thing and read as one page rather than
+         | as two headings from two documents.
+         |
+         | What this is for is unchanged: a student is the visitor this page is
+         | written for, and a page that never mentions teaching answers an
+         | instructor by omission.
+         */
+        $this->assertStringContainsString('If you teach here', $html);
+        $this->assertStringContainsString('From a course to a certificate', $html);
 
-        // Each capability names a screen that exists, rather than a promise.
-        foreach (['Write the course', 'Build the modules', 'Set the quizzes'] as $capability) {
-            $this->assertStringContainsString($capability, $html);
+        // The instructor workflow, in the order it happens in. Each step names a
+        // screen that exists rather than a promise, and the last one is the step
+        // that used to be missing from the page entirely.
+        foreach (['Write it', 'Build it', 'Set the questions', 'Publish it'] as $step) {
+            $this->assertStringContainsString($step, $html);
         }
+
     }
 
     public function test_a_guest_is_sent_to_sign_in_rather_than_to_the_instructor_area(): void

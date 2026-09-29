@@ -44,8 +44,28 @@
                         $paymentState = $paymentStates[$enrollment->id] ?? null;
                         $progress = $progressByEnrollment[$enrollment->id];
                     @endphp
-                    <li class="card flex flex-col p-5">
-                        <div class="flex items-start justify-between gap-3">
+                    {{--
+                        A learner recognises a course by its picture before its title,
+                        so the cover is here as well as in the catalog. The same
+                        component, so the three places a learner meets a course show
+                        the same thing.
+
+                        Skipped entirely when the course has been removed, because a
+                        placeholder for a course that no longer exists is a picture of
+                        nothing. The card already says "Removed course" and why.
+                    --}}
+                    <li class="card flex flex-col overflow-hidden p-0">
+                        @if ($course)
+                            <x-course-cover
+                                :course="$course"
+                                :width="480"
+                                :height="270"
+                                rounded="rounded-none"
+                                class="aspect-[16/9] w-full shrink-0"
+                            />
+                        @endif
+
+                        <div class="flex flex-1 flex-col p-5">
                             <h2 class="text-lg font-semibold text-ink">
                                 {{ $course?->title ?? 'Removed course' }}
                             </h2>

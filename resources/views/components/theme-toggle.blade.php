@@ -11,7 +11,7 @@
     data-theme-toggle
     aria-label="Switch to dark theme"
     aria-pressed="false"
-    {{ $attributes->merge(['class' => 'btn btn-secondary btn-sm px-2.5']) }}
+    {{ $attributes->merge(['class' => 'btn btn-secondary btn-sm size-11 p-0']) }}
 >
     <span class="hidden dark:block"><x-icon name="moon" size="sm" /></span>
     <span class="block dark:hidden"><x-icon name="sun" size="sm" /></span>

@@ -10,7 +10,50 @@
             ['label' => $course->title],
         ]" class="mb-6" />
 
-        <header class="border-b border-line pb-8">
+        {{--
+            The cover, above the title on a page that is about one course.
+
+            Eager and high priority here. This is a page somebody has chosen to be on
+            and the picture is the first thing on it, so deferring it would show an
+            empty box for a moment on a page with nothing else to look at. A card in
+            a list of twelve is a different case and is lazy.
+        --}}
+        <x-course-cover
+            :course="$course"
+            :width="1200"
+            :height="400"
+            :eager="true"
+            class="mb-2 aspect-[3/1] w-full"
+        />
+
+        {{--
+            The credit, here and not on the picture.
+
+            It used to be drawn over the bottom left of every cover, which meant a
+            black label across the face of every photograph in every grid, and the
+            label competed with the picture it was printed on. A reader who is
+            actually looking at this one photograph is the reader worth telling
+            where it came from, and a reader scanning a list of twelve is not.
+
+            The name and the address are columns on the course, so the credit
+            travels with the cover rather than being assembled here.
+        --}}
+        @if ($course->coverCreditName())
+            <p class="mb-6 text-xs text-ink-subtle">
+                Cover photograph from
+                @if ($course->coverCreditUrl())
+                    <a
+                        href="{{ $course->coverCreditUrl() }}"
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        class="link"
+                    >{{ $course->coverCreditName() }}</a>
+                @else
+                    {{ $course->coverCreditName() }}
+                @endif
+            </p>
+        @endif
+
             <div class="flex flex-wrap items-center gap-2">
                 <p class="eyebrow">Published course</p>
                 <x-badge :tone="$course->course_type->value === 'free' ? 'success' : 'primary'">

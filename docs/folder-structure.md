@@ -61,6 +61,7 @@ lms-project/
 │   │   │   ├── UnpublishCourse.php
 │   │   │   ├── UpdateCourse.php
 │   │   │   ├── ArchiveContent.php
+│   │   │   ├── SetCourseCover.php
 │   │   │   └── Curriculum/
 │   │   │   │   ├── CreateLearningMaterial.php
 │   │   │   │   ├── CreateLesson.php
@@ -164,6 +165,7 @@ lms-project/
 │   │   │   ├── HomeController.php
 │   │   │   ├── Instructor/
 │   │   │   │   ├── CourseController.php
+│   │   │   │   ├── CourseCoverController.php
 │   │   │   │   ├── CurriculumController.php
 │   │   │   │   └── QuizController.php
 │   │   │   ├── MaterialDownloadController.php
@@ -193,6 +195,7 @@ lms-project/
 │   │   │   ├── RefuseWhenProjectIsWebReadable.php
 │   │   │   ├── SecureSessionCookies.php
 │   │   │   ├── SecurityHeaders.php
+│   │   │   ├── ForcePublicHttps.php
 │   │   │   ├── ThrottleWrites.php
 │   │   │   └── EnsureUserHasRole.php
 │   │   ├── Requests/
@@ -215,6 +218,7 @@ lms-project/
 │   │   │   │   ├── UpdateLearningMaterialRequest.php
 │   │   │   │   ├── UpdateLessonRequest.php
 │   │   │   │   ├── UpdateModuleRequest.php
+│   │   │   │   ├── UpdateCourseCoverRequest.php
 │   │   │   │   ├── ReorderLessonsRequest.php
 │   │   │   │   └── ReorderModulesRequest.php
 │   │   │   ├── Messaging/
@@ -285,8 +289,10 @@ lms-project/
 │   │   ├── Reporting/
 │   │   │   └── OperationsReport.php
 │   │   └── Storage/
+│   │   │   ├── CourseCoverStorage.php
 │   │   │   └── LearningMaterialStorage.php
 │   └── Support/
+│   │   ├── CourseCoverCatalog.php
 │   │   ├── CoursePrice.php
 │   │   ├── RoleBasedDestination.php
 │   │   ├── StudentCourseAccess.php
@@ -347,9 +353,13 @@ lms-project/
 │       ├── instructor/
 │       │   └── courses/
 │       ├── layouts/
+│       ├── legal/
 │       ├── learning/
+│       ├── messaging/
+│       ├── notifications/
 │       ├── payments/
 │       ├── quizzes/
+│       ├── public/
 │       ├── roles/
 │       ├── student/
 │       │   ├── courses/
@@ -396,9 +406,13 @@ lms-project/
 │   │   └── Webhooks/
 │   └── Unit/
 │       ├── Certificates/
-│       ├── Learning/
+│       ├── legal/
+│       ├── learning/
+│       ├── messaging/
+│       ├── notifications/
 │       ├── Payments/
 │       ├── Quizzes/
+│       ├── public/
 │       └── Support/
 ├── vendor/
 ├── docs/

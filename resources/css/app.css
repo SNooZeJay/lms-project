@@ -260,6 +260,27 @@
     .btn-block {
         @apply w-full;
     }
+    /*
+     | Buttons for a dark surface.
+     |
+     | These exist rather than being written as utility overrides at the call site,
+     | because an override cannot win reliably. `bg-primary` and `bg-white` are both
+     | single class selectors, so which one paints is decided by the order the
+     | stylesheet happens to emit them in, not by the order they are written in the
+     | class attribute. A call site relying on that is relying on something it
+     | cannot see, and the day the build order changes the button silently becomes
+     | white text on a white button.
+     |
+     | So the pair is declared here, once, where the order is known.
+     */
+    .btn-invert {
+        @apply border-transparent bg-white text-primary hover:bg-white/90;
+    }
+
+    .btn-invert-quiet {
+        @apply border-white/40 bg-transparent text-white hover:bg-white/10;
+    }
+
 
     /*
      | Surfaces
@@ -294,6 +315,363 @@
 
     .card-body {
         @apply p-5;
+    }
+
+    /*
+     | Motion
+     |
+     | Everything that moves on a public page, and the rules all of it follows.
+     |
+     | Nothing changes a box. Every property here is opacity or transform, so
+     | nothing reflows, nothing is measured twice, and the page does not shift
+     | while it is being read. Nothing loops, because a looping animation on a
+     | page somebody is trying to read from is a distraction, and nothing runs
+     | under a reduced motion preference.
+     */
+
+    /*
+     | Animate on Scroll.
+     |
+     | AOS does the part that is fiddly: it reads every element marked
+     | `data-aos`, works out where it sits relative to the viewport, and adds its
+     | `aos-animate` class when the reader reaches it. The scroll handling, the
+     | throttling, the offset maths and the resize behaviour are the library's,
+     | because all of them are the same on every site and none of them are worth
+     | writing twice.
+     |
+     | The hiding is done here rather than by importing the library's own
+     | stylesheet, for one reason that matters more than twenty five kilobytes.
+     | AOS's CSS hides any element carrying `data-aos` outright, so if the
+     | stylesheet arrives and the script does not, every marked element stays
+     | invisible forever. Nothing throws. Nothing reports it. The page simply has
+     | no text on it.
+     |
+     | So the hidden state is gated on the class AOS itself puts on an element
+     | once it has initialised. An element is only ever hidden by a script that
+     | has already proved it is there to unhide it. If the script never arrives,
+     | no element is ever hidden, and the page is simply still.
+     |
+     | `translate3d` rather than `translate` for the same reason throughout: the
+     | movement is promoted to its own compositor layer for the length of the
+     | animation and painted without the main thread laying anything out.
+     |
+     | Only the three effects this site uses are declared. The library ships
+     * thirty; the ones not named here cost nothing because no element asks for
+     * them.
+     */
+    [data-aos].aos-init {
+        opacity: 0;
+        transition-property: opacity, transform;
+        transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transition-duration: 600ms;
+        will-change: opacity, transform;
+    }
+
+    [data-aos].aos-init.aos-animate {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+        will-change: auto;
+    }
+
+    [data-aos='fade-up'].aos-init {
+        transform: translate3d(0, 20px, 0);
+    }
+
+    [data-aos='fade-down'].aos-init {
+        transform: translate3d(0, -20px, 0);
+    }
+
+    [data-aos='fade-left'].aos-init {
+        transform: translate3d(24px, 0, 0);
+    }
+
+    [data-aos='fade-right'].aos-init {
+        transform: translate3d(-24px, 0, 0);
+    }
+
+    /*
+     | A card that answers the pointer.
+     |
+     | Two pixels, and only where a real pointer exists. The `hover: hover`
+     * wrapper matters more than it looks: a touch screen fires `hover` on tap
+     | and then leaves it set, so without the query a card would stay lifted
+     | after being tapped and would read as selected rather than as pressed.
+     |
+     | The border darkens with the lift so the movement is legible on a surface
+     | that is only a few shades apart from the page behind it. No shadow is
+     | added, because this is a flat design and elevation is reserved for the
+     * header, the dropdown, the dialog and the drawer.
+     */
+    .lift {
+        transition:
+            transform 180ms cubic-bezier(0.22, 0.61, 0.36, 1),
+            border-color 180ms ease;
+    }
+
+    /*
+     | The cover image inside a lifting card.
+     |
+     | Slower than the card, which is what makes the two read as one movement
+     | rather than two. A cover is cropped with `object-fit: cover`, so scaling
+     | it cannot reveal an edge, and the box around it clips it either way.
+     */
+    .cover-zoom {
+        transition: transform 420ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    @media (hover: hover) {
+        .lift:hover {
+            transform: translate3d(0, -2px, 0);
+            border-color: var(--lms-line-strong);
+        }
+
+        .lift:hover .cover-zoom {
+            transform: scale(1.05);
+        }
+    }
+
+
+    /*
+     | The page frame.
+     |
+     | One container, named, used by every public page. It was written out in full
+     | in eleven views, and two of them had drifted by a pixel of horizontal
+     | padding, which is enough for a band on one page to sit half a pixel left of
+     | the band above it and enough for nobody to say why.
+     |
+     | The measure is wide because a course card grid needs the room, and the
+     | *text* inside it is capped separately by `.measure`. Those are two different
+     | jobs and conflating them is what produces either a page of eighty character
+     | lines or a card grid squeezed into a reading column.
+     */
+    .shell {
+        @apply mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8;
+    }
+
+    /*
+     | The vertical rhythm of a public page.
+     |
+     | One step, one owner. Every band on the home page and the About page is
+     | separated by this and nothing else, so the page has a pulse a reader can
+     | feel without noticing it.
+     |
+     | The step is smaller than it was, and deliberately. The previous value gave a
+     | hundred and twenty eight pixels between two bands at a desktop width, and
+     | six bands on a page meant more space than content. Whitespace is for
+     | separating things that belong apart; past a certain point it stops doing
+     | that and starts making the reader scroll to find out what they missed.
+     |
+     | The step still grows with the viewport, because a phone needs less air
+     | above a heading than a desktop does: the column is narrower, the heading
+     | already fills it, and a fixed forty pixels on a three hundred and twenty
+     | pixel screen reads as a gap rather than as breathing room.
+     *
+     | `band-first` is the top of a page. No hairline, because a page does not
+     | open with a rule, and a tighter top, because the content is already at the
+     | top of the document and a large margin above it only pushes it down.
+     */
+    .band {
+        @apply border-t border-line py-10 sm:py-12 lg:py-14;
+    }
+
+    .band-first {
+        @apply pt-8 pb-10 sm:pt-12 sm:pb-12 lg:pt-16 lg:pb-14;
+    }
+
+    /*
+     | The last band on a page.
+     |
+     | The same top as any other band, and more below, because below the last
+     | band there is a footer rather than another band, and a rule followed
+     | immediately by the end of the page reads as a cut rather than as a finish.
+     |
+     | It was written as its own padding on the element, which is the one thing
+     | the rhythm rule exists to prevent: a band carrying a value that is not the
+     | shared one, on the part of the page a reader sees last and understands
+     | least. `HomePageRhythmTest` found it, which is what that test is for.
+     */
+    .band-last {
+        @apply border-t border-line pt-10 pb-14 sm:pt-12 sm:pb-16 lg:pt-14 lg:pb-20;
+    }
+
+
+    /*
+     | The heading block that opens a band.
+     |
+     | An optional eyebrow, a heading, and a lead line. Three parts and no
+     | margins, because the space between them is the same in every band on the
+     | site and is decided here rather than at each call site. Written out by hand
+     | eleven times it was already inconsistent by one step in three places.
+     */
+    .band-head {
+        @apply max-w-2xl;
+    }
+
+    .band-head h2 {
+        @apply text-2xl leading-tight font-semibold tracking-tight text-balance text-ink sm:text-[1.75rem];
+    }
+
+    /*
+     | The lead line under a section heading.
+     |
+     | The measure is written out rather than applied from `.measure`, because
+     | `@apply` can only reach a Tailwind utility and `.measure` is a plain class
+     | in this same layer. Two places now hold the same number, which is worth
+     | noting so the next person to change it changes both: a lead line and a
+     | paragraph of body prose are the same question asked at two sizes.
+     */
+    .band-head .lead {
+        @apply mt-3 max-w-[68ch] text-base leading-7 text-ink-muted;
+    }
+
+    /*
+     | The measure of a run of text.
+     |
+     | Sixty-eight characters, which is where a line of reading stops costing
+     | anything to find the start of the next one. Applied to prose rather than
+     | trusted to the width of a column, because a wide screen will happily give
+     | a paragraph a hundred and thirty characters and nothing about that looks
+     | wrong until somebody tries to read it.
+     */
+    .measure {
+        @apply max-w-[68ch];
+    }
+
+    /*
+     | A row of figures, ruled rather than boxed.
+     |
+     | The hero used to hold a panel containing a two by two grid of numbers in
+     | their own tinted boxes, and that is a dashboard widget. It is the shape an
+     | analytics screen uses to report a system, not the shape a landing page
+     | uses to describe itself, and on a page whose subject is a library of
+     | courses it read as though the site were showing the reader its own
+     | internals.
+     |
+     | The same four figures run along a single hairline instead, at the weight of
+     | ordinary text. They are still counted from the database and still exact;
+     | they have simply stopped pretending to be a control panel.
+     */
+    .figures {
+        @apply grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4 sm:gap-x-8;
+    }
+
+    .figures dt {
+        @apply text-xs text-ink-subtle;
+    }
+
+    .figures dd {
+        @apply mt-1 text-xl font-[650] text-ink tabular-nums sm:text-2xl;
+    }
+
+    /*
+     | A quiet call to action, in the page's own language.
+     |
+     | This was a full width panel in the deep brand blue with white buttons on
+     | it, and it was the only dark surface on a page of light ones. It looked
+     | like a component dropped in from somewhere else, which is what it was: a
+     | different idea about colour arriving at the end of a page rather than at
+     | the start of a system.
+     *
+     | So it is a border and a tinted ground, like every other panel here. The one
+     | thing it keeps is a stronger one: the heading is in the primary colour
+     | rather than in ink, which is enough to say "this is the end of the page"
+     | without a change of surface pretending to say it.
+     */
+    .panel-call {
+        @apply border border-line bg-primary-quiet px-6 py-8 sm:px-10 sm:py-10;
+    }
+
+    /*
+     | A stepper.
+     |
+     | The rule between the markers is drawn by each step rather than by the list,
+     | so it runs from one marker to the next and stops at the last one.
+     |
+     | Drawn on the list it was a single line across the full width of the row,
+     | which carried on past the third marker into empty space and read as a rule
+     | that had not finished being drawn. One rule per step, reaching across the
+     | gap into the next column, stops where the sequence stops.
+     |
+     | The step is its own positioning context, so the rule is measured from this
+     | marker rather than from the edge of the row, and the two cannot drift apart
+     | because they are the same element.
+     |
+     | Below the three column breakpoint the steps stack, and a rule running
+     | sideways between two stacked items would mean nothing. It turns vertical
+     | down the left, which is the only direction that still says "then" when the
+     | steps are one above the other, and it is omitted on the last so it does not
+     | run past the end.
+     */
+    .steps {
+        @apply grid gap-8 md:grid-cols-3 md:gap-10;
+    }
+
+    .steps > li {
+        @apply relative flex gap-4 md:block;
+    }
+
+    .steps > li::after {
+        content: '';
+        position: absolute;
+        top: 1.5rem;
+        left: 0.6875rem;
+        bottom: -2rem;
+        width: 1px;
+        background-color: var(--lms-line);
+    }
+
+    .steps > li:last-child::after {
+        content: none;
+    }
+
+    .steps .step-marker {
+        @apply relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-quiet font-mono text-xs font-semibold text-primary-text tabular-nums;
+    }
+
+    @media (min-width: 48rem) {
+        .steps > li::after {
+            top: 0.75rem;
+            bottom: auto;
+            left: 1.5rem;
+            /*
+             | Across the gap and into the next column, so the rule arrives at the
+             | next marker rather than stopping short of it. The negative right is
+             | the column gap, which is why the marker and the rule are drawn by
+             | the same element: one knows the gap and the other does not.
+             */
+            right: -2.5rem;
+            width: auto;
+            height: 1px;
+        }
+    }
+
+
+    .workflow .step-index {
+        @apply font-mono text-xs font-semibold text-primary-text tabular-nums;
+    }
+
+
+    /*
+     | The cover image inside a lifting card.
+     |
+     | Slower than the card and in the opposite proportion, which is what makes
+     | the two read as one movement rather than two. A cover is cropped with
+     | `object-fit: cover`, so scaling it cannot reveal an edge, and the box
+     | around it clips it either way.
+     */
+    .cover-zoom {
+        transition: transform 420ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    @media (hover: hover) {
+        .lift:hover {
+            transform: translate3d(0, -2px, 0);
+            border-color: var(--lms-line-strong);
+        }
+
+        .lift:hover .cover-zoom {
+            transform: scale(1.05);
+        }
     }
 
     /*
@@ -931,5 +1309,27 @@
     .auth-aside::before,
     .auth-aside::after {
         animation: none !important;
+    }
+
+    /* The same reasoning, for the motion added on the public pages. A reduced
+       duration is not the same as no motion: a card that jumps two pixels is
+       still a jump, and a band that fades over a hundredth of a second still
+       spends a frame at the wrong opacity.
+
+       AOS is switched off in script as well, through its own `disable` option,
+       because that is the only version of this that is genuinely off rather than
+       merely fast. The rule here is the backstop for the case where the
+       preference is set after the library has already initialised, which is rare
+       but real: the elements are then simply on screen, which is exactly what
+       they would be with no stylesheet at all. */
+    [data-aos].aos-init {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+
+    .lift,
+    .cover-zoom {
+        transition: none !important;
     }
 }

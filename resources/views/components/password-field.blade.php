@@ -53,9 +53,19 @@
             @required($required)
         >
 
+        {{--
+            The reveal control.
+
+            `input-icon-action` sizes this at thirty six by thirty six, which
+            clears the twenty four pixel minimum in WCAG 2.5.8 but is the one
+            control on a sign in form that a finger has to find without reading
+            it. The reveal is a button rather than a decoration, and it is the
+            only way to see what you have typed, so it gets the same forty four
+            pixels as every other control on the form.
+        --}}
         <button
             type="button"
-            class="input-icon-action"
+            class="input-icon-action size-11"
             data-password-reveal="{{ $id }}"
             aria-label="Show password"
             aria-controls="{{ $id }}"

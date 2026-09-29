@@ -5,8 +5,27 @@
     a phone is never handed a wide table. A free course shows the word `Free`
     instead of a zero peso amount, and every control keeps a 44 pixel target.
 --}}
-<article class="card p-5">
-    <div class="flex flex-wrap items-start justify-between gap-3">
+<article class="card overflow-hidden p-0">
+    {{--
+        The instructor's own list shows the cover too, and through the same component
+        as every other list, so a course looks the same here as it does in the
+        catalog. This is the one card that is not the shared one, because it carries
+        controls the public card does not, and a second card is exactly where a cover
+        would otherwise be forgotten.
+
+        Lazy rather than eager: this is a management list of the instructor's own
+        courses, which is the last place a person is deciding on a photograph, and it
+        can be twenty rows long.
+    --}}
+    <x-course-cover
+        :course="$course"
+        :width="480"
+        :height="270"
+        rounded="rounded-none"
+        class="aspect-[16/9] w-full"
+    />
+
+    <div class="p-5">
         <div class="min-w-0">
             <h2 class="text-base font-semibold text-balance text-ink">
                 <a

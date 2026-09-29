@@ -93,18 +93,163 @@ class AuthPanelRotatingLineTest extends TestCase
         $this->assertStringContainsString('data-rotate-sentences', $this->bundleSource());
     }
 
+    /**
+     * The rotating line is not gated on a media query or a width.
+     *
+     * This is the fault that hid the effect three times. A guard on
+     * prefers-reduced-motion, or on viewport width, meant the panel showed a
+     * static line that looked like a plain paragraph. The typewriter is what was
+     * asked for, so it runs for everyone.
+     *
+     * It used to be asserted against the whole bundle, which forbade the string
+     * `prefers-reduced-motion` appearing anywhere in the shipped script. That is a
+     * blunt instrument: it was really a statement about one function, and it went
+     * on to forbid a guard in a completely unrelated part of the same file. The
+     * scroll animation uses one, and it is the correct one, because a band that
+     * settles in as you scroll is a preference about motion and a counter that
+     * counts up is too. The typewriter is neither: it is a line of text changing,
+     * and gating it removes the thing it exists to do.
+     *
+     * So the assertion is now scoped to the function that does the rotating. It is
+     * read out of the source rather than the bundle, because a minified bundle has
+     * no reliable function boundaries and slicing one out of it would be guesswork.
+     * A stricter test about the wrong scope is worse than no test, because it gets
+     * changed rather than obeyed.
+     */
+    /**
+     * The rotating line is not gated on a media query or a width.
+     *
+     * This is the fault that hid the effect three times. A guard on
+     * prefers-reduced-motion, or on viewport width, meant the panel showed a
+     * static line that looked like a plain paragraph. The typewriter is what was
+     * asked for, so it runs for everyone.
+     *
+     * It used to be asserted against the whole bundle, which forbade the string
+     * appearing anywhere in the shipped script. That is a blunt instrument: it was
+     * really a statement about one function, and it went on to forbid a guard in an
+     * unrelated part of the same file.
+     *
+     * The scroll animation uses one, and it is the correct one. A band settling in
+     * as it is scrolled to is a preference about motion, and a figure counting up
+     * is too. The typewriter is neither: it is a line of text changing, and
+     * gating it removes the thing it exists to do. A test that cannot tell those
+     * apart gets changed rather than obeyed, which is worse than no test.
+     *
+     * So the assertion is scoped to the function that does the rotating, read out
+     * of the source rather than the bundle, because a minified bundle has no
+     * reliable function boundaries and cutting one out of it would be guesswork.
+     */
     public function test_the_rotation_is_not_gated_on_a_media_query(): void
     {
-        // This is the fault that hid the effect three times. A guard on
-        // prefers-reduced-motion, or on viewport width, meant the panel showed a
-        // static line that looked like a plain paragraph. The typewriter is what
-        // was asked for, so it runs for everyone.
-        //
-        // If a guard is ever wanted back, this is the test to change, and the
-        // reason belongs in the commit that does it.
-        $source = $this->bundleSource();
+        $source = (string) file_get_contents(base_path('resources/js/app.js'));
 
-        $this->assertStringNotContainsString('prefers-reduced-motion', $source);
-        $this->assertStringNotContainsString('min-width: 1024px', $source);
+        $start = strpos($source, 'const rotateSentences');
+
+        $this->assertNotFalse(
+            $start,
+            'The rotating line function was not found in resources/js/app.js, so this test proved nothing.'
+        );
+
+        $slice = $this->declarationAt($source, (int) $start);
+
+        $this->assertStringNotContainsString(
+            'prefers-reduced-motion',
+            $slice,
+            'The rotating line must not be gated on prefers-reduced-motion, or the panel shows a '
+            .'static line that looks like a plain paragraph. This is the fault the test was written for.'
+        );
+
+        $this->assertStringNotContainsString(
+            'min-width',
+            $slice,
+            'The rotating line must not be gated on a viewport width.'
+        );
+
+    }
+
+    /**
+     * The one declaration that starts at an offset, up to its own end.
+     *
+     * Brace matched from the opening one, skipping braces inside strings and
+     * comments. A plain count that does not skip them closes on the first brace in
+     * a comment, and a slice that ends inside a sentence is a slice about
+     * something else.
+     *
+     * Slicing to the next top level `const` was tried first and reached to the end
+     * of the file, because this function is the last `const` before the motion
+     * module. The slice then contained an unrelated media query and the test
+     * failed on code it was never about.
+     */
+    private function declarationAt(string $source, int $offset): string
+    {
+        $open = strpos($source, '{', $offset);
+
+        if ($open === false) {
+            return substr($source, $offset);
+        }
+
+        $depth = 0;
+        $length = strlen($source);
+        $state = 'code';
+        $quote = '';
+
+        for ($i = $open; $i < $length; $i++) {
+            $char = $source[$i];
+            $next = $source[$i + 1] ?? '';
+
+            if ($state === 'code') {
+                if ($char === '/' && $next === '/') {
+                    $state = 'line comment';
+                    $i++;
+
+                    continue;
+                }
+
+                if ($char === '/' && $next === '*') {
+                    $state = 'block comment';
+                    $i++;
+
+                    continue;
+                }
+
+                if ($char === "'" || $char === '"' || $char === '`') {
+                    $state = 'string';
+                    $quote = $char;
+
+                    continue;
+                }
+
+                if ($char === '{') {
+                    $depth++;
+                } elseif ($char === '}') {
+                    $depth--;
+
+                    if ($depth === 0) {
+                        return substr($source, $offset, $i - $offset + 1);
+                    }
+                }
+            } elseif ($state === 'line comment') {
+                if ($char === "\n") {
+                    $state = 'code';
+                }
+            } elseif ($state === 'block comment') {
+                if ($char === '*' && $next === '/') {
+                    $state = 'code';
+                    $i++;
+                }
+            } elseif ($state === 'string') {
+                if ($char === '\\') {
+                    $i++;
+
+                    continue;
+                }
+
+                if ($char === $quote) {
+                    $state = 'code';
+                }
+            }
+        }
+
+        return substr($source, $offset);
     }
 }

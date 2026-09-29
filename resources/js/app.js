@@ -1,3 +1,5 @@
+import AOS from 'aos';
+
 /**
  * Shared interface behaviour.
  *
@@ -14,6 +16,9 @@
  *   4. The countdown that carries a newly verified person into their workspace.
  *   5. Form safety: a confirmed action, an error summary that takes focus, and a
  *      pending state so a slow submission is not a silent one.
+ *   6. Motion on the public pages: a band that settles in as it is reached, and a
+ *      figure that counts up to the value the server already printed.
+ *   7. The cover fallback, for a course photograph this browser could not load.
  */
 
 const storageKey = 'lms-theme';
@@ -672,3 +677,228 @@ document.querySelectorAll('[data-rotate-sentences]').forEach(rotateSentences);
     }, SECOND);
   });
 })();
+
+
+/**
+ * Motion on the public pages.
+ *
+ * Three things move, and all three are additions to content that is already
+ * complete without them.
+ *
+ * SCROLL ANIMATION IS AOS
+ *
+ * Animate on Scroll does the part that is genuinely fiddly: it finds every
+ * element marked `data-aos`, works out where each one sits relative to the
+ * viewport, and adds its `aos-animate` class when the reader reaches it. The
+ * scroll listener, the throttling that keeps it cheap, the offset arithmetic, the
+ * resize and orientation handling and the mutation observer that picks up
+ * elements added later are all the library's, because they are the same on every
+ * site and none of them are worth writing a second time.
+ *
+ * Only four effects are declared in the stylesheet, because only four are used.
+ * The library ships thirty. The rest cost nothing, since no element asks for one.
+ *
+ * THE HIDING IS OURS, ON PURPOSE
+ *
+ * AOS's own stylesheet hides anything carrying `data-aos`, unconditionally. If
+ * the stylesheet arrives and this script does not, every marked element stays at
+ * zero opacity for ever. Nothing throws, nothing logs, and the page is simply
+ * blank where its text should be.
+ *
+ * So the stylesheet gates the hidden state on the `aos-init` class that AOS puts
+ * on an element as part of initialising it. An element is only ever hidden by
+ * code that has already proved it is there to reveal it. This script never
+ * arriving therefore costs a page that is still, which is the correct failure and
+ * not a silent one.
+ *
+ * REDUCED MOTION IS ASKED OF THE LIBRARY, NOT PATCHED OVER
+ *
+ * `disable` is AOS's own switch, and when it is set the library strips the
+ * `data-aos` attributes from every element it found. The stylesheet then has
+ * nothing to act on, so the animations do not merely run quickly, they are not
+ * part of the document. The stylesheet also carries the same rule under the same
+ * media query, as a backstop for a preference that changes after initialisation.
+ *
+ * ONE SHOT, NEVER A LOOP
+ *
+ * A band that re-animates every time it crosses the viewport is a band that
+ * cannot be scrolled past quickly, which is the opposite of what a reader is
+ * trying to do. `once` settles each element the first time it arrives and then
+ * leaves it alone.
+ */
+
+
+(() => {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    AOS.init({
+        // Off entirely under a reduced motion preference. See above.
+        disable: reducedMotion.matches,
+
+        // Once. See above.
+        once: true,
+
+        // A band starts to arrive while it is still a little below the fold, so
+        // it has finished moving by the time it is read rather than beginning to
+        // move at the exact moment it appears.
+        offset: 60,
+
+        // Slow enough to be followed, quick enough not to be waited for. The
+        // library's default is four hundred milliseconds, which is a touch
+        // snappy for something a whole band of the page is doing.
+        duration: 600,
+
+        // Arrives and settles, rather than a linear ramp or a bounce. A landing
+        // page that bounces reads as a template.
+        easing: 'ease-out-cubic',
+    });
+
+    /**
+     * Count each published figure up to the value the server printed.
+     *
+     * The one effect on this site that cannot be expressed in the stylesheet,
+     * because what moves is a string rather than a property, and therefore the
+     * one thing here that has to be asked about in script.
+     *
+     * Each figure carries its real value in the markup, written by the server,
+     * and this only overwrites it while the animation runs. Any failure below
+     * therefore leaves the correct number on screen rather than a wrong one, and
+     * the last assignment is the exact target rather than a rounded fraction of
+     * it, so a figure can never come to rest one off.
+     *
+     * A figure below ten is not animated at all. There is nothing to count from
+     * zero to three, and a digit that changes for no visible reason reads as a
+     * fault rather than as polish.
+     */
+    const countFigures = () => {
+        const targets = document.querySelectorAll('[data-count-to]');
+
+        if (targets.length === 0) {
+            return;
+        }
+
+        const DURATION_MS = 900;
+        const STAGGER_MS = 90;
+        const BELOW_WHICH_NOTHING_IS_COUNTED = 10;
+
+        if (typeof window.requestAnimationFrame !== 'function' || reducedMotion.matches) {
+            return;
+        }
+
+        // The same grouping the server used, so a figure that reaches five digits
+        // is written identically by both and does not change width at the end of
+        // the count.
+        const format = (value) => value.toLocaleString('en-US');
+
+        targets.forEach((node, index) => {
+            const target = Number.parseInt(node.dataset.countTo || '', 10);
+
+            if (!Number.isFinite(target) || target < BELOW_WHICH_NOTHING_IS_COUNTED) {
+                return;
+            }
+
+            // A short stagger, so several figures do not all land on the same
+            // frame. It is a tenth of the duration each, so the last one arrives
+            // well inside a second and the row never feels like it is waiting.
+            const startDelay = index * STAGGER_MS;
+
+            window.setTimeout(() => {
+                const started = window.performance.now();
+
+                const tick = (now) => {
+                    const elapsed = Math.min((now - started) / DURATION_MS, 1);
+
+                    // Cubic ease out. A linear ramp makes a figure look like a
+                    // machine counting; this one arrives and settles.
+                    const eased = 1 - Math.pow(1 - elapsed, 3);
+
+                    node.textContent = format(Math.round(target * eased));
+
+                    if (elapsed < 1) {
+                        window.requestAnimationFrame(tick);
+
+                        return;
+                    }
+
+                    // The exact target, not the last eased frame. A figure left
+                    // on a rounded fraction would print 61 for 62.
+                    node.textContent = format(target);
+                };
+
+                window.requestAnimationFrame(tick);
+            }, startDelay);
+        });
+    };
+
+    countFigures();
+})();
+
+/**
+ * A cover image that could not be loaded.
+ *
+ * A course cover is a photograph on somebody else's server, and a photograph on
+ * somebody else's server is sometimes not there. The card has to survive that
+ * without a torn hole in it and without a row of alt text where a picture was.
+ *
+ * WHY THIS IS NOT AN `onerror` ATTRIBUTE
+ *
+ * It was one, and it never ran. The content security policy this application
+ * sends is `script-src 'self' 'nonce-…'` with no `unsafe-inline`, which is the
+ * correct policy and which forbids an inline event handler outright. The browser
+ * discarded the attribute, so the fallback it was written to provide was absent
+ * on exactly the pages that needed it, and nothing reported the absence. The
+ * handler is here instead, in a file the policy does allow.
+ *
+ * WHY THE LISTENER IS DELEGATED AND CAPTURED
+ *
+ * `error` on an element does not bubble, so a listener on `document` in the
+ * bubble phase never hears it. Registering in the capture phase does hear it,
+ * and one listener covers every cover on the page including any added later,
+ * rather than attaching a handler per card.
+ *
+ * WHAT IT DOES
+ *
+ * Hides the image, so the placeholder already in the document underneath it
+ * shows through, and marks the box so a test or a stylesheet can tell a cover
+ * that failed from one that was never set. It also hands the description back to
+ * the placeholder, which the component hides from assistive technology while a
+ * real image is present. Left alone, a page whose every cover had failed would
+ * describe each card twice: once as a photograph, and once as having no
+ * photograph.
+ *
+ * It is deliberately not a retry. A cover that failed once from a third party's
+ * CDN has usually failed because this browser cannot reach that CDN, and asking
+ * again would produce the same answer more slowly.
+ */
+(() => {
+    document.addEventListener(
+        'error',
+        (event) => {
+            const image = event.target;
+
+            if (!(image instanceof HTMLImageElement) || !image.hasAttribute('data-cover-image')) {
+                return;
+            }
+
+            const box = image.parentElement;
+
+            image.hidden = true;
+
+            if (!box) {
+                return;
+            }
+
+            box.setAttribute('data-cover-broken', 'true');
+
+            const placeholder = box.querySelector('[data-cover-placeholder]');
+
+            if (placeholder) {
+                // The image was the description; now the absence of one is.
+                placeholder.removeAttribute('aria-hidden');
+                placeholder.setAttribute('role', 'img');
+            }
+        },
+        true,
+    );
+})();
+

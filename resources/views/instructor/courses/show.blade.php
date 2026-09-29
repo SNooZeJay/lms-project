@@ -11,6 +11,20 @@
 
         <x-form-errors :errors="$errors" class="mb-6" />
 
+        {{--
+            The course this page is about, and its cover. Same component as the
+            catalog and the two lists, so a learner moving between them sees one
+            course rather than three renderings of it. Eager, because the page has
+            been chosen and the picture is at the top of it.
+        --}}
+        <x-course-cover
+            :course="$course"
+            :width="1200"
+            :height="400"
+            :eager="true"
+            class="mb-6 aspect-[3/1] w-full"
+        />
+
         <header class="border-b border-line pb-8">
             <p class="eyebrow">Course outline</p>
 
@@ -855,5 +869,12 @@
                 </div>
             </section>
         @endcan
+        {{--
+            The cover control, after the content rather than above it. The outline is
+            what an instructor opens this page for, and the cover is something they
+            set once and then rarely touch, so putting it first would push the work
+            they came for down the page.
+        --}}
+        <x-course-cover-picker :course="$course" />
     </div>
 @endsection

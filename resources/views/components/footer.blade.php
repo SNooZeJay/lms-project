@@ -28,10 +28,29 @@
     $groups = array_values(array_filter([
         [
             'label' => 'Learn',
+
+            /*
+             | The learn destination, asked of one place rather than guessed at
+             | here.
+             |
+             | This offered `student.courses.index` to anybody signed in, which is
+             | inside the group guarded by the `role:student` middleware. An
+             | instructor and an administrator were each shown a footer link to a
+             | page that answers 403. The label has to change with the destination
+             | as well, because an instructor does not have courses they are taking.
+             |
+             | A PHP comment and not a Blade one, because this is inside an `@php`
+             | block. Blade strips `{{-- --}}` outside PHP and leaves it alone inside,
+             | so a Blade comment written here lands in the compiled view as literal
+             | text in the middle of an array literal and the page will not parse.
+             */
             'links' => array_values(array_filter([
                 ['route' => 'courses.index', 'label' => 'Course catalog'],
-                auth()->check() ? ['route' => 'student.courses.index', 'label' => 'My courses'] : null,
+                auth()->check()
+                    ? \App\Support\RoleBasedDestination::learningFor(auth()->user())
+                    : null,
             ])),
+
         ],
         [
             'label' => 'Account',
@@ -51,10 +70,12 @@
         ],
         [
             'label' => 'Legal',
-            // The two pages the sign in and sign up consent line links to. A
-            // page that is linked from somewhere has to exist, and these are the
-            // only two the site publishes.
+            // The two pages the sign in and sign up consent line links to, plus
+            // the About page. All three are public pages the site publishes, and
+            // the rule is the same for each: a page that is linked from somewhere
+            // has to exist.
             'links' => [
+                ['route' => 'about', 'label' => 'About'],
                 ['route' => 'legal.terms', 'label' => 'Terms of use'],
                 ['route' => 'legal.privacy', 'label' => 'Privacy'],
             ],

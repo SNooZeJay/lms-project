@@ -3,6 +3,7 @@
 use App\Http\Middleware\ConfineDebugOutput;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\ForcePublicHttps;
 use App\Http\Middleware\RefuseWhenProjectIsWebReadable;
 use App\Http\Middleware\RequirePasswordChange;
 use App\Http\Middleware\SecureSessionCookies;
@@ -32,6 +33,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // this request rather than only for requests that succeed.
         // SecurityHeaders is appended so its headers survive a response that
         // replaces the body.
+        // Ahead of everything that generates a URL. The stylesheet and the script
+        // are written into the document by the layout, so the scheme has to be
+        // settled before the first view renders or the page asks the browser for
+        // an asset over a scheme the port does not serve.
+        $middleware->prepend(ForcePublicHttps::class);
         $middleware->prepend(RefuseWhenProjectIsWebReadable::class);
         $middleware->prepend(ConfineDebugOutput::class);
         $middleware->prepend(SecureSessionCookies::class);

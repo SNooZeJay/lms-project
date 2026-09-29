@@ -10,6 +10,7 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Catalog\CourseCatalogController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Instructor\CourseController;
+use App\Http\Controllers\Instructor\CourseCoverController;
 use App\Http\Controllers\Instructor\CurriculumController;
 use App\Http\Controllers\Instructor\QuizController as InstructorQuizController;
 use App\Http\Controllers\MaterialDownloadController;
@@ -43,6 +44,16 @@ Route::get('/courses/{course:slug}', [CourseCatalogController::class, 'show'])->
 // pages with content taken from what the application actually does.
 Route::view('/terms', 'legal.terms')->name('legal.terms');
 Route::view('/privacy', 'legal.privacy')->name('legal.privacy');
+
+// The About page, on the same reasoning and reached the same way. It is written
+// as prose rather than as another row of cards, and it states what the platform
+// does not do as well as what it does, because this is the page somebody reads to
+// decide whether the claims on the landing page hold up.
+//
+// A view rather than a controller, because it reads no data. Every figure on the
+// landing page is counted from the database and this page quotes none of them, so
+// a controller here would have nothing to fetch.
+Route::view('/about', 'public.about')->name('about');
 
 $authenticated = ['auth', 'account.active', 'verified', 'password.change'];
 
@@ -142,6 +153,15 @@ Route::middleware([...$authenticated, 'role:instructor'])->group(function (): vo
     // the other pages of one Course. An Instructor looking for the roster looks
     // for it on the Course, not in a list of unrelated endpoints.
     Route::get('/instructor/courses/{course}/students', [CourseController::class, 'students'])->name('instructor.courses.students');
+    /*
+     | The cover is one PATCH with a body that says which of three things is
+     | happening, rather than three routes, because it is one control: the answer to
+     | "what should this course's cover be" and the only questions are these three.
+     | Three routes would put three buttons on one form and a page that has to guess
+     | which was pressed.
+     */
+    Route::patch('/instructor/courses/{course}/cover', [CourseCoverController::class, 'update'])
+        ->name('instructor.courses.cover.update');
     Route::patch('/instructor/courses/{course}', [CourseController::class, 'update'])->name('instructor.courses.update');
     Route::post('/instructor/courses/{course}/publish', [CourseController::class, 'publish'])->name('instructor.courses.publish');
     Route::post('/instructor/courses/{course}/unpublish', [CourseController::class, 'unpublish'])->name('instructor.courses.unpublish');

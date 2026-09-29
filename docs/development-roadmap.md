@@ -4111,3 +4111,128 @@ against a synthetic catalog built inside a rolled back transaction.
   index checks, none with anything to look at; 13 of 14 query shapes use an index at
   4,000 courses, and the one that does not does not warrant one.
 - 1745 tests, 7656 assertions. Pint 393 files. `composer audit` clean. 106 routes.
+## Course covers, an About page, and the home page rebuilt
+
+Three pieces of work in one pass, because the third turned out to be waiting on
+the first two.
+
+### Course cover images
+
+A course can have a picture: an instructor's own upload, or a photograph chosen
+from a curated catalog of twenty, grouped into six subjects. One component
+decides how a cover is shown, so every card, list and header in the application
+shows the same course the same way.
+
+The columns live on the course rather than in a view, because the interface reads
+them on every card and re-reading a file per request would put a disk read behind
+a course list. The source is an enum rather than a boolean, because an upload is
+ours to serve and a chosen photograph is somebody else's work that has to be
+credited, and a boolean would make the two indistinguishable at the point where
+the difference decides how it is displayed.
+
+**Input**: an upload, a photograph identifier, or a removal.
+**Process**: `SetCourseCover` runs the policy check, writes the six columns in one
+place, and returns the course. Paths are generated, so a stored path is never one
+a request chose.
+**Output**: one cover, rendered by `x-course-cover` everywhere, with an alt text
+that says what the picture shows rather than that there is a picture.
+
+**The photograph catalog, not a search.** There is no API key in this project and
+`api.unsplash.com` answers 401 without one, so nothing is searched and no
+credential can leak. Twenty photographs are curated in the repository, each named
+with what it shows, and each course's cover was chosen by reading that rather than
+by taking the first one in a list. A photograph unrelated to the subject is worse
+than no photograph, because a placeholder at least admits what it is.
+
+### The About page
+
+Written for a student, an instructor, or anybody who has found the site and wants
+to know what it is before deciding whether to make an account. Not for somebody
+reading the repository.
+
+That distinction decided the content rather than decorating it. The first version
+ended with a table naming the framework, the language, the database and the build
+tool. Every row was true and every row was the wrong answer, and together they
+told a reader the one thing they had not asked. `PublicContentTest` now fails if
+that vocabulary returns to any public page, and it was proved by putting the words
+back and watching it fail.
+
+### The home page
+
+Rebuilt against a system rather than adjusted at the edges.
+
+The vertical rhythm was written out band by band and had already drifted by a step
+in three places, so it now lives in four named classes: `.shell` for the page
+frame, `.band` for the step between sections, `.band-head` for the heading block,
+and `.measure` for the width of a line of prose. The step went down from 128
+pixels between two desktop bands to 112, because six bands at the old value meant
+more space than content.
+
+The opening held a panel of four tinted boxes counting courses, lessons and
+quizzes. That is the shape an analytics screen uses to report a system, and on a
+page about a library of courses it read as though the site were showing a reader
+its own internals. Those figures are on one ruled line beneath the headline now,
+at the weight of ordinary text. They were also lying: the panel read the number of
+cards drawn, which is capped at three, so eight free courses would have printed as
+three. It read correctly only because this repository holds two.
+
+A row of two cards no longer leaves a third of itself empty. The third cell
+carries a link to the full list, centred, with the same icon square the other
+cards use. A group of one is never filled, because a catalog holding one free
+course is a small catalog and padding it out would be the page inventing a shape
+the data does not have.
+
+The card carries four facts now rather than four icons and a name. The subject
+moved above the title as an eyebrow so it labels it instead of competing with it,
+the price is the one large number, the description is two lines, and the facts are
+one quiet sentence with rules between them. The button sits on the bottom edge of
+every card through `mt-auto` with a `pt-5` floor, so two cards whose titles wrap
+onto different numbers of lines still have their buttons on one line.
+
+Scroll animation is Animate on Scroll, doing the part that is fiddly: the scroll
+handling, the throttling, the offset arithmetic and the resize behaviour. The
+hiding is ours, gated on the class the library itself adds while initialising, so
+an element is only ever hidden by code that has already proved it is there to
+reveal it. Under a reduced motion preference the library's own switch is used, so
+the animations are not part of the document rather than merely fast.
+
+### Four faults found while doing it
+
+None of the four was visible to the suite, and the reason is the same in three of
+them: the thing being tested answered correctly and what the reader saw did not.
+
+1. The content security policy refused every course cover, because `img-src` named
+   neither the photograph CDN nor anything that could be opened to allow it. The
+   evidence that had been gathered for the feature was a set of HTTP 200s from a
+   server side request, which is exactly the check that cannot enforce a browser
+   policy.
+2. The cover's broken image fallback was an `onerror` attribute, and the policy
+   sends no `unsafe-inline`, so the browser discarded it. The fallback was absent
+   on exactly the pages that needed it.
+3. The home page and the footer offered every signed in reader a student route.
+   An instructor and an administrator were each given a button that answers 403, on
+   the landing page.
+4. The live database had never had the cover migration applied. The test database
+   had, because the suite migrates it on every run.
+
+`URL::forceScheme('https')` was also decided from `APP_URL` alone, which meant a
+request to the plain http local port was handed https URLs, asked a non TLS port
+for the stylesheet over https, and arrived with no design system on it at all. It
+is decided per request now, in `ForcePublicHttps`, so the scheme follows either
+the connection or the host that was asked for, and the two can no longer be
+confused with the configuration that describes the public address.
+
+### What the gate says
+
+- 1800 tests, 8076 assertions, up from 1745. Pint 406 files. `composer audit`
+  clean. 108 routes. Migrations reproduce from nothing, verified by running
+  `migrate:fresh` against the test database and checking the live one afterwards
+  was untouched.
+- Sixteen page and width combinations measured through headless Edge at 390, 820,
+  1280 and 1600 pixels: no horizontal overflow, no broken images, no console
+  errors. The first attempt at that measurement constrained the page with a
+  `max-width` instead of resizing the viewport and reported zero overflows on a
+  layout that had never been in a phone.
+- Four new test files, each of which was proved by breaking the thing it checks:
+  `ContentSecurityPolicyTest`, `IconNameTest`, `PublicContentTest` and
+  `ScrollAnimationTest`.

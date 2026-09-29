@@ -964,3 +964,192 @@ a reason" is easier to honour when the reason is measured rather than imagined.
   certificates and role separation.
 - The demonstration state restored afterwards, because the workflow probe enrolls and
   completes as it goes.
+
+
+## Ninth pass: the public interface, rebuilt against a system
+
+This pass was asked for twice over. The first request was for a polished home
+page and a new About page. The second was a complaint that the About page looked
+generated, that the spacing was wrong, that the animations were missing, and that
+a credit badge on every course cover looked cheap. All three complaints were
+correct and all three were checked against a rendered page before anything was
+changed.
+
+### What was measured rather than assumed
+
+A screenshot of the home page showed a page with no styling on it. The obvious
+reading is a broken stylesheet. The actual cause took three steps to find:
+
+`APP_URL` is the public tunnel, so `PublicHttps::isEnabled()` was true, so
+`AppServiceProvider` called `URL::forceScheme('https')` on every request. A request
+to the plain-http local port was therefore handed https URLs, and the page asked
+the browser for `https://127.0.0.1:8000/build/assets/app-….css`. That port
+serves http. The browser cannot verify a certificate for a loopback address, so it
+discarded the stylesheet, and `document.styleSheets.length` was **0**.
+
+The same document, with the stylesheet address corrected from https to http, was
+measured again in the same browser:
+
+| | stylesheets loaded | cover box | ratio |
+|---|---|---|---|
+| as served | 0 | 1224 × 1246 | 0.98 |
+| same page, http | 1 | 390 × 219 | 1.78 |
+
+Nothing at the HTTP level could have found this. The page answered 200, the asset
+answered 200, and the refusal happened in the browser afterwards. A test made with
+an HTTP client does not enforce the content security policy, so every check in the
+suite passed while the page had no design system on it.
+
+### Four faults the suite had passed
+
+1. **The content security policy refused every course cover.**
+   `img-src` was `'self' data:`, which is right for everything else and wrong for a
+   cover chosen from the photograph catalog, which is served from
+   `images.unsplash.com`. All five covers were blocked. The earlier evidence for
+   this feature was twenty HTTP 200s from a server-side `fetch`, which is exactly
+   the check that cannot see a browser policy.
+
+2. **The cover fallback was an `onerror` attribute the policy forbids.**
+   `script-src` is `'self'` plus a per request nonce, with no `unsafe-inline`, so
+   the browser discarded the attribute. The fallback was absent on exactly the
+   pages that needed it. The handler moved into the bundle, delegated and
+   captured, because an `error` event on an element does not bubble.
+
+3. **The home page and the footer sent every signed-in reader to a student route.**
+   `student.courses.index` sits inside the group guarded by `role:student`, so an
+   instructor and an administrator were each offered a link to a page that answers
+   403, on the landing page. Both now ask `RoleBasedDestination::learningFor()`,
+   so there is one answer rather than two that drifted.
+
+4. **The live database had never had the cover migration applied.** The test
+   database had it, because the suite migrates it on every run. The demonstration
+   database did not, and every write to a cover failed with
+   `Unknown column 'cover_disk'`. A test can only ever prove a thing about the
+   database it runs against.
+
+Each of these is now pinned by a test: `ContentSecurityPolicyTest` reads the
+origins out of `CourseCoverCatalog` rather than a list written beside the policy,
+`IconNameTest` reads every icon a template asks for against `config/icons.php`, and
+`PublicContentTest` keeps build vocabulary off the public pages.
+
+### The design system, decided in one place
+
+The complaints about spacing were not really about spacing. The vertical rhythm
+was written out band by band and had already drifted by a step in three places,
+and the home page and the About page each invented a second scale of their own.
+So it now lives in four named classes and nothing else chooses it:
+
+- `.shell` — the page frame, one definition, used by every public page
+- `.band` — the step between two sections, 40/48/56 pixels
+- `.band-head` — the heading block: eyebrow, heading, lead
+- `.measure` — 68 characters, because a wide screen will otherwise give a
+  paragraph a hundred and thirty
+
+The step went down from 128 pixels between two desktop bands to 112. Six bands at
+the old value meant more space than content.
+
+### The hero stopped being a dashboard
+
+The opening held a panel of four tinted boxes: free courses, paid courses, lessons,
+quizzes. That is the shape an analytics screen uses to report a system, and on a
+page about a library of courses it read as though the site were showing a reader
+its own internals. The four figures are the same four, still counted from the
+database, on one ruled line beneath the headline at the weight of ordinary text.
+
+The figures also turned out to be lying. The panel read `$freeCourses->count()`,
+which is the number of cards drawn and therefore capped at three. Eight free
+courses would have printed as three. It read correctly only because this repository
+holds two, so the cap was never reached. `PublishedCourses::totals()` now counts
+the whole published catalog, and it was verified by publishing nine more free
+courses inside a rolled back transaction and asking the panel whether it agreed.
+
+### A short row of cards, filled
+
+With three columns and two courses, a third of the row was empty, and an
+unexplained gap in the middle of a page is the most noticeable thing on it. The
+first attempt capped the grid so two cards would not stretch, which removed one gap
+and created a larger one to its right.
+
+The row is now three columns with the third cell carrying a link to the full list,
+centred, with the same icon square the other cards use. A group of one is never
+filled, because a catalog holding one free course is a small catalog and padding it
+out would be the page inventing a shape the data does not have.
+
+### Animate on Scroll
+
+Added, at 2.3.4, with the four effects the site uses and the thirty it does not
+declared as nothing.
+
+AOS's own stylesheet hides anything carrying `data-aos`, unconditionally. If that
+stylesheet arrives and the script does not, every marked element stays at zero
+opacity for ever: nothing throws, nothing logs, and the page has no text on it. So
+the hidden state here is gated on the `aos-init` class AOS itself adds to an
+element while initialising. An element is only ever hidden by code that has already
+proved it is there to reveal it.
+
+`ScrollAnimationTest` pins that, and pins the four places the wiring can be wrong.
+It exists because the machine this was written on reports
+`prefers-reduced-motion: reduce`, so every browser pass exercised the disabled path
+and the animated path was asserted rather than observed. That is stated in the
+test rather than left implied.
+
+### The About page, written for the wrong audience
+
+It ended with a table naming the framework, the language, the database and the
+build tool. Every row was true and every row was irrelevant: a reader who opened
+"About" to find out what a certificate is got a list of packages. The page is now
+about the learning, from what a course is to what has to happen before a
+certificate is issued. `PublicContentTest` keeps it that way, and it was proved by
+putting the words back and watching the test fail.
+
+The seven identical two column bands are gone. Each band is shaped to what it has
+to say: an opening, a three part chain, the student's six steps, the instructor's
+four, the four conditions for finishing, and a finish.
+
+### The closing band stopped being a different component
+
+It was a full width panel in the deep brand blue with white buttons on it, and the
+only dark surface on a page of light ones. It is a border and a tinted ground now,
+like every other panel, with the heading in the primary colour as the one thing
+that marks it as a conclusion.
+
+### The credit badge came off the cards
+
+A dark "Photo: Unsplash" label sat over the bottom left of every cover. Six covers
+in a grid meant six identical black labels over six different photographs, none at
+the same contrast against its background, competing with the picture they were
+printed on. It reads as a watermark nobody asked for.
+
+The name and the address are still columns on the course and the credit is still
+reachable, on the course's own page, which is where somebody is actually reading
+about the photograph rather than scanning a list of twelve.
+
+### What a real viewport found
+
+The first responsive pass constrained the page with a `max-width` and reported zero
+overflows. The document still reports the window's own width, so that measurement
+was of nothing. Re-run through headless Edge at 390, 820, 1280 and 1600 pixels:
+
+- **No horizontal overflow at any width.** `scrollWidth` equals `clientWidth` on
+  every page, on the home page, About, the catalog and sign in.
+- **No broken images.** Every cover loaded, which is what the policy fix bought.
+- **No console errors** on any of the sixteen page and width combinations.
+- **Four icon buttons** were 36 to 42 pixels wide rather than 44. All four clear
+  the 24 pixel minimum in WCAG 2.5.8, so this is polish rather than a violation,
+  and they are now square.
+
+The card titles the same pass listed as 21 pixel tap targets are false positives:
+the title carries a stretched overlay that covers the card, and a measurement of
+the anchor cannot see a pseudo element.
+
+### A panel of two, and a label that lied
+
+Two cards with titles wrapping onto different numbers of lines had their buttons
+at two different heights in the same row. `mt-auto` with a `pt-5` floor puts the
+button on the bottom edge of every card while keeping the space above it in a card
+that is exactly filled.
+
+The credit line inside the card became one quiet sentence: subject, modules,
+lessons, level, separated by rules rather than by four small icons. The instructor's
+name came off it. Four icons in a row read as a toolbar and made the card look like
+a panel of controls; it is now the four facts a student compares courses on.

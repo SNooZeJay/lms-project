@@ -79,7 +79,7 @@
                             data-dropdown-trigger
                             aria-expanded="false"
                             aria-controls="public-menu"
-                            class="btn btn-secondary btn-sm px-2.5"
+                            class="btn btn-secondary btn-sm size-11 p-0"
                         >
                             <x-icon name="menu" size="md" />
                             <span class="sr-only">Menu</span>
@@ -106,6 +106,21 @@
                                 <x-icon name="book-open" size="sm" class="text-ink-subtle" />
                                 Courses
                             </a>
+                            {{-- About sits between Courses and the account actions
+                                 because it is a page about the platform rather than a
+                                 destination inside it, and somebody deciding whether
+                                 this is worth signing in for looks for it before
+                                 they look for the sign in link. --}}
+                            <a
+                                href="{{ route('about') }}"
+                                data-dropdown-item
+                                @if (request()->routeIs('about')) aria-current="page" @endif
+                                class="flex min-h-10 items-center gap-2.5 rounded-md px-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus {{ request()->routeIs('about') ? 'bg-primary-quiet text-primary-text' : '' }}"
+                            >
+                                <x-icon name="info" size="sm" class="text-ink-subtle" />
+                                About
+                            </a>
+
 
                             @guest
                                 {{-- Registration is reached from the sign in page, not

@@ -2,7 +2,7 @@
 
 ## 1. Audit status
 
-Audit date: September 27, 2026
+Audit date: September 29, 2026
 
 This document describes the repository as it exists now.
 
@@ -25,6 +25,44 @@ expected to pass on a development machine.
 
 What remains outside the repository is a provider account display name, which a
 support request is handling. There is no open implementation task.
+
+### The public pages were rebuilt, and four faults were found doing it
+
+Course cover images and an About page were added, and the home page was
+reworked. The work turned up four faults that the whole suite had passed, which
+is worth recording here because three of the four are the kind that no HTTP level
+check can see.
+
+The content security policy permitted images from `'self'` and `data:` only, so
+the browser refused every course cover, because covers are served from a
+photograph CDN. The earlier evidence for that feature was a set of HTTP 200s from
+a server side request, which is precisely the check that cannot enforce a browser
+policy.
+
+The cover's broken image fallback was written as an `onerror` attribute. The
+policy sends no `unsafe-inline`, so the browser discarded the attribute and the
+fallback was absent on exactly the pages that needed it. The handler is in the
+bundle now.
+
+The home page and the footer offered every signed in reader a link to
+`student.courses.index`, which sits behind the `role:student` middleware. An
+instructor and an administrator were each given a dead button on the landing page.
+
+And the live demonstration database had never had the cover migration applied.
+The test database had it, because the suite migrates it on every run, so the only
+sign of it was a `Column not found` on the first write against real data.
+
+Each is now pinned by a test that would have caught it: one reads the permitted
+image origins out of the class that builds the URLs rather than from a list
+written beside the policy, one reads every icon name a template asks for against
+`config/icons.php`, one reads the rendered public text and fails on build
+vocabulary, and one reads the stylesheet and fails if an element is hidden without
+the library that reveals it having already run.
+
+`URL::forceScheme('https')` also used to be decided from `APP_URL` alone, which
+meant a request to the plain http local port was handed https URLs and arrived
+with no stylesheet at all. It is now decided per request, in middleware, so the
+scheme follows the connection or the host that was asked for.
 
 
 ## 2. Current repository state

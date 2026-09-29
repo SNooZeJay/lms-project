@@ -139,8 +139,26 @@ class PublicCourseCatalogTest extends TestCase
         ]);
         $course = $this->makePublishedCourse([], $instructor);
 
-        $this->get('/courses')->assertOk()->assertSee('Rhea Santos')->assertDontSee('rhea.santos@example.test');
-        $this->get("/courses/{$course->slug}")->assertOk()->assertSee('Rhea Santos')->assertDontSee('rhea.santos@example.test');
+        /*
+         | The name is asserted on the course page and not on the catalog card.
+         |
+         | The catalog card used to carry the instructor's name as a fifth item on
+         | its facts line. It was dropped: four small facts and a name is a toolbar
+         | rather than a card, and a reader choosing between two courses is reading
+         | the courses, not the people. The name is still on the course's own page,
+         | which is where somebody who wants to know who teaches it goes.
+         |
+         | That changes which page proves this check is not vacuous, and not what is
+         | being checked. "No email appears" passes trivially on a page that never
+         | mentioned the instructor at all, so the page that still names them has to
+         | be in here or the assertion means nothing at all.
+         */
+        $this->get('/courses')->assertOk()->assertDontSee('rhea.santos@example.test');
+
+        $this->get("/courses/{$course->slug}")
+            ->assertOk()
+            ->assertSee('Rhea Santos')
+            ->assertDontSee('rhea.santos@example.test');
     }
 
     public function test_course_title_is_html_escaped(): void

@@ -90,7 +90,26 @@ class SecurityHeaders
             "form-action 'self'",
             "object-src 'none'",
             "frame-ancestors 'none'",
-            "img-src 'self' data:",
+            // The one origin outside this application that a page is allowed to
+            // load an image from, and it is named rather than opened up with a
+            // wildcard.
+            //
+            // A course cover chosen from the catalog is a photograph served by
+            // Unsplash's own CDN, so the browser is asked to fetch it from there.
+            // This was 'self' data: only, which is correct for everything else in
+            // the application and wrong for covers: the policy silently refused all
+            // five of them and every card fell back to a broken image. Nothing
+            // reported it. A request for the image returns 200, the page is 200,
+            // and the refusal happens in the browser after both, so every check
+            // made with an HTTP client passed while the page showed nothing.
+            //
+            // Only the host and only over https, because that is the only origin a
+            // cover URL is ever built from. App\Support\CourseCoverCatalog::urlFor
+            // is the single place those URLs are constructed, and the test that
+            // pins this directive reads that class rather than a list written
+            // here, so a cover served from somewhere new fails the suite rather
+            // than failing to appear.
+            'img-src \'self\' data: https://images.unsplash.com',
             "font-src 'self'",
             "connect-src 'self'",
             "style-src 'self'",
