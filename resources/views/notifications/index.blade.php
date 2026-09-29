@@ -62,7 +62,18 @@
 
                         <div class="flex shrink-0 items-center gap-2">
                             @if ($notice->link)
-                                <x-btn :href="$notice->link" variant="quiet" size="sm">Open</x-btn>
+                                {{--
+    A real control, not a bare word.
+
+    This was a `quiet` button, which draws no border and no background, sitting
+    in the same row as a `secondary` button that draws both. Two actions on one
+    notification, one of which looks like a link and one of which does not, and
+    the one that actually navigates somewhere is the one that looks like text.
+    Read down the right hand edge of a long list it reads as though the first
+    action is less important than the second, which is the opposite of what it
+    does.
+--}}
+<x-btn :href="$notice->link" variant="secondary" size="sm">Open</x-btn>
                             @endif
 
                             @unless ($notice->isRead())

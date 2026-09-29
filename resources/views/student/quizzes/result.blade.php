@@ -4,8 +4,8 @@
 @section('workspace-context', $course->title)
 
 @section('content')
-    <div class="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <header class="border-b border-line pb-8">
+@section('measure', 'medium')
+            <header class="border-b border-line pb-8">
             <p class="eyebrow">Attempt {{ $attempt->attempt_number }} result</p>
             <h1 class="mt-2 text-3xl font-[650] tracking-tight text-balance text-ink sm:text-4xl">
                 {{ $quiz->title }}
@@ -116,5 +116,4 @@
                 Back to {{ $quiz->title }}
             </x-btn>
         </div>
-    </div>
 @endsection

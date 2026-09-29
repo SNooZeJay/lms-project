@@ -4,8 +4,8 @@
 @section('workspace-context', 'Operations workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'wide')
+            <x-page-header
             eyebrow="Administration"
             title="Certificates"
             description="Revoking keeps the record and the reason. Reissuing creates a linked replacement after a fresh eligibility check."
@@ -103,5 +103,4 @@
 
             <div class="mt-6">{{ $certificates->links() }}</div>
         @endif
-    </div>
 @endsection

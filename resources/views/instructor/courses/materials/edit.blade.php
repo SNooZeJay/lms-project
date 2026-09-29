@@ -4,8 +4,8 @@
 @section('workspace-context', 'Teaching workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'narrow')
+            <x-page-header
             eyebrow="Course outline"
             title="Edit learning material"
             description="Only the metadata below can change. The position, uploader, and storage details stay under server control."
@@ -102,5 +102,4 @@
                 </x-btn>
             </div>
         </form>
-    </div>
 @endsection

@@ -25,8 +25,8 @@
 @endphp
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'wide')
+            <x-page-header
             eyebrow="Administration"
             title="Enrollment report"
             description="Every row is read from the database. Amounts come from the stored payment record, never from a request."
@@ -246,5 +246,4 @@
                 </p>
             @endif
         </section>
-    </div>
 @endsection

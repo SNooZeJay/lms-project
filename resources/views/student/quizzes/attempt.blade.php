@@ -4,8 +4,8 @@
 @section('workspace-context', $quiz->title)
 
 @section('content')
-    <div class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-form-errors :errors="$errors" class="mb-6" />
+@section('measure', 'narrow')
+            <x-form-errors :errors="$errors" class="mb-6" />
 
         <header class="border-b border-line pb-8">
             <p class="eyebrow">Attempt {{ $attempt->attempt_number }} of {{ $quiz->max_attempts }}</p>
@@ -79,5 +79,4 @@
                 </x-btn>
             </div>
         </form>
-    </div>
 @endsection

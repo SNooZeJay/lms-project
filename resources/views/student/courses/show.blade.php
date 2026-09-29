@@ -4,8 +4,8 @@
 @section('workspace-context', 'My courses')
 
 @section('content')
-    <div class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        {{--
+@section('measure', 'medium')
+            {{--
             The course this page is about, and its cover. Same component as the
             catalog and the two lists, so a learner moving between them sees one
             course rather than three renderings of it. Eager, because the page has
@@ -272,5 +272,4 @@
                 </ul>
             </section>
         @endif
-    </div>
 @endsection

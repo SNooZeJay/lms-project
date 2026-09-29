@@ -4,8 +4,8 @@
 @section('workspace-context', 'Operations workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'wide')
+            <x-page-header
             eyebrow="Administration"
             title="Manage users"
             description="Search verified accounts, assign one approved role, and manage active access. A suspended account cannot sign in or continue a session."
@@ -231,5 +231,4 @@
 
             <div class="mt-6">{{ $users->links() }}</div>
         @endif
-    </div>
 @endsection

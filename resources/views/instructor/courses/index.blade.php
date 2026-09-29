@@ -4,8 +4,8 @@
 @section('workspace-context', 'Teaching workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'wide')
+            <x-page-header
             eyebrow="Instructor workspace"
             title="My courses"
             description="Create a private course draft, build its ordered outline, then publish it when it is ready."
@@ -142,5 +142,4 @@
 
             <div class="mt-6">{{ $courses->links() }}</div>
         @endif
-    </div>
 @endsection

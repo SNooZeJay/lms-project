@@ -4,8 +4,8 @@
 @section('workspace-context', 'Teaching workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'medium')
+            <x-page-header
             eyebrow="{{ $course->title }}"
             title="Learners"
             description="Every learner enrolled on this course, with the progress they have actually made."
@@ -101,5 +101,4 @@
                 </p>
             @endif
         </section>
-    </div>
 @endsection

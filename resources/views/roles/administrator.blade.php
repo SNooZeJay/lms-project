@@ -4,8 +4,8 @@
 @section('workspace-context', 'Operations workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'wide')
+            <x-page-header
             eyebrow="Administrator workspace"
             :title="'Welcome back, '.$user->name"
             description="Your Administrator access is active. User management, certificates, reports, and audit tools are available below."
@@ -31,7 +31,7 @@
                  used to take a tile each are folded into the hint of the tile
                  they belong with, so "8 courses" also says how many are live.
                  A dashboard that shows ten numbers shows none of them clearly. --}}
-            <dl role="list" class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+            <dl role="list" class="figures-row">
                 <x-stat label="Users" :value="$stats['users']" tone="primary" hint="Every account"
                         :href="route('admin.users.index')">Manage users</x-stat>
                 <x-stat label="Students" :value="$stats['students']" tone="primary"
@@ -259,5 +259,4 @@
                 </div>
             @endif
         </section>
-    </div>
 @endsection

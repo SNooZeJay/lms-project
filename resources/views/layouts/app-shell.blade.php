@@ -199,10 +199,36 @@
                 </div>
             </header>
 
-            <main id="main-content" class="min-w-0 flex-1" tabindex="-1">
-                @yield('content')
-            </main>
+            {{--
+                The page frame belongs to the shell.
 
+                It used to belong to each of the twenty six views that use this
+                layout and had a frame, and they had drifted. The same container
+                was written out twenty six times with six different maximum
+                widths, and seven more views had no wrapper at all, so their
+                content sat against the edge of the window with no padding at all.
+                Measured across the signed in pages, the content edge landed at
+                five different places: 0, 24, 32, 41 and 64 pixels.
+
+                A page whose left margin depends on which file drew it is not a
+                design, and it cannot be corrected by editing those files one at a
+                time, because the fault is that every one of them is allowed an
+                opinion. So the frame is written once, here.
+
+                The measure is the one thing a view still chooses, because the
+                width of a page is a property of its content: a reading page wants
+                a narrow column and a table wants the full one. Three named
+                measures, declared with @section('measure', 'narrow'), so that "the
+                same width as the reading pages" is sayable and two pages which
+                should match do match. `wide` is the default, because most pages
+                here are a table or a grid, and a 672 pixel column of a data table
+                is a table nobody can read.
+            --}}
+            <main id="main-content" class="min-w-0 flex-1" tabindex="-1">
+                <div class="page page-@yield('measure', 'wide') page-body">
+                    @yield('content')
+                </div>
+            </main>
             {{-- The compact band. The workspace sidebar already carries every
                  destination, so repeating those columns here would make the
                  footer a second, worse navigation. What the workspace still

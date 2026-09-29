@@ -4,8 +4,8 @@
 @section('workspace-context', 'Teaching workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        @if (session('status'))
+@section('measure', 'wide')
+            @if (session('status'))
             <x-note tone="success" class="mb-6">{{ session('status') }}</x-note>
         @endif
 
@@ -876,5 +876,4 @@
             they came for down the page.
         --}}
         <x-course-cover-picker :course="$course" />
-    </div>
 @endsection

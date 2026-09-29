@@ -4,8 +4,8 @@
 @section('workspace-context', 'Account')
 
 @section('content')
-    <div class="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'medium')
+            <x-page-header
             eyebrow="Account"
             title="Your profile"
             description="Keep the name and short biography shown on your learning account."
@@ -101,5 +101,4 @@
                 </x-note>
             </aside>
         </div>
-    </div>
 @endsection

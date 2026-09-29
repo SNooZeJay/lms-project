@@ -4,8 +4,8 @@
 @section('workspace-context', 'Operations workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'wide')
+            <x-page-header
             eyebrow="Administration"
             title="Activity log"
             description="Read-only records of approved role and account status changes. Each row shows who acted, who was changed, what moved, and when. Nothing else is recorded."
@@ -84,5 +84,4 @@
 
             <div class="mt-6">{{ $activityLogs->links() }}</div>
         @endif
-    </div>
 @endsection

@@ -4,8 +4,8 @@
 @section('workspace-context', 'Checkout')
 
 @section('content')
-    <div class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        @if (session('status'))
+@section('measure', 'narrow')
+            @if (session('status'))
             <x-note tone="success" class="mb-6">{{ session('status') }}</x-note>
         @endif
 
@@ -123,7 +123,6 @@
                 Back to my courses
             </x-btn>
         </div>
-    </div>
 @endsection
 
 @push('scripts')

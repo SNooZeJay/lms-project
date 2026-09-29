@@ -4,8 +4,8 @@
 @section('workspace-context', 'Teaching workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'wide')
+            <x-page-header
             eyebrow="Instructor workspace"
             :title="'Welcome back, '.$user->name"
             description="Build and publish your courses, then follow how students move through them."
@@ -32,7 +32,7 @@
                  completion rate is the figure that says whether the teaching is
                  landing, so it takes the place of the raw quiz count, which is
                  only interesting while authoring. --}}
-            <dl role="list" class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+            <dl role="list" class="figures-row">
                 <x-stat label="Courses" :value="$stats['courses']" tone="primary" hint="That you own" />
                 <x-stat label="Published" :value="$stats['published_courses']" tone="primary" hint="Of your courses" />
                 <x-stat label="Drafts" :value="$stats['draft_courses']" tone="primary" hint="Not published yet" />
@@ -231,5 +231,4 @@
                 </div>
             </section>
         </div>
-    </div>
 @endsection

@@ -245,16 +245,36 @@
         @apply border-error-line bg-error-surface text-error-text hover:opacity-90;
     }
 
+    /*
+     | The three button sizes.
+     |
+     | One height and one horizontal padding per size, which is what the three
+     | rules below used to disagree about. Measured on the signed in pages, a
+     | `size="md"` button was 44 pixels tall with 16 pixels of padding in the
+     | filter form and 44 pixels tall with 12 in the card row below it, on the
+     | same screen. Both were `btn-md` and `btn-sm` respectively, which is
+     | exactly the problem: two components in one row that do not match, and
+     | nothing in either view to explain why.
+     |
+     | The padding ladder is 12, 16, 20 and the heights are 44, 44 and 48. `sm`
+     | and `md` are the same height on purpose. They are the same size to a
+     | reader, they appear in the same rows, and a nine pixel difference between
+     | two controls in one row is a mistake rather than a hierarchy.
+     |
+     | `lg` is the only one that is taller, and it is used for a page's primary
+     | action, where the extra four pixels is the only thing saying "this is the
+     | one to press".
+     */
     .btn-sm {
         @apply min-h-11 px-3 py-2 text-xs;
     }
 
     .btn-md {
-        @apply px-4 py-2.5;
+        @apply min-h-11 px-4 py-2 text-sm;
     }
 
     .btn-lg {
-        @apply px-5 py-3;
+        @apply min-h-12 px-5 py-3 text-sm;
     }
 
     .btn-block {
@@ -580,6 +600,69 @@
      | to pick a gap has a list to pick it from.
      */
 
+    /*
+     | The workspace page frame.
+     |
+     | One container, one padding, for every page a signed in reader sees.
+     |
+     | This exists because thirty three views were each writing their own. The
+     | string was
+     |
+     |     mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10
+     |
+     | repeated with seven different maximum widths, and six of the thirty three
+     | views had no wrapper at all. Measured on the pages that did, the content
+     | edge landed at five different places: 0, 24, 32, 41 and 64 pixels, and the
+     | first two pages a reader visits after signing in had no horizontal padding
+     | at all, so the page heading touched the edge of the window. A page whose
+     | content edge depends on which file drew it is not a design, and no amount
+     | of adjusting margins in those files fixes it: the fault is that thirty
+     | three files are each allowed an opinion.
+     |
+     | So the frame moves here, where it can only be right once. A view states
+     | the width its content wants and nothing else.
+     |
+     | The padding is the documented scale, unchanged: 16, 24, 32. The maximum
+     | widths are named rather than arbitrary, so "the same width as the catalog"
+     | is sayable and a reader comparing two pages gets two pages of the same
+     | measure. `wide` is the default because most pages are a table or a grid
+     | and a 672 pixel column of a data table is a data table nobody can read.
+     */
+    .page {
+        @apply mx-auto w-full px-4 sm:px-6 lg:px-8;
+    }
+    .page-narrow {
+        @apply max-w-3xl;
+    }
+    .page-medium {
+        @apply max-w-5xl;
+    }
+    .page-wide {
+        @apply max-w-7xl;
+    }
+    /*
+     | The space above a page's own heading.
+     |
+     | The topbar is 64 pixels tall and sits against the top of the window, so
+     | without this the first heading is four pixels below it. The top padding is
+     | what separates a page from the chrome above it, and it is the same on
+     | every page for the same reason the horizontal padding is.
+     */
+    .page-body {
+        @apply py-8 sm:py-10 lg:py-12;
+    }
+
+    /*
+     | A control's own height, and the two paddings that were mixed.
+     |
+     | Measured on the real pages: a `size="md"` button rendered at 44 pixels tall
+     | with 16 pixels of horizontal padding in one place and 12 in another, on the
+     | same screen, in the same row. Both are `btn` sizes and neither was wrong
+     | on its own; they were two answers to the same question, and the row they
+     | sat in was the evidence.
+     |
+     | The height is one value per size. The padding is one value per size.
+     */
     .band {
         @apply border-t border-line py-10 sm:py-12 lg:py-16;
     }
@@ -687,6 +770,46 @@
      | rather than in ink, which is enough to say "this is the end of the page"
      | without a change of surface pretending to say it.
      */
+    /*
+     | A row of figures.
+     |
+     | The figures on a dashboard are a wrapping flex row rather than a grid, and
+     | each one takes a third of the width at a desktop size.
+     |
+     | It was a three column grid, and with five figures the last row held two and
+     | left a hole the width of a third card. A hole in a row of figures is
+     | conspicuous in a way a hole elsewhere is not, because the eye reads the row
+     | as one object, and a row of two at the same width as a row of three looks
+     | like a third figure failed to load.
+     |
+     | A wrapping flex row has no such failure. Five figures at a third each fit
+     | three on the first line and two on the second, and because each one grows
+     | to fill whatever is left, the two on the last line take half each and the
+     | row ends flush with the edge above it. Six figures behave the same, and so
+     | do four, and a page that gains or loses a figure does not gain a hole.
+     |
+     | `shrink-0` is what makes the wrapping happen. Without it the browser
+     | shrinks all five to a fifth of the width and puts them on one line, which
+     | is a five column row and not a three column one.
+     |
+     | The basis is a third less two shares of the gap, so three sit exactly on
+     | the line and a fourth does not fit. Below the medium breakpoint it is half
+     | less one share of the gap, for the same reason at a smaller size.
+     |
+     | The minimum width is the floor: a figure is never squeezed narrower than its
+     | own label before the row wraps.
+     */
+    .figures-row {
+        @apply flex flex-wrap gap-3 sm:gap-4;
+    }
+    .figures-row > * {
+        @apply min-w-[9rem] grow shrink-0 basis-[calc((100%-0.75rem)/2)];
+    }
+    @media (min-width: 48rem) {
+        .figures-row > * {
+            @apply basis-[calc((100%-2rem)/3)];
+        }
+    }
     .panel-call {
         @apply border border-line bg-primary-quiet px-6 py-8 sm:px-10 sm:py-10;
     }

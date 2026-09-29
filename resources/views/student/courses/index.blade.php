@@ -4,8 +4,8 @@
 @section('workspace-context', 'Learning workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'wide')
+            <x-page-header
             eyebrow="Student workspace"
             title="My courses"
             description="These are your own enrollments. No one else can see this list."
@@ -151,5 +151,4 @@
 
             <div class="mt-8">{{ $enrollments->links() }}</div>
         @endif
-    </div>
 @endsection

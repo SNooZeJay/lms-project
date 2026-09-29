@@ -4,8 +4,8 @@
 @section('workspace-context', 'Teaching workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'medium')
+            <x-page-header
             eyebrow="Instructor workspace"
             title="Create course"
             description="A new course starts as a private draft that only you can see. Publish it after it has at least one module and one lesson."
@@ -102,5 +102,4 @@
                 </x-btn>
             </div>
         </form>
-    </div>
 @endsection

@@ -4,8 +4,8 @@
 @section('workspace-context', 'Learning workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'wide')
+            <x-page-header
             eyebrow="Student workspace"
             :title="'Welcome back, '.$user->name"
             description="Pick up where you stopped, check your course progress, and see what is waiting for you."
@@ -41,7 +41,7 @@
                  different place. "Quizzes passed" gave way to "quizzes pending",
                  because a learner can act on the second one this week and only
                  look back at the first. --}}
-            <dl role="list" class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+            <dl role="list" class="figures-row">
                 <x-stat label="Overall progress" :value="$stats['average_progress'].'%'" tone="primary"
                         hint="Average across your courses" />
                 <x-stat label="Courses in progress" :value="$stats['courses_in_progress']" tone="primary" />
@@ -397,5 +397,4 @@
                 </div>
             @endif
         </section>
-    </div>
 @endsection

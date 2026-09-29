@@ -4,8 +4,8 @@
 @section('workspace-context', 'Learning workspace')
 
 @section('content')
-    <div class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <x-page-header
+@section('measure', 'wide')
+            <x-page-header
             eyebrow="Student workspace"
             title="My certificates"
             description="Finish every required lesson and pass every required quiz to earn a certificate."
@@ -129,5 +129,4 @@
                 @endforeach
             </ul>
         @endif
-    </div>
 @endsection

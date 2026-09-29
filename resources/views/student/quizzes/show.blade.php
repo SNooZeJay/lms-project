@@ -4,8 +4,8 @@
 @section('workspace-context', $course->title)
 
 @section('content')
-    <div class="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        @if (session('status'))
+@section('measure', 'medium')
+            @if (session('status'))
             <x-note tone="success" class="mb-6">{{ session('status') }}</x-note>
         @endif
 
@@ -162,5 +162,4 @@
                 </ul>
             </section>
         @endif
-    </div>
 @endsection
