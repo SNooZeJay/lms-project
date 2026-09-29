@@ -583,6 +583,24 @@ screen instead of asserting them.
   because an override replaces the state that sets `activated_at` with it
 - `seed-topbar-demo.php` builds the conversations and notifications the topbar
   panel reads, so the panel is exercised with something in it
+- `rebuild-the-test-database.php` drops and recreates the test database and
+  migrates it. It exists because `migrate:fresh` reported "Dropping all tables
+  DONE" and then failed on a table that had survived the drop, and a later run
+  deadlocked on the drop statement and left a half dropped schema that made every
+  following run fail on a foreign key pointing at a table that was no longer
+  there. Recreating the database in one statement does not walk foreign keys. It
+  refuses to run unless the name matches the database `phpunit.xml` declares,
+  because `.env` names the demonstration database and a script that drops
+  databases being pointed at the wrong one is the failure mode worth designing
+  against
+- `check-reveal.mjs` measures the opening band's entrance in a real browser with
+  a reduced motion preference forced **off**. It is in this project because the
+  machine it was written on reports that preference as set, and can therefore only
+  ever verify that the animations are absent. It samples computed opacity from the
+  first frame the element is painted in, which is the only moment a reveal lasting
+  a few hundred milliseconds can be observed at all: three earlier attempts
+  sampled after load and reported a working animation as broken, and one replayed
+  the reveal by hand and reported a broken one as working
 - `server-router.php` is the router that lets PHP's built in web server serve this
   application. Without one, `php -S` hands a request for a stylesheet to Laravel,
   the application answers with its 404 page, and the browser is handed HTML where

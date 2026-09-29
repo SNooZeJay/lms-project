@@ -104,11 +104,26 @@
             the page with a box beside it is a dashboard; the same headline across
             the whole measure is a page.
 
-            No animation on this band. It is on screen when the page arrives, and
-            animating it means the first thing a reader sees is a gap where the
-            content should be.
+            This band does animate, and it was left un-animated for a while on
+            the grounds that the first thing a reader sees should not be a gap.
+            That reasoning was half right and the conclusion was wrong: with the
+            opening marked out, nothing on the page moved at all until the reader
+            scrolled, because every other band is below the fold. A page that is
+            completely still until you scroll is indistinguishable from a page
+            whose animation is broken, which is exactly how it read.
+
+            So it is marked, and it is marked faster than the rest. It is on
+            screen when the page arrives, so anything that makes the reader wait
+            for it is a performance complaint about the site dressed as a
+            greeting. Four hundred and twenty milliseconds, against five hundred
+            for a band the reader has to scroll to reach.
         --}}
-        <section class="band-first" aria-labelledby="home-heading">
+        <section
+            class="band-first"
+            aria-labelledby="home-heading"
+            data-aos="fade-up"
+            data-aos-duration="420"
+        >
             <p class="eyebrow">Information Technology learning</p>
 
             <h1

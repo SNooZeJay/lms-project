@@ -731,6 +731,68 @@ document.querySelectorAll('[data-rotate-sentences]').forEach(rotateSentences);
 (() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+    /*
+     | The opening band, which the library cannot animate.
+     |
+     | Everything below the fold is prepared by the library while it is off screen,
+     | so an element there gets `aos-init` now and `aos-animate` later, when the
+     | reader scrolls to it. There is a real gap between those two states and the
+     | transition crosses it. That is why scrolling the page animated everything,
+     | and why the page looked like it worked.
+     |
+     | The opening band is different. It is on screen when the page loads, so the
+     | library adds `aos-init` and `aos-animate` in the same recalculation. The
+     | browser has one computed style to draw, the final one, and no transition
+     | runs. Nothing about it looks broken: the element arrives at full opacity,
+     | the page reads correctly, the console is silent. It simply never moved.
+     |
+     | So the one animation a reader sees without doing anything was the one
+     | animation that could not happen, and anybody who had scrolled the page and
+     | watched the other six work had every reason to say it was not working.
+     *
+     | A transition needs two painted styles, one to come from and one to go to.
+     | Forcing that gap with `requestAnimationFrame` was tried and measured, and it
+     | does not survive contact with a real page load: the callbacks land inside a
+     * single style recalculation, the browser coalesces them, and the hidden value
+     | is never painted. Over 128 frames traced from before the library ran, the
+     | opening band took exactly one distinct opacity value and was never seen
+     | part way through anything. Replaying the same steps by hand did animate it,
+     | which is precisely what made it look like a working fix.
+     *
+     | A keyframe animation is the right tool, because it does not depend on
+     * catching the element between two states. It has a start, an end and a
+     | length, and it plays from wherever the element is when it starts. Applied
+     | on the first frame it runs from zero; applied a little later it still runs.
+     | There is no frame to miss and no state to lose.
+     *
+     | The element is marked with a class rather than animated from here, so the
+     * motion lives in the stylesheet with everything else that moves. The duration
+     * is passed in as a custom property, because the opening band asks to be
+     | quicker than a band the reader has to scroll to, and hard coding it here
+     | would make that request a decoration.
+     *
+     | Only elements on screen at load are marked. Everything below the fold is
+     | left entirely to the library, so the path that already worked is untouched.
+     *
+     | A reduced motion reader gets none of it: the block is skipped, the library's
+     | own `disable` strips the attributes, and the page is simply on screen and
+     * still.
+     */
+    if (!reducedMotion.matches) {
+        document.querySelectorAll('[data-aos]').forEach((element) => {
+            const box = element.getBoundingClientRect();
+            if (box.top >= window.innerHeight || box.bottom <= 0) {
+                return;
+            }
+            const declared = Number.parseInt(element.getAttribute('data-aos-duration') ?? '', 10);
+            element.style.setProperty(
+                '--entrance-duration',
+                `${Number.isFinite(declared) ? declared : 500}ms`
+            );
+            element.classList.add('entrance');
+        });
+    }
+
     AOS.init({
         // Off entirely under a reduced motion preference. See above.
         disable: reducedMotion.matches,
@@ -743,10 +805,15 @@ document.querySelectorAll('[data-rotate-sentences]').forEach(rotateSentences);
         // move at the exact moment it appears.
         offset: 60,
 
-        // Slow enough to be followed, quick enough not to be waited for. The
-        // library's default is four hundred milliseconds, which is a touch
-        // snappy for something a whole band of the page is doing.
-        duration: 600,
+        /*
+         | Five hundred, and the stylesheet says the same.
+         |
+         | The library's default is four hundred, which is a touch snappy for
+         | something a whole band of the page is doing. Six hundred, which is what
+         | this was, is a touch slow: a reader scrolling briskly passes a band
+         | that is still arriving behind them.
+         */
+        duration: 500,
 
         // Arrives and settles, rather than a linear ramp or a bounce. A landing
         // page that bounces reads as a template.

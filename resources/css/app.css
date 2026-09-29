@@ -359,34 +359,121 @@
      * thirty; the ones not named here cost nothing because no element asks for
      * them.
      */
+    /*
+     | How far, how fast, and why it is not a will-change.
+     |
+     | The travel is 14 pixels and the fade is 500 milliseconds. The library's own
+     | defaults are 100 pixels of travel over 600, which on a section the height
+     | of this page is a visible slide rather than a settle, and it is the reason
+     | a fade tends to read as a page loading rather than as a page arriving.
+     |
+     | There is no `will-change` here, and there used to be.
+     |
+     | Promoting every marked section to its own compositor layer sounds free and
+     | is not. Six sections, each of them a full band of the page, is six large
+     | layers held for the whole visit, and the browser cannot discard them on its
+     | own. On a phone that is memory the rest of the page does not get, and the
+     | cost is paid whether or not anything ever animates. Nothing in this
+     | transition triggers layout, so the promotion bought nothing: opacity and
+     | transform are already the two properties a compositor handles without
+     | recalculating the page.
+     */
     [data-aos].aos-init {
         opacity: 0;
         transition-property: opacity, transform;
-        transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        transition-duration: 600ms;
-        will-change: opacity, transform;
+        transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+        transition-duration: 500ms;
     }
-
     [data-aos].aos-init.aos-animate {
         opacity: 1;
         transform: translate3d(0, 0, 0);
-        will-change: auto;
+    }
+    [data-aos='fade-up'].aos-init {
+        transform: translate3d(0, 14px, 0);
     }
 
-    [data-aos='fade-up'].aos-init {
-        transform: translate3d(0, 20px, 0);
+    /*
+     | The entrance, for an element already on screen when the page loads.
+     |
+     | The library animates a band the reader scrolls to by giving it two states
+     | seconds apart, and the transition crosses the gap between them. The opening
+     | band has no gap: it is on screen at load, so the library marks it hidden and
+     | revealed in the same recalculation and there is nothing to interpolate. It
+     | arrives at full opacity and never moves, which is why the page looked still
+     | until it was scrolled.
+     |
+     | A keyframe animation rather than a forced transition, because it does not
+     | depend on catching the element between two painted states. It has a start,
+     | an end and a length, and it plays from wherever the element is when it
+     | starts, so there is no frame to miss.
+     |
+     | `both` on the fill mode matters as much as the keyframes: it holds the
+     | final value after the animation ends, so the element is not left wherever
+     | the last painted frame happened to be.
+     |
+     | The distance is 14 pixels and the length comes from the element, which is
+     | how the opening band arrives faster than a band the reader has to scroll to.
+     */
+    @keyframes lms-entrance {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 14px, 0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+    .entrance {
+        animation: lms-entrance var(--entrance-duration, 500ms) cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    }
+    /*
+     | An element animating itself in is not also waiting to be revealed.
+     |
+     | The library's hidden rule and this animation's own `from` both say
+     | `opacity: 0`, and the library's rule wins on order, so the element would sit
+     | at zero while the animation appeared to do nothing. The animation is the
+     | one with a defined end, so it is the one that gets to name the resting
+     | value.
+     |
+     | Deliberately not written as `.entrance.aos-init`. The class belongs to the
+     | library, is added when the library prepares the element, and the order in
+     | which that lands relative to this stylesheet is not something this file
+     | should be depending on. Matching on `.entrance` alone cannot lose a race
+     | with a class this stylesheet never agreed to.
+     */
+    .entrance {
+        opacity: 1;
     }
 
     [data-aos='fade-down'].aos-init {
-        transform: translate3d(0, -20px, 0);
+        transform: translate3d(0, -14px, 0);
     }
-
     [data-aos='fade-left'].aos-init {
-        transform: translate3d(24px, 0, 0);
+        transform: translate3d(18px, 0, 0);
     }
-
     [data-aos='fade-right'].aos-init {
-        transform: translate3d(-24px, 0, 0);
+        transform: translate3d(-18px, 0, 0);
+    }
+    /*
+     | Per element timing.
+     |
+     | The library ships rules for `data-aos-duration`, `data-aos-delay` and
+     | `data-aos-easing`, and they live in the stylesheet this project does not
+     | import. Without them an element asking for a different duration gets the
+     | default, so the attribute is written in a view and quietly does nothing.
+     |
+     | This is what lets the opening band arrive faster than a band further down.
+     | The opening is on screen when the page loads, so anything that makes the
+     | reader wait for it makes the page feel slower than doing nothing at all.
+     | Twelve hundred milliseconds of fade on the headline is a performance
+     | complaint about the site, dressed as a greeting.
+     */
+    [data-aos][data-aos-duration] {
+        transition-duration: attr(data-aos-duration ms);
+    }
+    [data-aos][data-aos-delay] {
+        transition-delay: attr(data-aos-delay ms);
     }
 
     /*

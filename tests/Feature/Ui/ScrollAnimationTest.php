@@ -209,6 +209,105 @@ class ScrollAnimationTest extends TestCase
     }
 
     /**
+     * An element on screen when the page loads is animated by a keyframe, not by
+     * the library's transition.
+     *
+     * This is the bug that made the whole feature look broken, and it is here
+     * because it is the kind of fault that reads as a working page. The opening
+     * band is in the viewport when the library prepares it, so `aos-init` and
+     * `aos-animate` land in the same recalculation. The browser has one computed
+     * style to draw, the final one, and no transition runs. Nothing throws,
+     * nothing logs, the band is fully visible, and it never moved. Every band
+     * below the fold animated correctly, because scrolling gives the two states
+     * a gap of several seconds to be separated.
+     *
+     * A keyframe animation has a start, an end and a length, and plays from
+     * wherever the element is when it starts, so there is no frame to miss.
+     */
+    public function test_the_opening_band_is_animated_by_a_keyframe_rather_than_a_transition(): void
+    {
+        $css = $this->stylesheet();
+
+        // The keyframes, and the rule that applies them.
+        $this->assertStringContainsString(
+            '@keyframes lms-entrance',
+            $css,
+            'There is no keyframe animation for an element that is on screen at load, so the '
+            .'opening band has no way to animate itself. It arrives at full opacity and never moves.'
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/\.entrance\s*\{[^}]*animation:\s*lms-entrance/',
+            $css,
+            'Nothing applies the entrance keyframes to the opening band.'
+        );
+
+        // The fill mode. Without `both` the element is left wherever the last
+        // painted frame happened to be, which is a coin toss rather than a value.
+        $this->assertMatchesRegularExpression(
+            '/\.entrance\s*\{[^}]*animation:[^}]*\bboth\b/',
+            $css,
+            'The entrance does not hold its final value, so the band can be left at an intermediate opacity.'
+        );
+
+        // The resting value, so the library's hidden rule cannot win the cascade
+        // and leave the element at zero while the animation appears to do nothing.
+        $this->assertMatchesRegularExpression(
+            '/\.entrance\s*\{[^}]*opacity:\s*1/',
+            $css,
+            'An element animating itself in can still be forced to opacity 0 by the library, and the '
+            .'animation will then look like it is not working.'
+        );
+
+        // And the script has to actually mark the element, or the rule is unused.
+        $source = (string) file_get_contents(base_path('resources/js/app.js'));
+
+        $this->assertStringContainsString(
+            "classList.add('entrance')",
+            $source,
+            'Nothing marks the opening band, so the entrance keyframes are never applied to it.'
+        );
+
+        // Only what is on screen, or every band on the page would animate at load
+        // and the reader would scroll past a page that had already finished.
+        $this->assertStringContainsString(
+            'getBoundingClientRect',
+            $source,
+            'The entrance does not check whether an element is on screen, so bands below the fold would '
+            .'animate before the reader reaches them.'
+        );
+    }
+
+    /**
+     * The opening band is marked, and marked faster than the bands below it.
+     *
+     * Asserted on the served markup rather than the template, because a view can
+     * carry the attribute and the component can drop it, and only the response
+     * says which happened.
+     */
+    public function test_the_opening_band_carries_its_own_shorter_duration(): void
+    {
+        foreach (['home', 'about'] as $route) {
+            $html = (string) $this->get(route($route))->assertOk()->getContent();
+
+            $this->assertMatchesRegularExpression(
+                '/<section[^>]*class="band-first"[^>]*data-aos="[a-z-]+"/s',
+                $html,
+                "The opening band on the {$route} page carries no animation, so the page is completely "
+                .'still until the reader scrolls it, which is indistinguishable from an animation that '
+                .'is not working.'
+            );
+
+            $this->assertMatchesRegularExpression(
+                '/<section[^>]*data-aos-duration="(\d+)"/s',
+                $html,
+                "The opening band on the {$route} page does not ask for its own duration, so the "
+                .'attribute meant to make it arrive sooner has nothing to act on.'
+            );
+        }
+    }
+
+    /**
      * Motion must not move a box.
      *
      * Every rule in the motion block changes opacity or transform. A rule that

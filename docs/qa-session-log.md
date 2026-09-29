@@ -1275,3 +1275,174 @@ the contrast harness: a measurement that could not see the thing it was measurin
   there. Six failures in one run were that, not code.
 - The demonstration database was checked after every rebuild that could have
   touched it, and held 5 published courses and 62 lessons throughout.
+
+
+## Eleventh pass: the animation that was never running
+
+This pass was reported as a broken feature: the animations on the home page do
+not work. They did not. The mechanism worked and the one animation a reader sees
+without doing anything could not.
+
+### What the fault was
+
+A band below the fold is prepared by the library while it is off screen, so it
+receives `aos-init` and `aos-animate` seconds apart, when the reader scrolls to
+it. There is a real gap between those two states and the CSS transition crosses
+it. That path worked, and scrolling the page animated every band.
+
+The opening band is on screen when the page loads, so the library added both
+classes in the same recalculation. The browser had one computed style to draw,
+the final one, and no transition ran. It arrived at full opacity and never moved.
+
+Nothing about that looks broken. The band is fully visible, the page reads
+correctly, the console is silent, and every other band animates. The one thing
+that does not animate is the only one that moves without the reader asking, which
+is exactly the one a reader notices.
+
+So "the animations are not working" was correct, and the reason was not the one
+the symptom suggested. Nothing was misconfigured. The transition was simply being
+asked to animate something that was never in a state to be animated from.
+
+### Why the first three attempts at measuring it were wrong
+
+All three reported the same thing, and all three were wrong in the same way.
+
+The first sampled with `setTimeout` after load. The reveal is over inside four
+hundred milliseconds and the trace began at `DOMContentLoaded`, which on a warm
+page is a few hundred milliseconds in. It reported one distinct opacity value and
+declared the animation broken, having started too late to see it.
+
+The second used `MutationObserver` and found zero class mutations, which was true
+and useless: the classes arrived before the observer was attached, and the
+transition is not a class change anyway. The opacity was already 1.000 at the
+first sample and it was correct.
+
+The third replayed the reveal by hand, step by step, and it animated. That is what
+made the fix look like it worked.
+
+The measure that finally answered it samples on every animation frame from the
+first one the document has, installed before any document script. Over 230 frames
+there was exactly one opacity value, and the band was fully opaque on the frame
+it first appeared.
+
+### The first fix that did not work, and why
+
+The obvious fix is to force a gap between the two states: write an inline
+`opacity: 0`, let the library add its classes, then remove the inline value a
+frame later. Replayed by hand this animates cleanly. On a real page load it does
+not: the callbacks land inside a single style recalculation, the browser
+coalesces them, and the hidden value is never painted. Traced the same way, one
+opacity value, no frame part way through.
+
+It is recorded here because a fix that works when you step through it and does not
+work in the browser is the most expensive kind of wrong, and because the two
+behaviours are genuinely different.
+
+### What works
+
+A keyframe animation. It has a start, an end and a length, and it plays from
+wherever the element is when it starts, so there is no frame to miss. Applied on
+the first frame it runs from zero; applied slightly later it still runs.
+
+Measured, sampled on every frame from the first:
+
+```text
+first frame not yet full:  196ms at 0.000
+  236ms  opacity 0.109  offsetY 12.47px
+  319ms  opacity 0.573  offsetY  5.98px
+  452ms  opacity 0.906  offsetY  1.32px
+  618ms  opacity 0.999  offsetY  0.01px
+full opacity by:           636ms
+visible transition:        440ms
+```
+
+Twenty five distinct opacity values, 18 frames part way through, the offset
+falling from 14 pixels to zero. That is a fade, measured.
+
+The fill mode matters as much as the keyframes. `both` holds the final value
+after the animation ends, so the element is not left wherever the last painted
+frame happened to be.
+
+### Two more faults found on the way
+
+**`will-change` was pinned on every marked section.** Six sections, each a full
+band of the page, promoted to their own compositor layer and held for the whole
+visit, and the browser cannot discard them on its own. On a phone that is memory
+the rest of the page does not get. Nothing in a fade and a translate triggers
+layout, so the promotion bought nothing. Removed.
+
+**The library's own timing attributes did nothing.** AOS ships rules for
+`data-aos-duration`, `data-aos-delay` and `data-aos-easing`, and they live in the
+stylesheet this project deliberately does not import. An element asking for a
+different duration got the default, so the attribute was written in a view and
+quietly ignored. Rules added for the two that are used.
+
+The distance came down from twenty pixels to fourteen, and the duration from six
+hundred to five hundred. Six hundred meant a reader scrolling briskly passed a
+band that was still arriving behind them.
+
+### The reduced motion path is a different answer, and it is right
+
+With the preference set, the library strips the attributes and the entrance block
+is skipped entirely. No inline style, no keyframe, nothing to clean up on a later
+frame. The page is on screen and still. Measured: `animation-name "none"`, one
+opacity value, never seen part way through anything.
+
+### What was measured, and how often
+
+`tools/check-reveal.mjs`, which drives a real browser with the preference forced
+off, since this machine reports it as on and can therefore only ever verify that
+the animations are absent.
+
+- Motion allowed at 1280 and at 390: animated, 25 distinct opacity values, moved.
+- Reduced motion at 1280: on screen, still, nothing to undo.
+- The check was proved by removing the one line that marks the element. It
+  reported `FAILED: it snapped to full opacity, nothing animated` on both
+  motion-allowed scenarios and still passed the reduced one.
+
+Repeated loads, because a reveal that works once is not a reveal that works:
+
+| Page | Phone 390 | Tablet 820 | Laptop 1280 | Wide 1600 |
+|---|---|---|---|---|
+| home | 5 loads, 0 bad | 5 loads, 0 bad | 5 loads, 0 bad | 5 loads, 0 bad |
+| About | 5 loads, 0 bad | 5 loads, 0 bad | 5 loads, 0 bad | 5 loads, 0 bad |
+
+Each load checked the top, halfway, the bottom reached by jumping rather than
+scrolling, and back at the top, because an element that un-reveals on the way
+back up is as broken as one that never arrives. Cumulative layout shift was
+**zero** on every one of the forty loads, and the console reported nothing.
+
+Also checked, once each: a refresh while scrolled down, twice at the same
+position, because browser scroll restoration is where a reveal usually breaks;
+and print, where a fade leaves a page blank on paper. Nothing was invisible in
+view in any of them.
+
+### Two regressions from doing this
+
+Both were found by the build refusing, and both are the kind of damage that a
+careless splice causes and a build catches.
+
+A closing brace was lost from `[data-aos='fade-up'].aos-init`, which silently
+swallowed every rule after it into a selector list. The Tailwind error was
+`Missing closing }`, which pointed at the `@layer` rather than at the rule.
+
+A duplicate `AOS.init(` line was left behind by a splice, and the bundle stopped
+building with a parse error on a line number that was not where the mistake was.
+
+The stylesheet's brace balance is worth checking after any splice into it. It
+ignores the `@source` lines, whose contents contain a `/*` that a naive scan
+counts as a comment.
+
+### What it looks like
+
+Confirmed from screenshots taken over the debugging protocol, because the browser
+tool's screenshot needs a desktop window this environment does not provide. The
+capture waits for `animationPlayState` to leave `running` rather than for a fixed
+interval, since a screenshot taken mid fade is a screenshot of a bug.
+
+Home page at 1440, 820 and 390, and half a page down at 1440. The band arrives,
+the cards are equal height, the free-courses row is full with the third cell
+carrying the link to the full list, and nothing jumps.
+
+Lighthouse on the page as a reader receives it: accessibility 1.00, best
+practices 1.00, SEO 1.00, no failures.

@@ -89,8 +89,21 @@
 
     <div class="shell">
 
-        {{-- The opening. --}}
-        <section class="band-first" aria-labelledby="about-heading">
+        {{--
+            The opening.
+
+            Marked, and marked faster than the bands below it, for the same reason
+            as the home page: this is on screen when the page arrives, so the
+            reader should not be made to wait for it, and a page on which nothing
+            moves until it is scrolled is indistinguishable from a page whose
+            animation is not working.
+        --}}
+        <section
+            class="band-first"
+            aria-labelledby="about-heading"
+            data-aos="fade-up"
+            data-aos-duration="420"
+        >
             <div class="grid items-start gap-10 lg:grid-cols-12 lg:gap-12">
                 <div class="lg:col-span-7">
                     <p class="eyebrow">About</p>
