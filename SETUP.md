@@ -145,7 +145,7 @@ MAIL_MAILER=smtp
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USERNAME=your.address@gmail.com
-MAIL_PASSWORD=the sixteen character app password
+MAIL_PASSWORD=your-sixteen-character-app-password
 MAIL_FROM_ADDRESS=your.address@gmail.com
 ```
 

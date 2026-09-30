@@ -2,6 +2,20 @@
     'course',
     'compact' => false,
     'eager' => false,
+
+    /*
+     | The heading level for the course title, as a number.
+     |
+     | It was hardcoded as an h3, which is right on the home page because the
+     | cards sit under an h2 section heading, and wrong on the catalog page,
+     | where they sit directly under the page's h1. A screen reader user moving
+     | through the headings by level met h1 and then h3, skipping h2 entirely,
+     | and Lighthouse failed the catalog for it.
+     |
+     | The default stays 3 so the home page and every other caller are
+     | unaffected, and the catalog asks for 2 explicitly.
+     */
+    'level' => 3,
 ])
 
 @php
@@ -12,6 +26,18 @@
     $lessons = (int) $course->published_lessons_count;
     $modules = (int) $course->published_modules_count;
     $price = Money::course($course->price_minor, $course->course_type, $course->currency);
+
+    /*
+     | The tag name, constrained to h1 through h6.
+     |
+     | Clamped rather than trusted. This value reaches an HTML tag name, and a
+     | tag name that is not one of six known strings is markup the template
+     | author did not intend to emit. A card heading is never legitimately
+     | anything else, so an out of range value falls back to h3 rather than
+     | being written out.
+     */
+    $headingLevel = (int) $level;
+    $levelTag = 'h'.($headingLevel >= 1 && $headingLevel <= 6 ? $headingLevel : 3);
 @endphp
 
 {{--
@@ -93,14 +119,14 @@
         @endif
 
         <div class="{{ $compact ? '' : 'mt-2' }} flex items-start justify-between gap-3">
-            <h3 class="text-base leading-snug font-semibold text-balance text-ink">
+            <{{ $levelTag }} class="text-base leading-snug font-semibold text-balance text-ink">
                 <a
                     href="{{ route('courses.show', $course) }}"
                     class="rounded-sm after:absolute after:inset-0 hover:text-primary-text focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus"
                 >
                     {{ $course->title }}
                 </a>
-            </h3>
+            </{{ $levelTag }}>
 
             <p class="shrink-0 text-base font-semibold text-ink tabular-nums">
                 {{ $price }}

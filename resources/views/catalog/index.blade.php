@@ -101,7 +101,8 @@
                  formats the price through `Money`. --}}
             <ul role="list" class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($courses as $course)
-                    <x-course-card :course="$course" />
+                    {{-- Level 2, not the component's default 3: on this page the cards sit directly under the page h1, with no section heading between them. --}}
+                    <x-course-card :course="$course" :level="2" />
                 @endforeach
             </ul>
 
