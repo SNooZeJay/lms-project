@@ -41,3 +41,27 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Long lived caching for the built assets and the static images.
+#
+# These are served by the web server straight off disk, so no PHP ever sees them
+# and a middleware cannot set a header on them. That is the whole reason this
+# block exists: a Cache-Control set in the application is silently ignored for
+# every file in build/, which is where the stylesheet and the script live.
+#
+# The year is safe because the filenames carry a content hash. app-CcnLoUiz.css
+# is a different file the moment one byte of the source changes, so a browser
+# holding last week's copy can never be handed a stale one.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js|woff2?|png|jpe?g|gif|svg|webp|ico)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # index.php is the same URL for every version of the application, so it can
+    # never be held for long. A minute of freshness with a revalidate tail means
+    # following a link twice in a minute costs nothing, and everyone else pays
+    # for a 304 rather than a whole document.
+    <FilesMatch "index\.php$">
+        Header set Cache-Control "public, max-age=60, stale-while-revalidate=300"
+    </FilesMatch>
+</IfModule>

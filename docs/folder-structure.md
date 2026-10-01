@@ -196,6 +196,7 @@ lms-project/
 │   │   │   ├── SecureSessionCookies.php
 │   │   │   ├── SecurityHeaders.php
 │   │   │   ├── ForcePublicHttps.php
+│   │   │   ├── CacheStaticAssets.php
 │   │   │   ├── ThrottleWrites.php
 │   │   │   └── EnsureUserHasRole.php
 │   │   ├── Requests/

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CacheStaticAssets;
 use App\Http\Middleware\ConfineDebugOutput;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureUserHasRole;
@@ -42,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(ConfineDebugOutput::class);
         $middleware->prepend(SecureSessionCookies::class);
         $middleware->append(SecurityHeaders::class);
+        $middleware->append(CacheStaticAssets::class);
 
         // Appended to the web group rather than prepended, so the session has
         // already started and this can tell who is asking. That is what lets it
