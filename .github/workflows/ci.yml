@@ -1,0 +1,162 @@
+# Every push, and every pull request, runs the whole gate.
+#
+# WHY THIS EXISTS
+#
+# The suite is the only thing standing between a plausible change and a broken
+# system, and a suite nobody runs is a suite nobody trusts. This runs it on every
+# push, so a failure is visible in the commit that caused it rather than in a
+# demo.
+#
+# THE PORT IS 3307 AND THAT IS DELIBERATE
+#
+# `phpunit.xml` says 3307, because that is the port this machine's MySQL listens
+# on and the tests were written against it. A GitHub Actions MySQL service
+# listens on 3306 inside its container, and `ports` publishes it on the host, so
+# the container's 3306 is published as the host's 3307. Nothing in the test
+# configuration had to change, and the pipeline runs the suite exactly as it runs
+# locally. A pipeline that needed a different database port from the one the
+# tests use would be a pipeline testing something other than what ships.
+#
+# WHAT RUNS, AND WHY EACH THING
+#
+#   composer install    the locked versions, not the newest ones
+#   npm ci               the locked versions, from package-lock.json
+#   npm run build        the front end is built before anything checks it, so a
+#                        broken stylesheet is caught here rather than on a
+#                        browser. A test that reads public/build needs it to exist.
+#   artisan test         the suite: 1807 tests
+#   pint --test          code style, as a gate rather than as a suggestion
+#   composer audit       dependency advisories
+#   npm audit            the same, for the front end
+#
+# The build is deliberately before the tests. The motion and the layout tests
+# read the compiled assets, so a suite that ran first would pass against a stale
+# build and then fail in the browser.
+#
+# WHAT IS NOT HERE
+#
+# A deploy step. There is nowhere to deploy to: the demonstration runs on a
+# tunnel from a laptop, and a $6 droplet does not exist yet. A deploy job that
+# reached for a server which is not there would be a permanent red X teaching
+# everyone to ignore red X. It is written when there is a host to receive it.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push to the same branch cancels the run it superseded. Without this,
+# five pushes in a minute queue five full suites and the last one to finish is
+# the answer to a question about the first one.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Test, style, and dependencies
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        # 5.7 rejects utf8mb4_0900 and the schema is utf8mb4 throughout.
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: lms_test
+          MYSQL_USER: lms_user
+          MYSQL_PASSWORD: lms_secret
+        ports:
+          # Container 3306 published on the host as 3307. See the header.
+          - 3307:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:0000000000000000000000000000000000000000000=
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3307'
+      DB_DATABASE: lms_test
+      DB_USERNAME: lms_user
+      DB_PASSWORD: lms_secret
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      TRUSTED_PROXIES: '*'
+
+    steps:
+      - name: Check the runtime
+        run: |
+          php --version
+          node --version
+          npm --version
+
+      - name: Cache the Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Cache the Node packages
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: node-${{ runner.os }}-
+
+      - name: Install the PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install the Node dependencies
+        run: npm ci --no-audit --no-fund
+
+      # Before the suite, because the motion and layout tests read the compiled
+      # assets and would otherwise pass against whatever was last built.
+      - name: Build the front end
+        run: npm run build
+
+      - name: Report the front end weight
+        run: |
+          echo "Built assets:"
+          ls -la public/build/assets || true
+
+      - name: Run the migrations
+        # The suite uses RefreshDatabase, so this proves the schema builds from
+        # the migrations alone on a machine that has never run them. That is a
+        # different question from "does the suite pass on a database that already
+        # exists", and both are worth asking.
+        run: php artisan migrate --force
+
+      - name: Run the test suite
+        run: php artisan test
+
+      - name: Check the code style
+        run: ./vendor/bin/pint --test
+
+      - name: Audit the PHP dependencies
+        run: composer audit --no-interaction
+
+      - name: Audit the Node dependencies
+        run: npm audit --audit-level=high
+
+      - name: Confirm the working tree is unchanged by the build
+        run: |
+          if [ -n "$(git status --porcelain public/build)" ]; then
+            echo "::error::The build wrote into public/build, which is a tracked directory."
+            git status --porcelain public/build
+            exit 1
+          fi
+          echo "The build produced no tracked changes, so it is reproducible."
