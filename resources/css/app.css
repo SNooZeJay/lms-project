@@ -461,22 +461,79 @@
     @keyframes lms-heading-in {
         0% {
             opacity: 0;
-            transform: translate3d(0, 0.44em, 0);
+            transform: translate3d(0, 0.5em, 0) scale(0.985);
+            filter: blur(6px);
         }
-        62% {
+        55% {
             opacity: 1;
-            transform: translate3d(0, -0.03em, 0);
+            transform: translate3d(0, -0.035em, 0) scale(1.004);
+            filter: blur(0);
         }
         100% {
             opacity: 1;
-            transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0) scale(1);
+            filter: blur(0);
         }
     }
 
     [data-motion='heading'].is-revealed {
         animation-name: lms-heading-in;
-        --motion-duration: 660ms;
-        --motion-easing: cubic-bezier(0.19, 1, 0.22, 1);
+        --motion-duration: 820ms;
+        --motion-easing: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /*
+     | A lede, or any line of body copy directly under a heading.
+     |
+     | Blurs in from a distance rather than sliding. The two read differently on
+     | the eye: a slide says something moved, a blur says something came into
+     | focus, and the second is the one that suits a sentence rather than a
+     | title. The blur is small and short, because a large blur is a cost paid
+     | in frame time and it is the first thing a slow device drops.
+     */
+    @keyframes lms-lede-in {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 14px, 0);
+            filter: blur(5px);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+            filter: blur(0);
+        }
+    }
+
+    [data-motion='lede'].is-revealed {
+        animation-name: lms-lede-in;
+        --motion-duration: 780ms;
+        --motion-delay: 180ms;
+        --motion-travel: 14px;
+    }
+
+    /*
+     | A hero, which is several of the above in sequence.
+     |
+     | A page opens with an eyebrow, a title, a sentence and a pair of buttons.
+     | Arriving together it is a block appearing. Arriving in order it is a page
+     | assembling itself, and the reader's eye is led down the page rather than
+     | being dropped at the top of it.
+     *
+     | The steps are short and the whole sequence finishes inside a second and a
+     | half. A hero that takes two seconds to settle is a page that feels slow,
+     | and the reader has usually started scrolling before it finishes.
+     */
+    [data-motion='lede'] {
+        --motion-travel: 14px;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        [data-motion='cascade'] > *:nth-child(1) { --motion-delay: 0ms; }
+        [data-motion='cascade'] > *:nth-child(2) { --motion-delay: 90ms; }
+        [data-motion='cascade'] > *:nth-child(3) { --motion-delay: 180ms; }
+        [data-motion='cascade'] > *:nth-child(4) { --motion-delay: 270ms; }
+        [data-motion='cascade'] > *:nth-child(5) { --motion-delay: 360ms; }
+        [data-motion='cascade'] > *:nth-child(n + 6) { --motion-delay: 430ms; }
     }
 
     /*
@@ -602,6 +659,29 @@
 
     [data-dialog-backdrop] {
         animation: lms-backdrop-in 180ms ease-out both;
+    }
+
+    /*
+     | A drawer rather than a dialog, which arrives from the edge it lives on.
+     |
+     | The panel above uses a rise and a scale, which is right for something
+     | centred on the screen. A navigation drawer is attached to the left edge, so
+     | travelling in from the left is what tells the reader which way it came
+     | from and which way to throw it back. A drawer that fades in place has no
+     | edge, and a panel with no edge is harder to dismiss in the head.
+     */
+    @keyframes lms-drawer-in {
+        from {
+            transform: translate3d(-100%, 0, 0);
+        }
+        to {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    [data-drawer][data-dialog] {
+        animation-name: lms-drawer-in;
+        animation-duration: 280ms;
     }
 
     /*
@@ -1140,6 +1220,16 @@
      */
     .figures-grid {
         @apply grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4;
+    }
+
+    /*
+     | The featured figure takes two columns of a four wide grid, so it is
+     | visibly larger than the tiles beside it without being a different kind of
+     | thing. Two up on a phone it takes the whole row, which is right: a figure
+     | that matters more should not be fighting four others for half a screen.
+     */
+    .figures-grid-span {
+        @apply col-span-2;
     }
 
     /*

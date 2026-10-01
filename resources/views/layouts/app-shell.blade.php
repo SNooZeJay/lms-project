@@ -99,10 +99,11 @@
         {{-- The mobile drawer. It stays hidden until the menu button opens it,
              and the backdrop is what a click outside hits. --}}
         <div data-drawer class="lg:hidden" data-print="hide">
-            <div data-drawer-backdrop hidden class="fixed inset-0 z-40 bg-slate-900/50"></div>
+            <div data-drawer-backdrop data-dialog-backdrop hidden class="fixed inset-0 z-40 bg-slate-900/50"></div>
 
             <div
                 data-drawer-panel
+                data-dialog
                 id="workspace-drawer"
                 hidden
                 role="dialog"

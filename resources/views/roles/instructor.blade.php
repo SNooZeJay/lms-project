@@ -32,13 +32,40 @@
                  completion rate is the figure that says whether the teaching is
                  landing, so it takes the place of the raw quiz count, which is
                  only interesting while authoring. --}}
-            <dl role="list" class="figures-row">
-                <x-stat label="Courses" :value="$stats['courses']" tone="primary" hint="That you own" />
-                <x-stat label="Published" :value="$stats['published_courses']" tone="primary" hint="Of your courses" />
-                <x-stat label="Drafts" :value="$stats['draft_courses']" tone="primary" hint="Not published yet" />
-                <x-stat label="Active students" :value="$stats['active_students']" tone="accent" hint="Studying right now" />
-                <x-stat label="Completion rate" :value="$stats['completion_rate'].'%'" tone="accent"
-                        hint="Finished out of started" />
+            <dl role="list" class="figures-grid" data-motion="stagger">
+                {{-- Completion rate is the only figure allowed to be large, for the
+                     same reason it is on the student page: it is the question this
+                     page exists to answer, and five equal tiles give it the same
+                     weight as a count of drafts. --}}
+                <div class="stat-featured figures-grid-span" data-motion="box">
+                    <p class="text-sm leading-5 font-semibold text-ink">Completion rate</p>
+                    <p class="stat-featured-value">{{ $stats['completion_rate'] }}%</p>
+                    <p class="mt-2 text-sm leading-5 text-ink-muted">Finished out of started</p>
+                </div>
+
+                <div class="stat-compact" data-motion="box">
+                    <dt class="text-sm leading-5 text-ink-muted">Courses</dt>
+                    <dd class="stat-compact-value">{{ $stats['courses'] }}</dd>
+                    <p class="mt-1 text-xs leading-4 text-ink-subtle">That you own</p>
+                </div>
+
+                <div class="stat-compact" data-motion="box">
+                    <dt class="text-sm leading-5 text-ink-muted">Published</dt>
+                    <dd class="stat-compact-value">{{ $stats['published_courses'] }}</dd>
+                    <p class="mt-1 text-xs leading-4 text-ink-subtle">Of your courses</p>
+                </div>
+
+                <div class="stat-compact" data-motion="box">
+                    <dt class="text-sm leading-5 text-ink-muted">Drafts</dt>
+                    <dd class="stat-compact-value">{{ $stats['draft_courses'] }}</dd>
+                    <p class="mt-1 text-xs leading-4 text-ink-subtle">Not published yet</p>
+                </div>
+
+                <div class="stat-compact" data-motion="box">
+                    <dt class="text-sm leading-5 text-ink-muted">Active students</dt>
+                    <dd class="stat-compact-value">{{ $stats['active_students'] }}</dd>
+                    <p class="mt-1 text-xs leading-4 text-ink-subtle">Studying right now</p>
+                </div>
             </dl>
         </section>
 

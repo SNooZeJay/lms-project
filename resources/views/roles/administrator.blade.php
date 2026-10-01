@@ -31,19 +31,57 @@
                  used to take a tile each are folded into the hint of the tile
                  they belong with, so "8 courses" also says how many are live.
                  A dashboard that shows ten numbers shows none of them clearly. --}}
-            <dl role="list" class="figures-row">
-                <x-stat label="Users" :value="$stats['users']" tone="primary" hint="Every account"
-                        :href="route('admin.users.index')">Manage users</x-stat>
-                <x-stat label="Students" :value="$stats['students']" tone="primary"
-                        :hint="$stats['instructors'].' '.Str::plural('instructor', $stats['instructors'])
-                            .' · '.$stats['administrators'].' '.Str::plural('administrator', $stats['administrators'])" />
-                <x-stat label="Courses" :value="$stats['courses']" tone="primary"
-                        :hint="$stats['published_courses'].' published'" />
-                <x-stat label="Enrollments in progress" :value="$stats['active_enrollments']" tone="accent"
-                        :hint="'Of '.$stats['enrollments'].' in every state'" />
-                <x-stat label="Certificates issued" :value="$stats['certificates']" tone="accent" hint="Issued and valid"
-                        :href="route('admin.certificates.index')">Manage certificates</x-stat>
-                <x-stat label="Paid payments" :value="$stats['paid_payments']" tone="accent" hint="Confirmed by the provider" />
+            <dl role="list" class="figures-grid" data-motion="stagger">
+                {{-- The account total is the one figure an administrator opens
+                     this page to see, so it takes the wide slot and the rest sit
+                     in the grid beside it. The two that lead somewhere stay
+                     links, because a figure a reader can act on is worth more
+                     than a figure they can only look at. --}}
+                <div class="stat-featured figures-grid-span" data-motion="box">
+                    <p class="text-sm leading-5 font-semibold text-ink">Users</p>
+                    <p class="stat-featured-value">{{ $stats['users'] }}</p>
+                    <p class="mt-2 text-sm leading-5 text-ink-muted">
+                        {{ $stats['instructors'] }} {{ Str::plural('instructor', $stats['instructors']) }},
+                        {{ $stats['administrators'] }} {{ Str::plural('administrator', $stats['administrators']) }}
+                    </p>
+                    <a
+                        href="{{ route('admin.users.index') }}"
+                        class="mt-4 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-primary-text hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus"
+                    >
+                        Manage users
+                        <x-icon name="chevron-right" size="sm" />
+                    </a>
+                </div>
+
+                <div class="stat-compact" data-motion="box">
+                    <dt class="text-sm leading-5 text-ink-muted">Students</dt>
+                    <dd class="stat-compact-value">{{ $stats['students'] }}</dd>
+                    <p class="mt-1 text-xs leading-4 text-ink-subtle">Enrolled accounts</p>
+                </div>
+
+                <div class="stat-compact" data-motion="box">
+                    <dt class="text-sm leading-5 text-ink-muted">Courses</dt>
+                    <dd class="stat-compact-value">{{ $stats['courses'] }}</dd>
+                    <p class="mt-1 text-xs leading-4 text-ink-subtle">{{ $stats['published_courses'] }} published</p>
+                </div>
+
+                <div class="stat-compact" data-motion="box">
+                    <dt class="text-sm leading-5 text-ink-muted">Enrollments in progress</dt>
+                    <dd class="stat-compact-value">{{ $stats['active_enrollments'] }}</dd>
+                    <p class="mt-1 text-xs leading-4 text-ink-subtle">Of {{ $stats['enrollments'] }} in every state</p>
+                </div>
+
+                <div class="stat-compact" data-motion="box">
+                    <dt class="text-sm leading-5 text-ink-muted">Certificates issued</dt>
+                    <dd class="stat-compact-value">{{ $stats['certificates'] }}</dd>
+                    <p class="mt-1 text-xs leading-4 text-ink-subtle">Issued and valid</p>
+                </div>
+
+                <div class="stat-compact" data-motion="box">
+                    <dt class="text-sm leading-5 text-ink-muted">Paid payments</dt>
+                    <dd class="stat-compact-value">{{ $stats['paid_payments'] }}</dd>
+                    <p class="mt-1 text-xs leading-4 text-ink-subtle">Confirmed by the provider</p>
+                </div>
             </dl>
         </section>
 

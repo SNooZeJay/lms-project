@@ -54,6 +54,45 @@
             ];
         }
     }
+
+    /*
+     | The plain `status` key, which is what this application has always used.
+     |
+     | The four tone keys were read first and nothing appeared, because not one
+     | controller writes them: every flash in the code base is
+     | `->with('status', 'Course published.')`. The component was listening for
+     | a key nobody sends, which is the same failure as listening for a class
+     | nobody adds, and it is why "published a course and nothing told me" was
+     | the honest answer to a question about toasts.
+     |
+     | The tone is guessed from the wording, which is a judgement and not a rule.
+     | A sentence about revoking or failing is not a success, and presenting it
+     | as one would be the component lying on the controller's behalf.
+     */
+    $status = session('status');
+
+    if (filled($status) && $messages === []) {
+        $text = is_array($status) ? ($status['message'] ?? reset($status)) : $status;
+        $lower = mb_strtolower((string) $text);
+
+        $tone = match (true) {
+            str_contains($lower, 'revok'),
+            str_contains($lower, 'fail'),
+            str_contains($lower, 'cannot'),
+            str_contains($lower, 'could not'),
+            str_contains($lower, 'refus'),
+            str_contains($lower, 'reject') => 'error',
+
+            str_contains($lower, 'withdraw'),
+            str_contains($lower, 'unpublish'),
+            str_contains($lower, 'archiv'),
+            str_contains($lower, 'suspend') => 'warning',
+
+            default => 'success',
+        };
+
+        $messages[] = ['tone' => $tone, 'text' => $text];
+    }
 @endphp
 
 @if ($messages !== [])

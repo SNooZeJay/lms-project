@@ -140,7 +140,7 @@
                      a list is the honest shape and a card each would give them a
                      weight they have not earned. --}}
                 <div class="lg:col-span-5 lg:pt-14">
-                    <h2 class="text-sm font-semibold text-ink">What you can study</h2>
+                    <h2 class="text-sm font-semibold text-ink" data-motion="heading">What you can study</h2>
 
                     <ul role="list" class="mt-4 divide-y divide-line border-y border-line">
                         @foreach ([
@@ -268,7 +268,7 @@
             <div class="panel-call">
                 <div class="grid items-center gap-8 lg:grid-cols-12 lg:gap-10">
                     <div class="lg:col-span-7">
-                        <h2 id="about-closing-heading" class="text-2xl font-semibold text-balance text-primary-text sm:text-3xl">
+                        <h2 id="about-closing-heading" class="text-2xl font-semibold text-balance text-primary-text sm:text-3xl" data-motion="heading">
                             Start with a free course
                         </h2>
                         <p class="measure mt-3 leading-7 text-ink-muted">

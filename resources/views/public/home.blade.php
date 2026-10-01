@@ -121,20 +121,19 @@
         <section
             class="band-first"
             aria-labelledby="home-heading"
-            data-motion="on-scroll"
+            data-motion="cascade"
         >
-            <p class="eyebrow" data-motion="heading" data-motion-delay="0ms">Information Technology learning</p>
+            <p class="eyebrow" data-motion="heading">Information Technology learning</p>
 
             <h1
                 id="home-heading"
                 class="mt-4 max-w-4xl text-4xl leading-[1.08] font-[650] tracking-tight text-balance text-ink sm:text-5xl lg:text-[3.5rem]"
                 data-motion="heading"
-                data-motion-delay="80ms"
             >
                 Learn IT by building the skills the work asks for.
             </h1>
 
-            <p class="measure mt-6 text-lg leading-8 text-ink-muted">
+            <p class="measure mt-6 text-lg leading-8 text-ink-muted" data-motion="lede">
                 Courses in information technology, programming, web development and
                 cybersecurity. Read the lessons at your own pace, check yourself with
                 a quiz, and take the certificate when you finish.
@@ -363,7 +362,7 @@
             <div class="panel-call">
                 <div class="grid items-center gap-8 lg:grid-cols-12 lg:gap-10">
                     <div class="lg:col-span-7">
-                        <h2 id="closing-heading" class="text-2xl font-semibold text-balance text-primary-text sm:text-3xl">
+                        <h2 id="closing-heading" class="text-2xl font-semibold text-balance text-primary-text sm:text-3xl" data-motion="heading">
                             Open a course and start
                         </h2>
                         <p class="measure mt-3 leading-7 text-ink-muted">
