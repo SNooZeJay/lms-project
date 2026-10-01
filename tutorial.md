@@ -1031,3 +1031,173 @@ Payments need real PayMongo test-mode credentials. Until then, review the flow w
 7. Run `php artisan optimize:clear` so local `.env` changes take effect again.
 
 On a real server, every line must read `PASS` before you announce the release.
+
+## 35. Share your site over the internet for free
+
+Everything so far runs only on your own computer. Other people cannot see it.
+This section makes your site reachable from anywhere in the world, for free.
+
+It works by running a small program called **cloudflared** on your computer. That
+program opens an outgoing connection to Cloudflare's servers and asks them to
+forward visitors to your local address. Cloudflare then gives you a public web
+address.
+
+**Names used in this section:**
+
+- **A tunnel** is that forwarding connection. It runs no code of its own.
+- **Your computer is the server.** If you turn your computer off, the site goes
+  off too. This is not hosting. It is a window.
+- **A public address** (also called a URL) is the web link visitors type, such as
+  `https://example.trycloudflare.com`.
+
+### Step 35.1: Install cloudflared
+
+Download this file and save it as `cloudflared.exe`:
+
+```
+https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe
+```
+
+Put it in a folder you can find again. This tutorial uses
+`C:\Users\YourName\AppData\Local\cloudflared\cloudflared.exe`.
+
+Check it worked. Open PowerShell and run:
+
+```powershell
+& "$env:LOCALAPPDATA\cloudflared\cloudflared.exe" --version
+```
+
+You should see a version number. An example, not your real output: `cloudflared
+version 2026.9.3`.
+
+### Step 35.2: Start everything
+
+Three things must be running at the same time. Each one needs its own PowerShell
+window.
+
+1. **MySQL.** Start it from the XAMPP Control Panel as in section 4.
+2. **Laravel.**
+
+   ```powershell
+   cd C:\xampp\htdocs\lms-project
+   php artisan serve
+   ```
+
+3. **The tunnel.**
+
+   ```powershell
+   & "$env:LOCALAPPDATA\cloudflared\cloudflared.exe" tunnel --url http://127.0.0.1:8000 --no-autoupdate
+   ```
+
+Wait about twenty seconds. Cloudflare prints a line like this. The exact address
+will be different for you:
+
+```
+https://some-words-here.trycloudflare.com
+```
+
+**That address is your public site.** Anyone who opens it sees your LMS.
+
+### Step 35.3: Check it works
+
+Open the printed address in your browser. You should see the IT Learning Hub home
+page.
+
+Then check it from a device that is **not** on your Wi-Fi, because your own
+computer can often reach itself in ways other devices cannot. The easiest test
+is your phone with mobile data turned on and Wi-Fi turned off.
+
+If it loads there, other people can reach it too.
+
+### What the quick tunnel does not do
+
+- **The address changes every time you restart it.** If you stop and start
+  cloudflared, you get a different address. Send people the new one.
+- **Your computer must stay on and awake.** See section 37.
+- It is free, needs no account, and has no time limit.
+
+## 36. Get an address that never changes
+
+The address from section 35 changes each restart, which is inconvenient when
+you are sharing a link. A **named tunnel** gives you one fixed address, such as
+`https://lms.yourdomain.com`.
+
+**The tunnel itself is free**, on Cloudflare's free plan, with no trial and no
+expiry. The only cost is a **domain name** if you do not already own one. A
+domain is the web address of a website, such as `yourdomain.com`, and costs
+around ten dollars a year.
+
+So:
+
+- If you **already own a domain**, this costs nothing.
+- If you **do not own one**, keep using the free quick tunnel from section 35.
+  It is genuinely good enough for a demonstration.
+
+### If you own a domain
+
+**Step 1. Add the domain to Cloudflare, free.**
+
+In your Cloudflare account choose **Add a site**, enter your domain, and follow
+the instructions. Cloudflare will give you two nameserver addresses. At the
+company where you bought the domain, replace the existing nameservers with
+those two. DNS propagation, which is the process of the change spreading around
+the internet, takes up to a day, often much less.
+
+**Step 2. Install cloudflared as a Windows service.**
+
+A service is a program Windows starts automatically at boot. This step means the
+tunnel is already running after a restart, so you do not have to open a window
+by hand. In PowerShell, run as Administrator:
+
+```powershell
+& "$env:LOCALAPPDATA\cloudflared\cloudflared.exe" service install <the-token-Cloudflare-gave-you>
+```
+
+**Step 3. Point a name at the tunnel.**
+
+In the Cloudflare dashboard, open **Zero Trust**, then **Networks**, then
+**Tunnels**, and create a tunnel. Cloudflare walks you through each step. When
+it asks for a public hostname, enter the subdomain you want, such as `lms`, and
+your domain, then set the service to `http://127.0.0.1:8000`.
+
+**Step 4. Test it.**
+
+Open `https://lms.yourdomain.com`. Confirm the home page loads, then confirm
+`/login` works. Also confirm your security headers are still present; see
+section 25.
+
+**Important:** if you close your computer, the named tunnel address stops
+working, because your computer is still the server. A named tunnel gives you a
+permanent address, not permanent hosting.
+
+## 37. Presentation checklist
+
+Run through this the day before you demonstrate. The most common failure is not
+a broken site. It is a computer that fell asleep.
+
+1. **Stop sleep.** Windows Settings, System, Power, then set Screen and sleep to
+   **Never**, both on battery and when plugged in.
+2. **Stop lid sleep.** Control Panel, Power Options, Choose what closing the lid
+   does, set it to **Do nothing**.
+3. **Plug in the charger.**
+4. **Start the three things** from section 35.2: MySQL, Laravel, tunnel.
+5. **Test from your phone on mobile data**, not your own Wi-Fi.
+6. **Send the address to yourself** so you can paste it from your phone if the
+   laptop network fails.
+7. **Have a backup plan.** Know your campus Wi-Fi password, and keep your phone
+   hotspot ready. A dropped connection during a demonstration is the one problem
+   no amount of software quality prevents.
+8. **Check the accounts first.** Sign in as the Administrator, an Instructor,
+   and a Student before you begin. That way you know each one works.
+
+### When the site is down during a demonstration
+
+Check these in order. The answer is almost always the first one.
+
+1. Is the PowerShell window running `php artisan serve` still open?
+2. Is the PowerShell window running cloudflared still open?
+3. Is MySQL running in the XAMPP Control Panel?
+4. Has the computer slept?
+5. Has the public address changed? The quick tunnel address changes on restart,
+   so a restart with a new address is the usual explanation.
+

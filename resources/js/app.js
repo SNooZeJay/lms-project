@@ -1,4 +1,3 @@
-import AOS from 'aos';
 
 /**
  * Shared interface behaviour.
@@ -680,145 +679,191 @@ document.querySelectorAll('[data-rotate-sentences]').forEach(rotateSentences);
 
 
 /**
- * Motion on the public pages.
+ * Motion.
  *
- * Three things move, and all three are additions to content that is already
- * complete without them.
+ * One system, no library. AOS was removed and this replaces it, because it was
+ * carrying fourteen kilobytes to animate four things.
  *
- * SCROLL ANIMATION IS AOS
+ * WHY AOS WENT
  *
- * Animate on Scroll does the part that is genuinely fiddly: it finds every
- * element marked `data-aos`, works out where each one sits relative to the
- * viewport, and adds its `aos-animate` class when the reader reaches it. The
- * scroll listener, the throttling that keeps it cheap, the offset arithmetic, the
- * resize and orientation handling and the mutation observer that picks up
- * elements added later are all the library's, because they are the same on every
- * site and none of them are worth writing a second time.
+ * The library was installed to handle scroll reveals. Its transition approach
+ * then failed on the one element a reader always sees: the opening band is on
+ * screen at load, so the library set its initial and final class in the same
+ * style recalculation. The browser had one computed style to paint, the final
+ * one, and no transition ever ran. Nothing threw. The page looked correct and
+ * simply never moved, which is why scrolling the page appeared to work while
+ * the top of it did not.
  *
- * Only four effects are declared in the stylesheet, because only four are used.
- * The library ships thirty. The rest cost nothing, since no element asks for one.
+ * Forcing the two states apart with `requestAnimationFrame` was tried and
+ * measured. The browser coalesced the frames and the hidden value was never
+ * painted. Over a hundred and twenty eight traced frames the opening band took
+ * exactly one distinct opacity value.
  *
- * THE HIDING IS OURS, ON PURPOSE
+ * WHAT REPLACES IT
  *
- * AOS's own stylesheet hides anything carrying `data-aos`, unconditionally. If
- * the stylesheet arrives and this script does not, every marked element stays at
- * zero opacity for ever. Nothing throws, nothing logs, and the page is simply
- * blank where its text should be.
+ * Three mechanisms, each chosen for the job rather than applied everywhere:
  *
- * So the stylesheet gates the hidden state on the `aos-init` class that AOS puts
- * on an element as part of initialising it. An element is only ever hidden by
- * code that has already proved it is there to reveal it. This script never
- * arriving therefore costs a page that is still, which is the correct failure and
- * not a silent one.
+ *   1. A CSS keyframe for anything on screen at load. A keyframe has a start, an
+ *      end and a length, so it plays from wherever the element is when it runs.
+ *      There is no state to miss.
+ *   2. An IntersectionObserver for anything below the fold. The observer fires
+ *      when the element crosses into view, which is a real gap in time rather
+ *      than a gap between two class names.
+ *   3. Plain CSS transitions for hover, focus and open states, which need
+ *      nothing from JavaScript at all.
  *
- * REDUCED MOTION IS ASKED OF THE LIBRARY, NOT PATCHED OVER
+ * The observer is told to stop watching an element once it has been revealed.
+ * A band that re-animates every time it crosses the viewport is a band a brisk
+ * reader cannot get past, which is the opposite of what they are trying to do.
  *
- * `disable` is AOS's own switch, and when it is set the library strips the
- * `data-aos` attributes from every element it found. The stylesheet then has
- * nothing to act on, so the animations do not merely run quickly, they are not
- * part of the document. The stylesheet also carries the same rule under the same
- * media query, as a backstop for a preference that changes after initialisation.
+ * REDUCED MOTION
  *
- * ONE SHOT, NEVER A LOOP
- *
- * A band that re-animates every time it crosses the viewport is a band that
- * cannot be scrolled past quickly, which is the opposite of what a reader is
- * trying to do. `once` settles each element the first time it arrives and then
- * leaves it alone.
+ * A reader who has asked for reduced motion gets none of it, and gets the page
+ * immediately rather than after a delay. The check is read once and also
+ * observed, because a reader can change the setting while the page is open.
+ * The stylesheet carries the same rule as a backstop.
  */
-
-
 (() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-    /*
-     | The opening band, which the library cannot animate.
-     |
-     | Everything below the fold is prepared by the library while it is off screen,
-     | so an element there gets `aos-init` now and `aos-animate` later, when the
-     | reader scrolls to it. There is a real gap between those two states and the
-     | transition crosses it. That is why scrolling the page animated everything,
-     | and why the page looked like it worked.
-     |
-     | The opening band is different. It is on screen when the page loads, so the
-     | library adds `aos-init` and `aos-animate` in the same recalculation. The
-     | browser has one computed style to draw, the final one, and no transition
-     | runs. Nothing about it looks broken: the element arrives at full opacity,
-     | the page reads correctly, the console is silent. It simply never moved.
-     |
-     | So the one animation a reader sees without doing anything was the one
-     | animation that could not happen, and anybody who had scrolled the page and
-     | watched the other six work had every reason to say it was not working.
+    /**
+     * Is the element already inside the viewport at load?
      *
-     | A transition needs two painted styles, one to come from and one to go to.
-     | Forcing that gap with `requestAnimationFrame` was tried and measured, and it
-     | does not survive contact with a real page load: the callbacks land inside a
-     * single style recalculation, the browser coalesces them, and the hidden value
-     | is never painted. Over 128 frames traced from before the library ran, the
-     | opening band took exactly one distinct opacity value and was never seen
-     | part way through anything. Replaying the same steps by hand did animate it,
-     | which is precisely what made it look like a working fix.
-     *
-     | A keyframe animation is the right tool, because it does not depend on
-     * catching the element between two states. It has a start, an end and a
-     | length, and it plays from wherever the element is when it starts. Applied
-     | on the first frame it runs from zero; applied a little later it still runs.
-     | There is no frame to miss and no state to lose.
-     *
-     | The element is marked with a class rather than animated from here, so the
-     * motion lives in the stylesheet with everything else that moves. The duration
-     * is passed in as a custom property, because the opening band asks to be
-     | quicker than a band the reader has to scroll to, and hard coding it here
-     | would make that request a decoration.
-     *
-     | Only elements on screen at load are marked. Everything below the fold is
-     | left entirely to the library, so the path that already worked is untouched.
-     *
-     | A reduced motion reader gets none of it: the block is skipped, the library's
-     | own `disable` strips the attributes, and the page is simply on screen and
-     * still.
+     * An element the reader can see should arrive, because arriving is what
+     * makes the top of a page feel alive rather than pasted.
      */
-    if (!reducedMotion.matches) {
-        document.querySelectorAll('[data-aos]').forEach((element) => {
-            const box = element.getBoundingClientRect();
-            if (box.top >= window.innerHeight || box.bottom <= 0) {
-                return;
-            }
-            const declared = Number.parseInt(element.getAttribute('data-aos-duration') ?? '', 10);
-            element.style.setProperty(
-                '--entrance-duration',
-                `${Number.isFinite(declared) ? declared : 500}ms`
-            );
-            element.classList.add('entrance');
-        });
+    const onScreenAtLoad = (element) => {
+        const box = element.getBoundingClientRect();
+
+        return box.top < window.innerHeight && box.bottom > 0;
+    };
+
+    /**
+     * Reads a declared duration in milliseconds, or null when there is none.
+     */
+    const declaredDuration = (element) => {
+        const raw = Number.parseInt(element.getAttribute('data-motion-duration') ?? '', 10);
+
+        return Number.isFinite(raw) && raw > 0 ? raw : null;
+    };
+
+    /**
+     * Reveals one element, and honours any delay the author asked for.
+     *
+     * The duration arrives as a custom property rather than a class, so a band
+     * can be quicker than a section the reader scrolls to without this file
+     * carrying a table of which is which.
+     */
+    const reveal = (element) => {
+        const duration = declaredDuration(element);
+        const delay = Number.parseInt(element.getAttribute('data-motion-delay') ?? '', 10);
+
+        if (duration !== null) {
+            element.style.setProperty('--motion-duration', `${duration}ms`);
+        }
+
+        if (Number.isFinite(delay) && delay > 0) {
+            element.style.setProperty('--motion-delay', `${delay}ms`);
+        }
+
+        element.classList.add('is-revealed');
+    };
+
+    /*
+     * Every element carrying the attribute, whatever the value.
+     *
+     * The value names the treatment, not whether the element waits. `on-scroll`
+     * says "the reader has to reach this one"; `heading`, `box` and `stagger`
+     * say how it should move, and say nothing about when.
+     *
+     * Reading only two of the values was a real bug: a heading on screen at load
+     * was matched by neither, so it was never revealed, and the stylesheet's
+     * hidden state kept it at zero opacity for ever. The page looked like it
+     * was missing its headline. A selector that does not know about a value the
+     * stylesheet defines is a selector that leaves content invisible.
+     */
+    const marked = document.querySelectorAll('[data-motion]');
+
+    if (marked.length === 0) {
+        return;
     }
 
-    AOS.init({
-        // Off entirely under a reduced motion preference. See above.
-        disable: reducedMotion.matches,
+    const showAll = () => marked.forEach((element) => element.classList.add('is-revealed'));
 
-        // Once. See above.
-        once: true,
+    if (reducedMotion.matches) {
+        showAll();
 
-        // A band starts to arrive while it is still a little below the fold, so
-        // it has finished moving by the time it is read rather than beginning to
-        // move at the exact moment it appears.
-        offset: 60,
+        return;
+    }
 
-        /*
-         | Five hundred, and the stylesheet says the same.
-         |
-         | The library's default is four hundred, which is a touch snappy for
-         | something a whole band of the page is doing. Six hundred, which is what
-         | this was, is a touch slow: a reader scrolling briskly passes a band
-         | that is still arriving behind them.
-         */
-        duration: 500,
+    /*
+     * Anything already on screen is revealed now. A reader who has the element
+     * in front of them should not have to scroll to earn it, and an element
+     * that waits for an observer fires on it is the reader watching a blank
+     * space where a headline should be.
+     */
+    const waiting = [];
 
-        // Arrives and settles, rather than a linear ramp or a bounce. A landing
-        // page that bounces reads as a template.
-        easing: 'ease-out-cubic',
+    marked.forEach((element) => {
+        if (element.dataset.motion === 'on-scroll' || !onScreenAtLoad(element)) {
+            waiting.push(element);
+
+            return;
+        }
+
+        reveal(element);
     });
+
+    /*
+     * The rest wait for the reader to reach them.
+     *
+     * The margin starts the animation slightly before the element is fully on
+     * screen, so a band has finished moving by the time it is read rather than
+     * beginning to move at the exact moment it appears.
+     */
+    if (waiting.length === 0) {
+        return;
+    }
+
+    const observer = new IntersectionObserver(
+        (entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) {
+                    return;
+                }
+
+                reveal(entry.target);
+
+                // Once. See above.
+                observer.unobserve(entry.target);
+            });
+        },
+        {
+            rootMargin: '0px 0px -8% 0px',
+            threshold: 0.05,
+        }
+    );
+
+    waiting.forEach((element) => observer.observe(element));
+
+    /*
+     * A reader who turns reduced motion on while the page is open should get the
+     * page, immediately, rather than having to reload to escape what is moving.
+     */
+    reducedMotion.addEventListener('change', (event) => {
+        if (!event.matches) {
+            return;
+        }
+
+        document
+            .querySelectorAll('[data-motion]')
+            .forEach((element) => element.classList.add('is-revealed'));
+
+        observer.disconnect();
+    });
+
+    /**
+     * Count each published figure up to the value the server printed.
 
     /**
      * Count each published figure up to the value the server printed.
@@ -969,3 +1014,429 @@ document.querySelectorAll('[data-rotate-sentences]').forEach(rotateSentences);
     );
 })();
 
+
+/*
+ | FLASH MESSAGES
+ |
+ | Reads the toast region the shell renders and gives each message away.
+ |
+ | THREE THINGS THAT ARE EASY TO GET WRONG
+ |
+ | Dismissal. A message removed from the DOM is gone. The button removes its own
+ | message and nothing else, so dismissing one never takes the rest of the page's
+ | messages with it.
+ |
+ | The timer. A message that disappears from under a reader who has started to
+ | read it is a message they never read. So the countdown pauses whenever the
+ | pointer is over the message or the message has focus, and resumes when it
+ | leaves. A message a keyboard user has tabbed to stays put.
+ |
+ | Reduced motion. Under that preference the message is not dismissed on a timer
+ | at all. Nothing is moving, so nothing is competing for attention, and a reader
+ | who asked for stillness should not also have to catch a message before it
+ | leaves. The close button is the way out, and it is a real button with a name.
+ */
+(() => {
+    const region = document.querySelector('[data-toast-region]');
+
+    if (!region) {
+        return;
+    }
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const remove = (toast) => {
+        toast.remove();
+
+        // An empty region would still cover the corner of the page.
+        if (region.querySelectorAll('[data-toast]').length === 0) {
+            region.remove();
+        }
+    };
+
+    region.querySelectorAll('[data-toast]').forEach((toast) => {
+        const dismiss = toast.querySelector('[data-toast-dismiss]');
+        const declared = Number.parseInt(toast.getAttribute('data-toast-lifetime') ?? '', 10);
+        const lifetime = Number.isFinite(declared) && declared > 0 ? declared : 6000;
+
+        dismiss?.addEventListener('click', () => remove(toast));
+
+        if (reducedMotion.matches) {
+            return;
+        }
+
+        let remaining = lifetime;
+        let startedAt = 0;
+        let timer = null;
+
+        const stop = () => {
+            if (timer === null) {
+                return;
+            }
+
+            clearTimeout(timer);
+            timer = null;
+
+            // Whatever was left of the countdown is remembered, so pausing twice
+            // does not quietly hand the reader more time than they asked for.
+            remaining -= Math.round(performance.now() - startedAt);
+        };
+
+        const start = () => {
+            if (timer !== null || remaining <= 0) {
+                return;
+            }
+
+            startedAt = performance.now();
+            timer = window.setTimeout(() => remove(toast), remaining);
+        };
+
+        toast.addEventListener('mouseenter', stop);
+        toast.addEventListener('mouseleave', start);
+        toast.addEventListener('focusin', stop);
+        toast.addEventListener('focusout', start);
+
+        start();
+    });
+})();
+
+
+/*
+ | VALIDATION
+ |
+ | Client side validation for the actions a reader can take.
+ |
+ | WHAT THIS IS NOT
+ |
+ | It is not a replacement for the twenty three Form Requests. Those are the
+ | rules, they run on the server, and a request that never reaches them is the
+ | only thing this file prevents. Anything a reader can be tricked out of doing
+ | with a modified request, a replayed cookie, or a direct call to a controller
+ | is still checked there. This file exists to say so at the moment the mistake is
+ | made, while the person still has the form in front of them.
+ |
+ | WHY IT IS NOT A LIBRARY
+ |
+ | A validation library is a few thousand kilobytes of rules that a browser
+ | already has. The browser implements constraint validation, accessible
+ | descriptions, and live regions. What is missing is a place to say what the
+ | rules are for this application, and that is a hundred lines rather than a
+ | dependency.
+ |
+ | HOW A FIELD STATES ITS RULE
+ |
+ | On the input, in order of how well they work:
+ |
+ |   required  the constraint, understood by the browser and by assistive
+ |             technology, and enforced on submit by the form itself
+ |   type      email, url, number, so the keyboard offers the right keys and
+ |             the browser rejects an address with no at sign
+ |   minlength the same length rule the server enforces, spelled the same way
+ |   maxlength
+ |   pattern   the shape rule, in the reader's own regex dialect
+ |   data-validate-rule    a named rule this file knows about, for the things
+ |                         HTML has no attribute for: a password confirmation, a
+ |                         quantity, a price
+ |   data-validate-equals  the name of the field this one must match
+ |
+ | MESSAGES
+ |
+ | Each rule carries a sentence a person can act on. "This field is invalid" is
+ | the browser's default and it is not a sentence anyone can act on, so where a
+ | rule has a specific meaning the specific sentence is used.
+ |
+ | The message is wired to the input with `aria-describedby`, and the input gets
+ | `aria-invalid`. That is what makes the message reach a screen reader rather
+ | than sitting next to the box where only a sighted reader will find it.
+ */
+(() => {
+    /*
+     | The named rules. A key is what `data-validate-rule` carries.
+     |
+     | Each is a function returning a sentence, or null when the value is
+     | acceptable. Returning the message rather than a boolean is deliberate: a
+     | rule that fails needs to say why, and returning true for success keeps the
+     | two cases from being confused at the call site.
+     */
+    const rules = {
+        /*
+         | A password confirmation, named by the field it must match rather than
+         | by a rule, because the rule is relational and a named rule cannot
+         | describe a relationship.
+         */
+        confirmed: (input) => {
+            const other = document.querySelector(`[name="${CSS.escape(input.dataset.validateEquals)}"]`);
+
+            if (!other) {
+                return 'The field this must match is missing from the form.';
+            }
+
+            return input.value === other.value
+                ? null
+                : 'These do not match. Retype the password without hiding it.';
+        },
+
+        /*
+         | Money. An amount in pesos, stored in minor units, so a stray decimal
+         | point is a real error rather than a rounding surprise.
+         |
+         | Rejects a value with no digits at all, which `type="number"` accepts
+         | happily when it is typed rather than picked.
+         */
+        money: (input) => {
+            const value = input.value.trim();
+
+            if (value === '') {
+                return 'Enter an amount.';
+            }
+
+            if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+                return 'Enter an amount in pesos, with at most two decimal places.';
+            }
+
+            return Number(value) < 0 ? 'An amount cannot be negative.' : null;
+        },
+
+        /*
+         | A quantity. Whole and positive, because a course cannot have half a
+         | lesson and a negative number of questions is a mistake rather than a
+         | request.
+         */
+        quantity: (input) => {
+            const value = input.value.trim();
+
+            if (value === '') {
+                return 'Enter a number.';
+            }
+
+            if (!/^\d+$/.test(value)) {
+                return 'Enter a whole number, with no decimal point.';
+            }
+
+            return Number(value) < 1 ? 'This must be at least 1.' : null;
+        },
+
+        /*
+         | A file, checked before it is read rather than after.
+         |
+         | The browser's own `accept` attribute is a hint to the file picker, not
+         | a check: a file with any name can be attached whatever it says. This
+         | compares the extension, because the extension is what the server will
+         | act on, and comparing the media type alone lets `photo.png.exe`
+         | through.
+         */
+        file: (input) => {
+            if (input.files.length === 0) {
+                return 'Choose a file.';
+            }
+
+            const file = input.files[0];
+            const accepted = (input.getAttribute('accept') ?? '').split(',').map((type) => type.trim());
+            const allowedExtensions = accepted
+                .filter((type) => type.startsWith('.'))
+                .map((type) => type.slice(1).toLowerCase());
+            const extension = (file.name.split('.').pop() ?? '').toLowerCase();
+
+            if (allowedExtensions.length > 0 && !allowedExtensions.includes(extension)) {
+                return `This file has to be one of: ${allowedExtensions.join(', ')}.`;
+            }
+
+            const max = Number.parseInt(input.getAttribute('data-validate-max-kb') ?? '', 10);
+            const maxBytes = Number.isFinite(max) && max > 0 ? max * 1024 : null;
+
+            if (maxBytes !== null && file.size > maxBytes) {
+                return `This file is ${Math.round(file.size / 1024 / 1024 * 10) / 10} MB. The limit is ${max} MB.`;
+            }
+
+            return null;
+        },
+    };
+
+    /**
+     * Where a message is written, so the same field always reports in the same
+     * place and a reader who has been told once can find it again.
+     */
+    const messageFor = (input) => {
+        let holder = input.closest('[data-validate-message]');
+
+        if (holder) {
+            return holder;
+        }
+
+        holder = document.createElement('p');
+        holder.dataset.validateMessage = '';
+        holder.className = 'mt-1.5 text-sm leading-5 text-error-text';
+        holder.setAttribute('role', 'alert');
+
+        input.insertAdjacentElement('afterend', holder);
+
+        return holder;
+    };
+
+    /**
+     * Tells assistive technology that the message belongs to this field.
+     *
+     * Without this the message is a sentence next to the box, which a sighted
+     * reader finds and a screen reader user never meets. The attribute is added
+     * on the first failure and kept, because removing it on success would make
+     * the relationship flicker for a reader tabbing between fields.
+     */
+    const describe = (input, holder) => {
+        if (input.id === '') {
+            input.id = `field-${Math.random().toString(36).slice(2, 10)}`;
+        }
+
+        if (holder.id === '') {
+            holder.id = `${input.id}-message`;
+        }
+
+        const existing = (input.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
+
+        if (!existing.includes(holder.id)) {
+            input.setAttribute('aria-describedby', [...existing, holder.id].join(' '));
+        }
+    };
+
+    /**
+     * Runs every rule a field carries and returns the first message that fails.
+     *
+     * The first, rather than all of them, because a person fixing a form does
+     * not need to be told six things about one field at once. The next one is
+     * waiting after they fix the first.
+     */
+    const check = (input) => {
+        const holder = messageFor(input);
+
+        // The browser's own validity, so `required`, `type`, `pattern` and the
+        // length attributes are honoured without being restated here.
+        if (input.validity && input.validity.valid === false && input.dataset.validateSkipBrowser !== 'true') {
+            input.setAttribute('aria-invalid', 'true');
+
+            const message =
+                input.validity.valueMissing
+                    ? (input.dataset.validateRequiredMessage ?? 'This is required.')
+                    : (input.validity.typeMismatch
+                        ? (input.dataset.validateTypeMessage ?? 'Check the format of this value.')
+                        : (input.validity.tooShort
+                            ? `Use at least ${input.minLength} characters.`
+                            : 'Check this value.'));
+
+            holder.textContent = message;
+            describe(input, holder);
+
+            return message;
+        }
+
+        // The named rules, for the things HTML has no attribute for.
+        const named = (input.dataset.validateRule ?? '').split(/\s+/).filter(Boolean);
+
+        for (const rule of named) {
+            const run = rules[rule];
+
+            if (!run) {
+                continue;
+            }
+
+            const message = run(input);
+
+            if (message !== null) {
+                input.setAttribute('aria-invalid', 'true');
+                holder.textContent = message;
+                describe(input, holder);
+
+                return message;
+            }
+        }
+
+        input.removeAttribute('aria-invalid');
+        holder.textContent = '';
+
+        return null;
+    };
+
+    /**
+     * Validates every field of a form, and reports the first one that failed.
+     *
+     * Returning the first failure is what makes the focus move somewhere useful.
+     * A reader who submits a form with three problems and is told about the third
+     * is sent back to a field they have already fixed.
+     */
+    const checkForm = (form) => {
+        const fields = [...form.querySelectorAll('[required], [data-validate-rule], [type="email"], [type="url"], [type="number"]')];
+
+        for (const field of fields) {
+            if (check(field) !== null) {
+                field.focus();
+
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    /*
+     | Wire it up.
+     |
+     | Submit is the moment that matters, and this is the only place the form's
+     | own submission is prevented, so nothing else in this file can silently
+     | stop a form being sent.
+     */
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+
+        if (!(form instanceof HTMLFormElement) || form.dataset.validateSkip === 'true') {
+            return;
+        }
+
+        if (!checkForm(form)) {
+            event.preventDefault();
+        }
+    });
+
+    /*
+     | Checking while a reader types.
+     |
+     | Only after a field has been left once. Validating on every keystroke tells
+     | someone their email address is invalid while they are still typing the
+     | domain, which is both wrong and infuriating. A field is armed on its first
+     | `blur`, and from then on it reports as soon as it becomes valid, so a
+     | message clears itself the moment it stops being true.
+     |
+     | Everything is deferred past the keystroke that caused it, because a
+     | message inserted into the form during an input event can move the caret.
+     */
+    document.addEventListener(
+        'blur',
+        (event) => {
+            const field = event.target;
+
+            if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) {
+                if (field.dataset.validateArmed === 'true') {
+                    return;
+                }
+
+                field.dataset.validateArmed = 'true';
+            }
+        },
+        true
+    );
+
+    document.addEventListener('input', (event) => {
+        const field = event.target;
+
+        if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement)) {
+            return;
+        }
+
+        if (field.dataset.validateArmed !== 'true' || field.getAttribute('aria-invalid') !== 'true') {
+            return;
+        }
+
+        window.requestAnimationFrame(() => {
+            if (field.getAttribute('aria-invalid') === 'true') {
+                check(field);
+            }
+        });
+    });
+})();

@@ -350,150 +350,281 @@
      */
 
     /*
-     | Animate on Scroll.
+     | MOTION
      |
-     | AOS does the part that is fiddly: it reads every element marked
-     | `data-aos`, works out where it sits relative to the viewport, and adds its
-     | `aos-animate` class when the reader reaches it. The scroll handling, the
-     | throttling, the offset maths and the resize behaviour are the library's,
-     | because all of them are the same on every site and none of them are worth
-     | writing twice.
+     | One system replaces Animate on Scroll, which was removed. Three mechanisms,
+     | each picked for the job rather than applied everywhere.
      |
-     | The hiding is done here rather than by importing the library's own
-     | stylesheet, for one reason that matters more than twenty five kilobytes.
-     | AOS's CSS hides any element carrying `data-aos` outright, so if the
-     | stylesheet arrives and the script does not, every marked element stays
-     | invisible forever. Nothing throws. Nothing reports it. The page simply has
-     | no text on it.
+     |   1. In view at load      a keyframe animation, which has a start, an end and
+     |                          a length, so it plays from wherever the element is
+     |                          when it runs. There is no state to miss.
+     |   2. Below the fold       the script's IntersectionObserver, because it fires
+     |                          on a real gap in time rather than a gap between two
+     |                          class names.
+     |   3. Hover, focus, open   a plain transition. No script involved.
      |
-     | So the hidden state is gated on the class AOS itself puts on an element
-     | once it has initialised. An element is only ever hidden by a script that
-     | has already proved it is there to unhide it. If the script never arrives,
-     | no element is ever hidden, and the page is simply still.
+     | WHY THE HIDDEN STATE IS OURS
      |
-     | `translate3d` rather than `translate` for the same reason throughout: the
-     | movement is promoted to its own compositor layer for the length of the
-     | animation and painted without the main thread laying anything out.
+     | The library's own stylesheet hid any element carrying its attribute,
+     | unconditionally, which meant a missing script left a page with no text on
+     | it and nothing in the console to say why. Here the hidden state belongs to
+     | the same rule that reveals it, and the stylesheet below the media query
+     | guarantees the page is never left invisible even if the script never runs.
      |
-     | Only the three effects this site uses are declared. The library ships
-     * thirty; the ones not named here cost nothing because no element asks for
-     * them.
+     | No `will-change`, deliberately. Promoting every marked band to its own
+     | compositor layer holds six large layers for the whole visit on a device
+     | that may not have the memory for them, and the cost is paid whether or not
+     | anything animates. Opacity and transform are already the two properties a
+     | compositor handles without laying the page out.
      */
+
     /*
-     | How far, how fast, and why it is not a will-change.
+     | The resting hidden state.
      |
-     | The travel is 14 pixels and the fade is 500 milliseconds. The library's own
-     | defaults are 100 pixels of travel over 600, which on a section the height
-     | of this page is a visible slide rather than a settle, and it is the reason
-     | a fade tends to read as a page loading rather than as a page arriving.
+     | Scoped to `:not(.is-revealed)` rather than to the attribute alone, so the
+     | moment the script adds the class the element is free, with no cascade race
+     | and no specificity contest to lose.
      |
-     | There is no `will-change` here, and there used to be.
-     |
-     | Promoting every marked section to its own compositor layer sounds free and
-     | is not. Six sections, each of them a full band of the page, is six large
-     | layers held for the whole visit, and the browser cannot discard them on its
-     | own. On a phone that is memory the rest of the page does not get, and the
-     | cost is paid whether or not anything ever animates. Nothing in this
-     | transition triggers layout, so the promotion bought nothing: opacity and
-     | transform are already the two properties a compositor handles without
-     | recalculating the page.
+     | Only opacity and transform. Nothing here triggers layout, which is what
+     | keeps the reveal from being felt as a stutter.
      */
-    [data-aos].aos-init {
+    [data-motion]:not(.is-revealed) {
         opacity: 0;
-        transition-property: opacity, transform;
-        transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
-        transition-duration: 500ms;
-    }
-    [data-aos].aos-init.aos-animate {
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
-    }
-    [data-aos='fade-up'].aos-init {
-        transform: translate3d(0, 14px, 0);
+        transform: translate3d(0, var(--motion-travel, 14px), 0);
     }
 
     /*
-     | The entrance, for an element already on screen when the page loads.
+     | The arrival.
      |
-     | The library animates a band the reader scrolls to by giving it two states
-     | seconds apart, and the transition crosses the gap between them. The opening
-     | band has no gap: it is on screen at load, so the library marks it hidden and
-     | revealed in the same recalculation and there is nothing to interpolate. It
-     | arrives at full opacity and never moves, which is why the page looked still
-     | until it was scrolled.
+     | A keyframe rather than a transition, for the reason in the header: it does
+     | not depend on catching the element between two painted styles, so an
+     | element that is on screen when the page loads still moves.
      |
-     | A keyframe animation rather than a forced transition, because it does not
-     | depend on catching the element between two painted states. It has a start,
-     | an end and a length, and it plays from wherever the element is when it
-     | starts, so there is no frame to miss.
-     |
-     | `both` on the fill mode matters as much as the keyframes: it holds the
-     | final value after the animation ends, so the element is not left wherever
-     | the last painted frame happened to be.
-     |
-     | The distance is 14 pixels and the length comes from the element, which is
-     | how the opening band arrives faster than a band the reader has to scroll to.
+     | `both` holds the final value after the animation ends, so the element is
+     | not left wherever the last painted frame happened to fall.
      */
-    @keyframes lms-entrance {
+    @keyframes lms-reveal {
         from {
             opacity: 0;
-            transform: translate3d(0, 14px, 0);
+            transform: translate3d(0, var(--motion-travel, 14px), 0);
         }
         to {
             opacity: 1;
             transform: translate3d(0, 0, 0);
         }
     }
-    .entrance {
-        animation: lms-entrance var(--entrance-duration, 500ms) cubic-bezier(0.22, 0.61, 0.36, 1) both;
-    }
-    /*
-     | An element animating itself in is not also waiting to be revealed.
-     |
-     | The library's hidden rule and this animation's own `from` both say
-     | `opacity: 0`, and the library's rule wins on order, so the element would sit
-     | at zero while the animation appeared to do nothing. The animation is the
-     | one with a defined end, so it is the one that gets to name the resting
-     | value.
-     |
-     | Deliberately not written as `.entrance.aos-init`. The class belongs to the
-     | library, is added when the library prepares the element, and the order in
-     | which that lands relative to this stylesheet is not something this file
-     | should be depending on. Matching on `.entrance` alone cannot lose a race
-     | with a class this stylesheet never agreed to.
-     */
-    .entrance {
-        opacity: 1;
+
+    [data-motion].is-revealed {
+        animation: lms-reveal
+            var(--motion-duration, 520ms)
+            var(--motion-easing, cubic-bezier(0.22, 0.61, 0.36, 1))
+            var(--motion-delay, 0ms)
+            both;
     }
 
-    [data-aos='fade-down'].aos-init {
-        transform: translate3d(0, -14px, 0);
-    }
-    [data-aos='fade-left'].aos-init {
-        transform: translate3d(18px, 0, 0);
-    }
-    [data-aos='fade-right'].aos-init {
-        transform: translate3d(-18px, 0, 0);
-    }
     /*
-     | Per element timing.
+     | The distances.
      |
-     | The library ships rules for `data-aos-duration`, `data-aos-delay` and
-     | `data-aos-easing`, and they live in the stylesheet this project does not
-     | import. Without them an element asking for a different duration gets the
-     | default, so the attribute is written in a view and quietly does nothing.
+     | Fourteen pixels is a settle. A hundred is a slide, and a band the height of
+     | a page that slides reads as a page loading rather than a page arriving.
      |
-     | This is what lets the opening band arrive faster than a band further down.
-     | The opening is on screen when the page loads, so anything that makes the
-     | reader wait for it makes the page feel slower than doing nothing at all.
-     | Twelve hundred milliseconds of fade on the headline is a performance
-     | complaint about the site, dressed as a greeting.
+     | The heading travels further because a heading is set large, so a movement
+     | proportional to a paragraph is invisible on it.
      */
-    [data-aos][data-aos-duration] {
-        transition-duration: attr(data-aos-duration ms);
+    [data-motion='on-scroll'] {
+        --motion-travel: 16px;
     }
-    [data-aos][data-aos-delay] {
-        transition-delay: attr(data-aos-delay ms);
+    [data-motion='in-view'] {
+        --motion-travel: 10px;
+    }
+    [data-motion='heading'] {
+        --motion-travel: 0.42em;
+        --motion-duration: 640ms;
+    }
+    [data-motion='box'] {
+        --motion-travel: 18px;
+        --motion-duration: 560ms;
+    }
+
+    /*
+     | HEADINGS
+     |
+     | A heading arrives from below its own baseline and settles, which reads as
+     | the page composing itself rather than as a block of text fading in. The
+     | travel is in `em` so it scales with whatever size the heading is set at,
+     | and a two line heading moves as one piece rather than line by line, which
+     | is what keeps a ragged left edge from looking like a mistake.
+     |
+     | The easing overshoots very slightly and comes back. A heading that stops
+     | dead looks stopped; a small settle reads as weight.
+     */
+    @keyframes lms-heading-in {
+        0% {
+            opacity: 0;
+            transform: translate3d(0, 0.44em, 0);
+        }
+        62% {
+            opacity: 1;
+            transform: translate3d(0, -0.03em, 0);
+        }
+        100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    [data-motion='heading'].is-revealed {
+        animation-name: lms-heading-in;
+        --motion-duration: 660ms;
+        --motion-easing: cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    /*
+     | BOXES
+     |
+     | A card, panel or dialog arrives with a little scale as well as a little
+     | travel, so it reads as being brought forward rather than slid in from
+     | further down the page.
+     |
+     | The scale is small on purpose. Past about four percent a card stops
+     | reading as a flat panel and starts reading as a balloon, and a flat design
+     | cannot afford that.
+     */
+    @keyframes lms-box-in {
+        from {
+            opacity: 0;
+            transform: translate3d(0, var(--motion-travel, 18px), 0) scale(0.985);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+    }
+
+    [data-motion='box'].is-revealed {
+        animation-name: lms-box-in;
+    }
+
+    /*
+     | A GROUP
+     |
+     | Children arrive in sequence. The step is small, because the point is to
+     | lead the eye down a list rather than to perform on it, and a long stagger
+     | means the last item is still moving after the reader has read the first.
+     */
+    [data-motion='stagger'] > * {
+        --motion-delay: 0ms;
+    }
+
+    /*
+     | The order comes from `nth-child`, not from an index written into a `style`
+     | attribute by the template.
+     |
+     | The policy is `style-src 'self'`, so an inline style is blocked. The
+     | first version wrote `--motion-index` on each tile and every tile animated
+     | at the same instant with its delay silently ignored. Nothing looked
+     | broken, which is exactly why it survived as long as it did.
+     */
+    [data-motion='stagger'] > *:nth-child(1) { --motion-delay: 0ms; }
+    [data-motion='stagger'] > *:nth-child(2) { --motion-delay: 60ms; }
+    [data-motion='stagger'] > *:nth-child(3) { --motion-delay: 120ms; }
+    [data-motion='stagger'] > *:nth-child(4) { --motion-delay: 180ms; }
+    [data-motion='stagger'] > *:nth-child(5) { --motion-delay: 240ms; }
+    [data-motion='stagger'] > *:nth-child(6) { --motion-delay: 300ms; }
+    [data-motion='stagger'] > *:nth-child(n + 8) { --motion-delay: 420ms; }
+
+    /*
+     | A running underline, for a heading that is also a link.
+     |
+     | Grows from the leading edge, because a line that grows in the middle
+     | belongs to a button and a heading is not a button.
+     */
+    @keyframes lms-underline {
+        from {
+            transform: scaleX(0);
+        }
+        to {
+            transform: scaleX(1);
+        }
+    }
+
+    .heading-underline {
+        position: relative;
+        display: inline-block;
+    }
+
+    .heading-underline::after {
+        content: '';
+        position: absolute;
+        inset-inline: 0;
+        bottom: -0.12em;
+        height: 2px;
+        background: var(--color-accent);
+        transform: scaleX(0);
+        transform-origin: left center;
+    }
+
+    .heading-underline.is-revealed::after {
+        animation: lms-underline 520ms cubic-bezier(0.19, 1, 0.22, 1) 220ms both;
+    }
+
+    /*
+     | A dialog.
+     |
+     | The panel scales and lifts, the backdrop fades on its own slightly faster
+     | so the surface is already there when the panel lands on it. Exits are
+     | quicker than entrances, so a dismissal never feels like the panel is
+     | reluctant to leave.
+     */
+    @keyframes lms-dialog-in {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 12px, 0) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+    }
+
+    @keyframes lms-backdrop-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    [data-dialog] {
+        animation: lms-dialog-in 240ms cubic-bezier(0.19, 1, 0.22, 1) both;
+    }
+
+    [data-dialog-backdrop] {
+        animation: lms-backdrop-in 180ms ease-out both;
+    }
+
+    /*
+     | Reduced motion, as a backstop.
+     |
+     | The script skips the whole block when the preference is set, so this rule
+     | should never be reached. It is here because a preference can change after
+     | the page has loaded, and a page that honours the setting only at load time
+     | is a page that ignores it.
+     |
+     | `animation: none` rather than a very short one, so an element is on screen
+     | and still rather than on screen and finished.
+     */
+    @media (prefers-reduced-motion: reduce) {
+        [data-motion],
+        [data-motion].is-revealed,
+        [data-dialog],
+        [data-dialog-backdrop],
+        .heading-underline.is-revealed::after {
+            opacity: 1 !important;
+            transform: none !important;
+            animation: none !important;
+        }
     }
 
     /*
@@ -809,6 +940,223 @@
         .figures-row > * {
             @apply basis-[calc((100%-2rem)/3)];
         }
+    }
+    /*
+     | THE DASHBOARD
+     |
+     | A dashboard that is a row of identical tiles is a list of numbers, and a
+     | list of numbers tells a reader nothing about what to do next. Six equal
+     | boxes give every figure the same weight, which means the one that matters
+     | most is the one most likely to be missed.
+     |
+     | So the page is built in three levels rather than one:
+     |
+     |   the next step   one large panel, because a learner's next action is a
+     |                  single answer and everything else on the page is context
+     |   the figures     one featured number and a tighter grid beneath it, so the
+     |                  headline figure is distinguishable without being larger
+     |   the detail     the chart and the activity list, unchanged, because they
+     |                  were never the problem
+     |
+     | Mobile first throughout. On a phone the next step is the whole first screen
+     | and the figures are a two up grid, because a learner on a phone is usually
+     | on the way to a lesson rather than reading a report.
+     |
+     | Flat, in the sense the design system means it: solid fills, hairline
+     | borders, no drop shadows to fake height. Depth here comes from the type
+     | scale and from colour, not from blur.
+     */
+
+    /*
+     | THE NEXT STEP
+     |
+     | The one panel on the page that is allowed to be large, because it carries
+     | the one thing a learner came for.
+     |
+     | The accent edge is a four pixel rule on the leading edge rather than a
+     | shadow, so the panel reads as marked rather than as raised, and it costs
+     | nothing to draw.
+     */
+    .next-step {
+        @apply relative overflow-hidden border border-line bg-surface;
+        border-left: 4px solid var(--color-accent);
+    }
+
+    /*
+     | A faint tint behind the panel, drawn with a gradient rather than an image.
+     |
+     | This is the only gradient in the interface and it is the one place it earns
+     | its place: it separates the panel from the page without a border thick
+     | enough to shout. It is two stops, both at low alpha, and it is invisible
+     | to anyone who does not look for it.
+     */
+    .next-step::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(
+            100deg,
+            color-mix(in oklab, var(--color-accent) 7%, transparent) 0%,
+            transparent 58%
+        );
+    }
+
+    .next-step > * {
+        position: relative;
+    }
+
+    /*
+     | The progress figure on the next step, set large enough to be the thing the
+     | eye lands on. A learner scrolling in should not have to read a label to
+     | find out how far along they are.
+     */
+    .next-step-figure {
+        @apply text-[2.75rem] leading-none font-[650] tracking-[-0.03em] tabular-nums text-ink;
+    }
+
+    @media (min-width: 40rem) {
+        .next-step-figure {
+            @apply text-[3.5rem];
+        }
+    }
+
+    /*
+     | A ring drawn with SVG, and why not a conic gradient.
+     |
+     | The first version of this was a `conic-gradient` reading a `--value`
+     | custom property, which is elegant and needs one line. It also does not
+     | work here, because the value has to reach the element in a `style`
+     | attribute and this application ships a content security policy of
+     | `style-src 'self'` with no `unsafe-inline`. The browser blocked it, the
+     | property stayed empty, and the ring drew as zero. The console said so
+     | loudly, and the page still looked plausible, which is the worst way for
+     | this to fail.
+     |
+     | SVG attributes are not CSS, so the policy does not apply to them. The
+     | dash offset is an attribute on the circle, computed in the template, and
+     | the ring cannot disagree with the number printed beside it because they
+     | are the same number written once.
+     |
+     | The alternative was to add `unsafe-inline` to the policy, which would have
+     | made the ring work and quietly weakened a deliberate security decision to
+     | serve a decoration. Not a trade worth making.
+     */
+    .progress-ring {
+        @apply relative grid shrink-0 place-items-center;
+        inline-size: 5.5rem;
+        block-size: 5.5rem;
+    }
+
+    @media (min-width: 40rem) {
+        .progress-ring {
+            inline-size: 6.5rem;
+            block-size: 6.5rem;
+        }
+    }
+
+    .progress-ring svg {
+        @apply absolute inset-0 -rotate-90;
+        inline-size: 100%;
+        block-size: 100%;
+    }
+
+    .progress-ring-track {
+        @apply text-line;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 7;
+    }
+
+    .progress-ring-fill {
+        @apply text-accent;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 7;
+        stroke-linecap: round;
+        /*
+         * The travel itself. `transition` on the dash offset means the ring
+         * draws itself when the value changes, which is motion that carries
+         * information rather than motion that decorates.
+         */
+        transition: stroke-dashoffset 900ms cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    /*
+     | The number in the middle. It is a sibling of the SVG, not a child, because
+     | the SVG is positioned over the whole box and would cover the text.
+     */
+    .progress-ring-label {
+        @apply relative text-xl font-[650] tracking-tight tabular-nums text-ink;
+    }
+
+    /*
+     | THE FIGURES
+     |
+     | One featured tile and the rest. The featured tile keeps the same data and
+     | the same label as before, and is simply allowed to be larger, because
+     | "how far along am I overall" is the question the page exists to answer.
+     |
+     | The compact tiles drop the four pixel top rule that every tile used to
+     | carry. Six coloured rules in a row is a barcode, and none of them meant
+     | anything to a reader who had not memorised the colour key.
+     */
+    .stat-featured {
+        @apply flex flex-col justify-between border border-line bg-surface p-5 sm:p-6;
+    }
+
+    .stat-featured-value {
+        @apply mt-3 text-[2.25rem] leading-none font-[650] tracking-[-0.03em] text-ink tabular-nums;
+    }
+
+    @media (min-width: 40rem) {
+        .stat-featured-value {
+            @apply text-[2.75rem];
+        }
+    }
+
+    .stat-compact {
+        @apply flex flex-col border border-line bg-surface p-4;
+    }
+
+    .stat-compact-value {
+        @apply mt-1.5 text-2xl leading-none font-[650] tracking-tight text-ink tabular-nums;
+    }
+
+    /*
+     | A marker that gives a figure a category without colouring the whole tile.
+     |
+     | A small square rather than a rule across the tile, because six rules in a
+     | row compete with the numbers and one square per tile does not.
+     */
+    .stat-marker {
+        @apply inline-block size-2 shrink-0;
+    }
+
+    /*
+     | A grid for the compact tiles. Two up on a phone, which is the narrowest a
+     | pair of numbers can be and still be read, then three and four as room
+     | appears.
+     */
+    .figures-grid {
+        @apply grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4;
+    }
+
+    /*
+     | The page header is given the heading treatment, so a page opens by naming
+     | itself rather than by presenting a form.
+     */
+    .page-title {
+        @apply text-[1.75rem] leading-[1.15] font-[650] tracking-[-0.02em] text-balance text-ink sm:text-[2rem];
+    }
+
+    /*
+     | A section label, set small and wide. It sits above a group so the group has
+     | a name, and the letterspacing is what makes it read as a label rather than
+     | as a heading that lost an argument with a heading.
+     */
+    .section-label {
+        @apply text-xs font-semibold tracking-[0.08em] text-ink-subtle uppercase;
     }
     .panel-call {
         @apply border border-line bg-primary-quiet px-6 py-8 sm:px-10 sm:py-10;
@@ -1561,17 +1909,10 @@
        still a jump, and a band that fades over a hundredth of a second still
        spends a frame at the wrong opacity.
 
-       AOS is switched off in script as well, through its own `disable` option,
-       because that is the only version of this that is genuinely off rather than
-       merely fast. The rule here is the backstop for the case where the
-       preference is set after the library has already initialised, which is rare
-       but real: the elements are then simply on screen, which is exactly what
-       they would be with no stylesheet at all. */
-    [data-aos].aos-init {
-        opacity: 1 !important;
-        transform: none !important;
-        transition: none !important;
-    }
+       The motion system skips its whole block when this preference is set, so
+       the elements are simply on screen and still. The rule in the motion
+       section is the backstop for a preference changed after the page loaded,
+       which is rare but real. */
 
     .lift,
     .cover-zoom {

@@ -218,5 +218,9 @@
     @endif
 
     @stack('scripts')
+
+<x-toast-region />
+
+
 </body>
 </html>

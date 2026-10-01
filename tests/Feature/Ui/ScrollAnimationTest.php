@@ -5,12 +5,12 @@ namespace Tests\Feature\Ui;
 use Tests\TestCase;
 
 /**
- * The scroll animation is AOS, and the way it is wired has three requirements.
+ * The motion system, and the requirements it has to keep satisfying.
  *
- * The library does the part that is fiddly: it finds every element marked
- * `data-aos`, works out where each sits relative to the viewport, and adds
- * `aos-animate` when the reader arrives. Only four effects are declared in the
- * stylesheet because only four are used; the library ships thirty.
+ * These tests were originally about Animate on Scroll and were rewritten when
+ * the library was removed. Most of what they asserted is still worth asserting,
+ * because it was never about the library. It was about four ways motion goes
+ * wrong on a page, and all four are still available.
  *
  * Why this is a test and not a look at the page
  * ---------------------------------------------
@@ -18,313 +18,426 @@ use Tests\TestCase;
  * The machine this was written on reports `prefers-reduced-motion: reduce`, so
  * every browser pass over the public pages exercises the *disabled* path. That is
  * the right path to have verified by eye, and it is the wrong path to conclude
- * from. The animated path was never observed, only asserted, and an assertion
- * that has never been checked against a real animation is a comment.
+ * anything about whether the motion exists. A page that honours the preference
+ * correctly is motionless, and a motionless page looks exactly like a broken one.
  *
- * So the contract is pinned here instead, in the three places it can be wrong.
+ * So these tests read the source instead, and assert the properties that were
+ * never in doubt: that a missing script cannot blank a page, that nothing
+ * animates a box, that a reduced motion reader still ends up with the content,
+ * and that every treatment the views ask for is one the stylesheet defines.
  *
- * The one that matters most
- * -------------------------
+ * The failure that prompted the rewrite
+ * --------------------------------------
  *
- * AOS's own stylesheet hides anything carrying `data-aos`, unconditionally. If
- * that stylesheet arrives and the script does not, every marked element stays at
- * zero opacity for ever: nothing throws, nothing logs, and the page has no text
- * on it. That is why the hidden state here is gated on the `aos-init` class AOS
- * itself adds to an element while initialising. An element is only ever hidden by
- * code that has already proved it is there to reveal it.
+ * The first version of the new script selected on two of the four treatment
+ * values. An `h1` marked `data-motion="heading"` matched neither, so it was never
+ * revealed, and the stylesheet's hidden rule held it at zero opacity for ever.
+ * The page rendered with no headline on it. Nothing logged, nothing threw, and
+ * every accessibility and performance check still passed.
+ *
+ * The test that would have caught it is the one below asserting that the script's
+ * selector covers every value the stylesheet defines.
  */
 class ScrollAnimationTest extends TestCase
 {
-    private function bundle(): string
+    /**
+     * The script and the stylesheet, once each.
+     */
+    private function script(): string
     {
-        $scripts = glob(public_path('build/assets/app-*.js')) ?: [];
-
-        $this->assertNotSame([], $scripts, 'The bundled script was not found. Run the asset build first.');
-
-        return implode("\n", array_map('file_get_contents', $scripts));
+        return (string) file_get_contents(resource_path('js/app.js'));
     }
 
     private function stylesheet(): string
     {
-        $files = glob(public_path('build/assets/app-*.css')) ?: [];
-
-        $this->assertNotSame([], $files, 'The built stylesheet was not found. Run the asset build first.');
-
-        return implode("\n", array_map('file_get_contents', $files));
+        return (string) file_get_contents(resource_path('css/app.css'));
     }
 
     /**
-     * A pattern matching the rule for one AOS effect, quotes or no quotes.
-     *
-     * The minifier rewrites `[data-aos='fade-up']` to `[data-aos=fade-up]`, and an
-     * assertion written against the source quoting therefore fails against a
-     * correctly built stylesheet. Which is a test of the minifier.
+     * Every treatment any view actually asks for.
      */
-    private function selectorFor(string $effect): string
+    private function treatmentsInUse(): array
     {
-        return '/\[data-aos=[\'"]?'.preg_quote($effect, '/').'[\'"]?\]/';
-    }
+        $found = [];
 
-    public function test_the_library_is_installed_and_bundled(): void
-    {
-        $this->assertFileExists(
-            base_path('node_modules/aos/package.json'),
-            'AOS is not installed, so the scroll animation cannot run at all.'
-        );
+        foreach (glob(resource_path('views/**/*.blade.php')) as $file) {
+            preg_match_all('/data-motion="([a-z-]+)"/', (string) file_get_contents($file), $matches);
 
-        $this->assertStringContainsString(
-            'aos-init',
-            $this->bundle(),
-            'The bundle carries no AOS. Either the import was dropped or the build is stale.'
-        );
-    }
-
-    /**
-     * The options, each for a reason stated where it is chosen.
-     */
-    public function test_it_is_configured_for_one_shot_and_for_a_settled_arrival(): void
-    {
-        $source = (string) file_get_contents(base_path('resources/js/app.js'));
-
-        $this->assertMatchesRegularExpression(
-            '/AOS\.init\(\s*\{(.*?)\}\s*\)/s',
-            $source,
-            'AOS is not initialised with options, so it is running on its defaults.'
-        );
-
-        preg_match('/AOS\.init\(\s*\{(.*?)\}\s*\)/s', $source, $matches);
-        $options = $matches[1];
-
-        // Once. A band that re-animates every time it crosses the viewport is a
-        // band that cannot be scrolled past quickly.
-        $this->assertStringContainsString('once: true', $options);
-
-        // Off under a reduced motion preference, through the library's own switch,
-        // which strips the attributes rather than running the animation quickly.
-        $this->assertStringContainsString('disable: reducedMotion.matches', $options);
-
-        // A step, a duration and a curve. All three are visual decisions, and the
-        // library's defaults are a linear ramp over four hundred milliseconds,
-        // which reads as mechanical on a page this size.
-        $this->assertStringContainsString('offset:', $options);
-        $this->assertStringContainsString('duration:', $options);
-        $this->assertStringContainsString('easing:', $options);
-    }
-
-    /**
-     * The part that decides whether a page with no script is blank or readable.
-     */
-    public function test_an_element_is_never_hidden_unless_the_library_has_already_started(): void
-    {
-        $css = $this->stylesheet();
-
-        // The hidden state must be scoped to .aos-init. An unscoped
-        // `[data-aos] { opacity: 0 }` is what makes a missing script a blank page.
-        $this->assertMatchesRegularExpression(
-            '/\[data-aos\]\.aos-init\s*\{[^}]*opacity:\s*0/',
-            $css,
-            'The hidden state is not gated on .aos-init. If the script never runs, every marked '
-            .'element stays invisible and the page has no text on it.'
-        );
-
-        // And it must not be hidden unconditionally anywhere else either.
-        $this->assertDoesNotMatchRegularExpression(
-            '/\[data-aos\]\s*\{[^}]*opacity:\s*0/',
-            $css,
-            'There is an ungated [data-aos] rule setting opacity to zero.'
-        );
-
-        // The library is never imported wholesale, only its behaviour.
-        $this->assertStringNotContainsString(
-            'aos/dist/aos.css',
-            $this->bundle(),
-            'The library stylesheet was imported. It hides every [data-aos] element on its own, which '
-            .'is exactly the unconditional hiding this design is avoiding.'
-        );
-    }
-
-    /**
-     * The four effects the site actually asks for, and the arrival.
-     */
-    public function test_the_declared_effects_match_the_ones_the_views_use(): void
-    {
-        $css = $this->stylesheet();
-
-        foreach (['fade-up', 'fade-down', 'fade-left', 'fade-right'] as $effect) {
-            $this->assertMatchesRegularExpression(
-                $this->selectorFor($effect),
-                $css,
-                "The effect `{$effect}` is declared in the comments but has no rule."
-            );
+            $found = array_merge($found, $matches[1]);
         }
 
-        // And every effect a view actually asks for has a rule.
-        $used = [];
+        return array_values(array_unique($found));
+    }
 
-        $files = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator(base_path('resources/views'))
+    public function test_no_animation_library_is_installed(): void
+    {
+        $composer = json_decode((string) file_get_contents(base_path('package.json')), true);
+
+        $dependencies = array_merge(
+            array_keys($composer['dependencies'] ?? []),
+            array_keys($composer['devDependencies'] ?? [])
         );
 
-        foreach ($files as $file) {
-            if (! $file->isFile() || $file->getExtension() !== 'php') {
+        $libraries = array_values(array_filter(
+            $dependencies,
+            fn (string $package): bool => in_array(
+                strtolower(strtok($package, '/')),
+                ['aos', 'gsap', 'animejs', 'motion', 'framer-motion', 'scrollmagic', 'velocity'],
+                true
+            )
+        ));
+
+        $this->assertSame(
+            [],
+            $libraries,
+            'An animation library is installed again. The motion is a keyframe animation and an '
+                .'IntersectionObserver, and a library carrying fourteen kilobytes to animate nine '
+                .'elements is the reason this file had to be rewritten.'
+        );
+    }
+
+    public function test_the_shipped_bundle_carries_no_library_markers(): void
+    {
+        $bundles = glob(public_path('build/assets/app-*.js')) ?: [];
+
+        if ($bundles === []) {
+            $this->markTestSkipped('The front end has not been built.');
+        }
+
+        foreach ($bundles as $bundle) {
+            $this->assertDoesNotMatchRegularExpression(
+                '/aos-init|aos-animate|AOS\.init/',
+                (string) file_get_contents($bundle),
+                basename($bundle).' still carries library markers. Either the import was dropped or '
+                    .'the build is stale.'
+            );
+        }
+    }
+
+    public function test_the_script_selects_every_treatment_the_stylesheet_defines(): void
+    {
+        $script = $this->script();
+
+        /*
+         | The selector is a bare attribute, not a value match.
+         |
+         | This is the assertion that would have caught the invisible headline. A
+         | script that names two of the four treatments leaves the other two
+         | matched by nothing, unrevealed, and held at zero opacity by the
+         | stylesheet that is correctly waiting for a class that never arrives.
+         */
+        $this->assertStringContainsString(
+            "querySelectorAll('[data-motion]')",
+            $script,
+            'The script does not select on the attribute alone. A value-specific selector leaves any '
+                .'treatment it does not name permanently invisible.'
+        );
+    }
+
+    public function test_an_element_is_never_hidden_unless_the_script_can_reveal_it(): void
+    {
+        $css = $this->stylesheet();
+
+        $this->assertMatchesRegularExpression(
+            '/\[data-motion\]:not\(\.is-revealed\)\s*\{[^}]*opacity:\s*0/',
+            $css,
+            'The hidden state is not scoped to :not(.is-revealed). An ungated `[data-motion] { opacity: 0 }` '
+                .'means a script that never runs leaves every marked element invisible, with nothing in the '
+                .'console to explain the blank page.'
+        );
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/\[data-motion\]\s*\{[^}]*opacity:\s*0/',
+            $css,
+            'There is an ungated [data-motion] rule setting opacity to zero.'
+        );
+    }
+
+    public function test_every_treatment_a_view_asks_for_is_defined(): void
+    {
+        $css = $this->stylesheet();
+        $unknown = [];
+
+        foreach ($this->treatmentsInUse() as $treatment) {
+            /*
+             | A treatment is either a treatment of one element, written
+             | `[data-motion="heading"] {`, or a modifier of a group, written
+             | `[data-motion="stagger"] > * {`.
+             |
+             | The first version of this only accepted the first shape, and
+             | reported `stagger` as undefined. It is defined, and it works; the
+             | check was simply looking for the wrong shape. A check that fails
+             | for a reason unrelated to what it names is worse than no check,
+             | because the fix is to the check and not to the code.
+             */
+            $shapes = [
+                '/\[data-motion=[\'"]'.preg_quote($treatment, '/').'[\'"]\]\s*\{/',
+                // A group modifier, which only ever styles the children.
+                '/\[data-motion=[\'"]'.preg_quote($treatment, '/').'[\'"]\]\s*[>+~]\s*[^{]*\{/',
+            ];
+
+            $found = false;
+
+            foreach ($shapes as $shape) {
+                if (preg_match($shape, $css) === 1) {
+                    $found = true;
+                    break;
+                }
+            }
+
+            if ($found) {
                 continue;
             }
 
-            preg_match_all(
-                '/data-aos="([a-z-]+)"/',
-                (string) file_get_contents($file->getPathname()),
-                $matches
-            );
-
-            foreach ($matches[1] as $effect) {
-                $used[$effect] = true;
-            }
+            $unknown[] = $treatment;
         }
 
-        $this->assertNotSame([], $used, 'No view asks for an animation, so this test proved nothing.');
+        $this->assertSame(
+            [],
+            $unknown,
+            'A view asks for a treatment the stylesheet does not define: '.implode(', ', $unknown)
+                .'. It will be hidden by the base rule and never revealed, because there is no keyframe '
+                .'to reveal it with.'
+        );
+    }
 
-        foreach (array_keys($used) as $effect) {
-            $this->assertMatchesRegularExpression(
-                $this->selectorFor($effect),
-                $css,
-                "A view asks for the effect `{$effect}` and there is no rule for it, so it would "
-                .'fade in with no movement, or not at all.'
+    public function test_every_treatment_a_view_asks_for_is_handled_by_the_script(): void
+    {
+        $script = $this->script();
+
+        foreach ($this->treatmentsInUse() as $treatment) {
+            $handled = $script === ''
+                ? false
+                : (str_contains($script, 'data-motion') || str_contains($script, 'dataset.motion'));
+
+            $this->assertTrue(
+                $handled,
+                "The view marks data-motion=\"{$treatment}\" and the script does not read data-motion at all."
             );
         }
     }
 
-    /**
-     * The reduced motion backstop, in the stylesheet as well as in script.
-     */
     public function test_a_reduced_motion_preference_still_ends_with_the_content_visible(): void
     {
         $css = $this->stylesheet();
 
         $this->assertMatchesRegularExpression(
-            '/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{.*?\[data-aos\]\.aos-init\s*\{[^}]*opacity:\s*1/s',
+            '/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{.*?\[data-motion[^\{]*\{[^}]*opacity:\s*1\s*!important/s',
             $css,
-            'Under a reduced motion preference the animation is not switched off, so an element that '
-            .'has been marked .aos-init stays at zero opacity.'
+            'Under reduced motion a marked element is not forced to full opacity. A reader who has asked '
+                .'for less motion gets an invisible page instead.'
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{.*?animation:\s*none\s*!important/s',
+            $css,
+            'Under reduced motion the animation is not switched off outright, so the elements are on '
+                .'screen and still moving.'
+        );
+
+        $script = $this->script();
+
+        $this->assertStringContainsString(
+            'prefers-reduced-motion',
+            $script,
+            'The script does not read the reduced motion preference, so a reader who asks for less motion '
+                .'still gets an animation.'
+        );
+
+        $this->assertStringContainsString(
+            "addEventListener('change'",
+            $script,
+            'The script reads the preference once and never listens for it changing. A reader who turns '
+                .'reduced motion on while the page is open has to reload to escape what is moving.'
         );
     }
 
-    /**
-     * An element on screen when the page loads is animated by a keyframe, not by
-     * the library's transition.
-     *
-     * This is the bug that made the whole feature look broken, and it is here
-     * because it is the kind of fault that reads as a working page. The opening
-     * band is in the viewport when the library prepares it, so `aos-init` and
-     * `aos-animate` land in the same recalculation. The browser has one computed
-     * style to draw, the final one, and no transition runs. Nothing throws,
-     * nothing logs, the band is fully visible, and it never moved. Every band
-     * below the fold animated correctly, because scrolling gives the two states
-     * a gap of several seconds to be separated.
-     *
-     * A keyframe animation has a start, an end and a length, and plays from
-     * wherever the element is when it starts, so there is no frame to miss.
-     */
-    public function test_the_opening_band_is_animated_by_a_keyframe_rather_than_a_transition(): void
+    public function test_an_element_on_screen_at_load_is_revealed_by_a_keyframe(): void
     {
         $css = $this->stylesheet();
 
-        // The keyframes, and the rule that applies them.
-        $this->assertStringContainsString(
-            '@keyframes lms-entrance',
+        $this->assertMatchesRegularExpression(
+            '/@keyframes\s+lms-reveal/',
             $css,
-            'There is no keyframe animation for an element that is on screen at load, so the '
-            .'opening band has no way to animate itself. It arrives at full opacity and never moves.'
+            'The reveal keyframes are missing.'
         );
 
         $this->assertMatchesRegularExpression(
-            '/\.entrance\s*\{[^}]*animation:\s*lms-entrance/',
+            '/\[data-motion\]\.is-revealed\s*\{[^}]*animation:\s*lms-reveal/s',
             $css,
-            'Nothing applies the entrance keyframes to the opening band.'
+            'Nothing applies the reveal keyframes to a revealed element.'
         );
 
-        // The fill mode. Without `both` the element is left wherever the last
-        // painted frame happened to be, which is a coin toss rather than a value.
         $this->assertMatchesRegularExpression(
-            '/\.entrance\s*\{[^}]*animation:[^}]*\bboth\b/',
+            '/\[data-motion\]\.is-revealed\s*\{[^}]*both/s',
             $css,
-            'The entrance does not hold its final value, so the band can be left at an intermediate opacity.'
+            'The reveal does not hold its final value, so an element can be left at an intermediate '
+                .'opacity after the animation ends.'
         );
 
-        // The resting value, so the library's hidden rule cannot win the cascade
-        // and leave the element at zero while the animation appears to do nothing.
-        $this->assertMatchesRegularExpression(
-            '/\.entrance\s*\{[^}]*opacity:\s*1/',
-            $css,
-            'An element animating itself in can still be forced to opacity 0 by the library, and the '
-            .'animation will then look like it is not working.'
-        );
-
-        // And the script has to actually mark the element, or the rule is unused.
-        $source = (string) file_get_contents(base_path('resources/js/app.js'));
+        /*
+         | A keyframe rather than a transition, and this is the whole reason the
+         | library was removed. A transition needs two painted styles to cross.
+         | An element that is on screen when the page loads is given its hidden
+         | and its revealed state in the same style recalculation, the browser
+         | has one computed style to draw, and nothing ever moves. A keyframe has
+         | a start, an end and a length, so it plays from wherever the element is.
+         */
+        $script = $this->script();
 
         $this->assertStringContainsString(
-            "classList.add('entrance')",
-            $source,
-            'Nothing marks the opening band, so the entrance keyframes are never applied to it.'
-        );
-
-        // Only what is on screen, or every band on the page would animate at load
-        // and the reader would scroll past a page that had already finished.
-        $this->assertStringContainsString(
-            'getBoundingClientRect',
-            $source,
-            'The entrance does not check whether an element is on screen, so bands below the fold would '
-            .'animate before the reader reaches them.'
+            'onScreenAtLoad',
+            $script,
+            'Nothing checks whether an element is on screen at load, so a hero heading has to wait for a '
+                .'scroll that will never come.'
         );
     }
 
-    /**
-     * The opening band is marked, and marked faster than the bands below it.
-     *
-     * Asserted on the served markup rather than the template, because a view can
-     * carry the attribute and the component can drop it, and only the response
-     * says which happened.
-     */
-    public function test_the_opening_band_carries_its_own_shorter_duration(): void
-    {
-        foreach (['home', 'about'] as $route) {
-            $html = (string) $this->get(route($route))->assertOk()->getContent();
-
-            $this->assertMatchesRegularExpression(
-                '/<section[^>]*class="band-first"[^>]*data-aos="[a-z-]+"/s',
-                $html,
-                "The opening band on the {$route} page carries no animation, so the page is completely "
-                .'still until the reader scrolls it, which is indistinguishable from an animation that '
-                .'is not working.'
-            );
-
-            $this->assertMatchesRegularExpression(
-                '/<section[^>]*data-aos-duration="(\d+)"/s',
-                $html,
-                "The opening band on the {$route} page does not ask for its own duration, so the "
-                .'attribute meant to make it arrive sooner has nothing to act on.'
-            );
-        }
-    }
-
-    /**
-     * Motion must not move a box.
-     *
-     * Every rule in the motion block changes opacity or transform. A rule that
-     * changed width, height, top or margin would reflow the page as it animates,
-     * which is the failure mode that makes scroll animation feel cheap.
-     */
     public function test_no_animation_changes_a_box(): void
     {
         $css = $this->stylesheet();
 
-        // The layout properties a scroll animation must never touch.
-        foreach (['width:', 'height:', 'top:', 'left:', 'margin', 'padding'] as $property) {
+        /*
+         | Only the keyframes are inspected, and the distinction matters.
+         |
+         | A first version of this scanned the whole motion section for a
+         | `height`, and found the two pixel underline beneath a heading link. That
+         | value is static: it is set once and never changes, and the animation
+         | acting on that element is a `transform` that scales it. The rule was
+         | reporting a correct piece of CSS as a layout thrash.
+         |
+         | What costs layout is a property that changes between two frames, which
+         | is only ever true inside `@keyframes`. Checking there asks the question
+         | that was actually meant.
+         */
+        $keyframes = $this->keyframeBlocks($css);
+
+        $this->assertNotSame(
+            '',
+            $keyframes,
+            'No @keyframes were found in the motion section, so this test is passing because it found '
+                .'nothing to check rather than because the motion is safe.'
+        );
+
+        foreach (['width', 'height', 'top', 'left', 'right', 'bottom', 'margin', 'padding', 'font-size'] as $property) {
             $this->assertDoesNotMatchRegularExpression(
-                '/\[data-aos[^\{]*\.[a-z-]+\s*\{[^}]*'.preg_quote($property, '/').'/',
-                $css,
-                "An AOS rule changes `{$property}`, so the page reflows while it animates."
+                '/(^|[{;\s])'.$property.':/i',
+                $keyframes,
+                "An animation changes `{$property}`, so the page reflows while it animates. Only opacity "
+                    .'and transform are safe here, because neither needs the layout the others need.'
             );
         }
+    }
+
+    public function test_no_animation_promotes_a_layer_permanently(): void
+    {
+        $css = $this->stylesheet();
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/\[data-motion[^\{]*\{[^}]*will-change/s',
+            $css,
+            'A marked element is permanently promoted to its own compositor layer. Nine large layers held '
+                .'for the whole visit is memory the rest of the page does not get, and the cost is paid '
+                .'whether or not anything ever animates.'
+        );
+    }
+
+    public function test_the_heading_and_box_treatments_carry_their_own_movement(): void
+    {
+        $css = $this->stylesheet();
+
+        $this->assertMatchesRegularExpression(
+            '/@keyframes\s+lms-heading-in/',
+            $css,
+            'Headings have no keyframe of their own, so a heading animates as a generic box.'
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/@keyframes\s+lms-box-in/',
+            $css,
+            'Boxes have no keyframe of their own, so a card arrives as a generic block.'
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/\[data-motion=[\'"]heading[\'"]\]\.is-revealed\s*\{[^}]*animation-name:\s*lms-heading-in/s',
+            $css,
+            'The heading treatment does not name the heading keyframes.'
+        );
+
+        /*
+         | A heading moves in `em`, so the travel scales with the size it is set
+         | at. A heading animating fourteen pixels reads as a paragraph that
+         | moved, because a headline is much larger than fourteen pixels of travel.
+         |
+         | The closing bracket is in the pattern. Leaving it out makes the
+         | expression expect whitespace where the `]` is, which never matches, and
+         | the assertion then fails for a reason that has nothing to do with the
+         | thing it claims to check. A test that cannot fail for the right reason
+         | is worse than no test, because it is a test that always fails.
+         */
+        $this->assertMatchesRegularExpression(
+            '/\[data-motion=[\'"]heading[\'"]\]\s*\{[^}]*--motion-travel:\s*[\d.]+em/s',
+            $css,
+            "The heading treatment's travel is not expressed in em, so it does not scale with the heading size."
+        );
+    }
+
+    public function test_the_hero_heading_is_marked_and_the_home_page_uses_the_new_attribute(): void
+    {
+        foreach (['home', 'about'] as $page) {
+            $markup = (string) file_get_contents(resource_path("views/public/{$page}.blade.php"));
+
+            $this->assertStringContainsString(
+                'data-motion="heading"',
+                $markup,
+                "The {$page} page has no heading reveal, so the one thing a reader sees first arrives "
+                    .'without moving.'
+            );
+
+            $this->assertDoesNotMatchRegularExpression(
+                '/data-aos/',
+                $markup,
+                "The {$page} page still marks motion with the removed library's attribute."
+            );
+        }
+    }
+
+    /**
+     * The motion section of the stylesheet, so a layout property elsewhere in the
+     * file is not mistaken for one in the animation rules.
+     */
+    private function motionBlock(string $css): string
+    {
+        $start = strpos($css, '[data-motion]:not(.is-revealed)');
+
+        if ($start === false) {
+            return '';
+        }
+
+        /*
+         | The block runs to the reduced motion query, which is the last thing in
+         | the section. Taking everything up to that point is the honest span;
+         | guessing a line count breaks the moment a rule is added.
+         */
+        $end = strpos($css, '@media (prefers-reduced-motion: reduce)', $start);
+        $end = $end === false ? strlen($css) : $end;
+
+        return substr($css, $start, $end - $start);
+    }
+
+    /**
+     * The bodies of every keyframe in the motion section, concatenated.
+     *
+     * A property only costs layout if it differs between two frames, which can
+     * only happen here. A static `height` on a pseudo-element that is animated by
+     * a transform is not a thrash and must not be reported as one.
+     */
+    private function keyframeBlocks(string $css): string
+    {
+        if (preg_match_all('/@keyframes\s+[\w-]+\s*\{(.*?)\n\s*\}/s', $this->motionBlock($css), $matches) === 0) {
+            return '';
+        }
+
+        return implode("\n", $matches[1]);
     }
 }

@@ -32,7 +32,10 @@
             <p class="eyebrow">{{ $eyebrow }}</p>
         @endif
 
-        <{{ $heading }} class="mt-2 text-3xl font-[650] tracking-tight text-balance text-ink sm:text-4xl">
+        <{{ $heading }}
+            class="page-title mt-2"
+            data-motion="heading"
+        >
             {{ $title }}
         </{{ $heading }}>
 

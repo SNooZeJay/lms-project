@@ -26,31 +26,73 @@
              every number comes from the one report service, so a figure can
              never disagree with itself across pages. --}}
         <section class="mt-8" aria-labelledby="student-summary-heading">
-            <h2 id="student-summary-heading" class="sr-only">Your totals</h2>
+            <h2 id="student-summary-heading" class="section-label">Your totals</h2>
 
-            {{-- The label on every tile names exactly what is counted, in plain
-                 words. "Courses enrolled" would need a second reading to know
-                 whose courses and which state, so each label says so.
+            {{-- Six identical tiles give every figure the same weight, which means
+                 the one a learner most wants is the one most likely to be missed.
+                 Overall progress is the question the page exists to answer, so it
+                 is the only figure allowed to be large. The other five sit
+                 beneath it in a tight grid as context rather than competition.
 
-                 Six tiles, not ten. A learner's own progress is a short list, and
-                 a tile that repeats another is the first thing to cut.
+                 A two up grid on a phone, because a learner on a phone is usually
+                 on the way to a lesson rather than reading a report, and one
+                 column of five numbers would push the lesson below two screens.
 
-                 Two of the previous four were replaced rather than added to.
-                 "Courses enrolled" is now the sum of "in progress" and
-                 "completed", so keeping it would show the same number twice in a
-                 different place. "Quizzes passed" gave way to "quizzes pending",
-                 because a learner can act on the second one this week and only
-                 look back at the first. --}}
-            <dl role="list" class="figures-row">
-                <x-stat label="Overall progress" :value="$stats['average_progress'].'%'" tone="primary"
-                        hint="Average across your courses" />
-                <x-stat label="Courses in progress" :value="$stats['courses_in_progress']" tone="primary" />
-                <x-stat label="Courses completed" :value="$stats['courses_completed']" tone="accent" />
-                <x-stat label="Lessons completed" :value="$stats['lessons_completed']" tone="primary" />
-                <x-stat label="Quizzes pending" :value="$stats['quizzes_pending']" tone="primary"
-                        hint="In your enrolled courses" />
-                <x-stat label="Certificates earned" :value="$stats['certificates_earned']" tone="accent" />
-            </dl>
+                 Every label still names exactly what is counted, in words. The
+                 six figures are the same six the page showed before. --}}
+            <div class="mt-3 grid gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-5" data-motion="stagger">
+                <div class="stat-featured" data-motion="box">
+                    <div class="flex items-center gap-5">
+                        {{-- The ring is an SVG rather than a conic gradient, because
+                             the value has to reach it and this application ships a
+                             content security policy of style-src self, which blocks
+                             a style attribute. An SVG attribute is not CSS, so the
+                             policy does not apply to it. Weakening the policy for
+                             the sake of a decoration would be the wrong direction.
+
+                             The circumference is 100 and the dash offset is what
+                             remains, so the ring and the printed number are written
+                             once and cannot disagree. --}}
+                        <div class="progress-ring" role="img"
+                             aria-label="{{ (int) $stats['average_progress'] }} percent of your courses complete">
+                            <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+                                <circle class="progress-ring-track" cx="50" cy="50" r="45"></circle>
+                                <circle class="progress-ring-fill" cx="50" cy="50" r="45"
+                                        stroke-dasharray="100"
+                                        stroke-dashoffset="{{ 100 - (float) $stats['average_progress'] }}"></circle>
+                            </svg>
+                            <span class="progress-ring-label">{{ (int) $stats['average_progress'] }}%</span>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm leading-5 font-semibold text-ink">Overall progress</p>
+                            <p class="mt-1 text-sm leading-5 text-ink-muted">Average across your courses</p>
+                        </div>
+                    </div>
+                </div>
+
+                <dl role="list" class="figures-grid lg:col-span-2">
+                    <div class="stat-compact" data-motion="box">
+                        <dt class="text-sm leading-5 text-ink-muted">Courses in progress</dt>
+                        <dd class="stat-compact-value">{{ $stats['courses_in_progress'] }}</dd>
+                    </div>
+                    <div class="stat-compact" data-motion="box">
+                        <dt class="text-sm leading-5 text-ink-muted">Courses completed</dt>
+                        <dd class="stat-compact-value">{{ $stats['courses_completed'] }}</dd>
+                    </div>
+                    <div class="stat-compact" data-motion="box">
+                        <dt class="text-sm leading-5 text-ink-muted">Lessons completed</dt>
+                        <dd class="stat-compact-value">{{ $stats['lessons_completed'] }}</dd>
+                    </div>
+                    <div class="stat-compact" data-motion="box">
+                        <dt class="text-sm leading-5 text-ink-muted">Quizzes pending</dt>
+                        <dd class="stat-compact-value">{{ $stats['quizzes_pending'] }}</dd>
+                    </div>
+                    <div class="stat-compact" data-motion="box">
+                        <dt class="text-sm leading-5 text-ink-muted">Certificates earned</dt>
+                        <dd class="stat-compact-value">{{ $stats['certificates_earned'] }}</dd>
+                    </div>
+                </dl>
+            </div>
         </section>
 
         <div class="mt-8 grid items-start gap-6 lg:grid-cols-3">

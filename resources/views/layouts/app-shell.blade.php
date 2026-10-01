@@ -246,5 +246,9 @@
     {{-- Page scripts. A view that pushes here is rendered only if the stack
          exists, so the placeholder is required, not optional. --}}
     @stack('scripts')
+
+<x-toast-region />
+
+
 </body>
 </html>

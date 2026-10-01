@@ -101,16 +101,17 @@
         <section
             class="band-first"
             aria-labelledby="about-heading"
-            data-aos="fade-up"
-            data-aos-duration="420"
+            data-motion="on-scroll"
         >
             <div class="grid items-start gap-10 lg:grid-cols-12 lg:gap-12">
                 <div class="lg:col-span-7">
-                    <p class="eyebrow">About</p>
+                    <p class="eyebrow" data-motion="heading">About</p>
 
                     <h1
                         id="about-heading"
                         class="mt-3 max-w-3xl text-4xl leading-[1.12] font-[650] tracking-tight text-balance text-ink sm:text-5xl"
+                        data-motion="heading"
+                        data-motion-delay="80ms"
                     >
                         A place to learn Information Technology properly.
                     </h1>
@@ -168,7 +169,7 @@
             id="anatomy-heading"
             title="How a course is put together"
             description="Three levels, each one inside the last. It is worth knowing, because a course that arrives in pieces is easier to finish than one that arrives all at once."
-            data-aos="fade-up"
+            data-motion="on-scroll"
         >
             <ul role="list" class="mt-8 grid gap-5 sm:grid-cols-3">
                 @foreach ($anatomy as $part)
@@ -189,7 +190,7 @@
             id="learning-heading"
             title="What you can do as a student"
             description="Six things, in the order you would do them."
-            data-aos="fade-up"
+            data-motion="on-scroll"
         >
             <ol role="list" class="mt-8 grid gap-x-12 gap-y-8 sm:grid-cols-2">
                 @foreach ($learning as $index => $item)
@@ -214,7 +215,7 @@
             id="teaching-heading"
             title="What you can do as an instructor"
             description="You write the course, arrange it, decide what a student has to pass, and publish it when it is ready."
-            data-aos="fade-up"
+            data-motion="on-scroll"
         >
             <x-slot:action>
                 @if (auth()->user()?->profile?->role === \App\Enums\UserRole::Instructor)
@@ -247,7 +248,7 @@
             id="rules-heading"
             title="How a course is finished"
             description="Four conditions. They are worth knowing in advance, because they are what decides whether a certificate is issued, and they are the first thing to check when a course will not complete."
-            data-aos="fade-up"
+            data-motion="on-scroll"
         >
             <ol role="list" class="steps mt-10">
                 @foreach ($rules as $index => $rule)
@@ -263,7 +264,7 @@
         </x-home.section>
 
         {{-- The finish, in the same flat language as everything else. --}}
-        <section class="band-last" aria-labelledby="about-closing-heading" data-aos="fade-up">
+        <section class="band-last" aria-labelledby="about-closing-heading" data-motion="on-scroll">
             <div class="panel-call">
                 <div class="grid items-center gap-8 lg:grid-cols-12 lg:gap-10">
                     <div class="lg:col-span-7">

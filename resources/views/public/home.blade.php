@@ -121,14 +121,15 @@
         <section
             class="band-first"
             aria-labelledby="home-heading"
-            data-aos="fade-up"
-            data-aos-duration="420"
+            data-motion="on-scroll"
         >
-            <p class="eyebrow">Information Technology learning</p>
+            <p class="eyebrow" data-motion="heading" data-motion-delay="0ms">Information Technology learning</p>
 
             <h1
                 id="home-heading"
                 class="mt-4 max-w-4xl text-4xl leading-[1.08] font-[650] tracking-tight text-balance text-ink sm:text-5xl lg:text-[3.5rem]"
+                data-motion="heading"
+                data-motion-delay="80ms"
             >
                 Learn IT by building the skills the work asks for.
             </h1>
@@ -180,7 +181,7 @@
                 id="free-heading"
                 title="Start without paying"
                 description="These courses are open to anyone who enrolls, and no payment is involved at any point."
-                data-aos="fade-up"
+                data-motion="on-scroll"
             >
                 <x-slot:action>
                     <x-btn :href="route('courses.index', ['course_type' => 'free'])" variant="quiet" size="sm">
@@ -203,7 +204,7 @@
                 id="paid-heading"
                 title="Longer courses, once paid"
                 description="More lessons and a practical project at the end. You pay once, and the course opens as soon as the payment is confirmed."
-                data-aos="fade-up"
+                data-motion="on-scroll"
             >
                 <x-slot:action>
                     <x-btn :href="route('courses.index', ['course_type' => 'paid'])" variant="quiet" size="sm">
@@ -254,7 +255,7 @@
             id="capabilities-heading"
             title="What a student can do"
             description="Six things, each of them a screen in the application, in the order the platform does them to you."
-            data-aos="fade-up"
+            data-motion="on-scroll"
         >
             <ol role="list" class="mt-8 grid gap-x-12 gap-y-8 sm:grid-cols-2">
                 @foreach ($capabilities as $index => $item)
@@ -281,7 +282,7 @@
             id="how-heading"
             title="From a course to a certificate"
             description="Three steps, and the whole of it."
-            data-aos="fade-up"
+            data-motion="on-scroll"
         >
             <ol role="list" class="steps mt-10">
                 @foreach ($steps as $index => $item)
@@ -320,7 +321,7 @@
             id="teaching-heading"
             title="If you teach here"
             description="An instructor writes the course, arranges it, decides what has to be passed, and publishes it when it is ready."
-            data-aos="fade-up"
+            data-motion="on-scroll"
         >
             <x-slot:action>
                 @if (auth()->user()?->profile?->role === \App\Enums\UserRole::Instructor)
@@ -358,7 +359,7 @@
             this page. The heading is in the primary colour, which is enough to
             mark it as a conclusion without changing the surface underneath it.
         --}}
-        <section class="band-last" aria-labelledby="closing-heading" data-aos="fade-up">
+        <section class="band-last" aria-labelledby="closing-heading" data-motion="on-scroll">
             <div class="panel-call">
                 <div class="grid items-center gap-8 lg:grid-cols-12 lg:gap-10">
                     <div class="lg:col-span-7">
