@@ -168,9 +168,21 @@ class EnrollmentController extends Controller
         $enrollment = $this->grantingEnrollment($request, $course);
         $progress = $recordActivity->handle($request->user(), $enrollment, $lesson);
 
+        /*
+         | This student's own submissions are loaded with the work itself, and
+         | scoped in the query rather than found afterwards.
+         |
+         | Two reasons. It is one query instead of one per assignment, and a view
+         | that asks "is this mine?" by looking through a list of everyone's
+         | submissions would have every student's work in the page's memory to
+         | answer a question about one of them.
+         */
         $lesson->load([
             'module',
             'learningMaterials' => fn ($query) => $query->orderBy('position'),
+            'publishedAssignments' => fn ($query) => $query
+                ->with(['submissions' => fn ($submissions) => $submissions
+                    ->where('student_id', $request->user()->id)]),
         ]);
 
         return view('student.lessons.show', [

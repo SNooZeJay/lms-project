@@ -10,6 +10,7 @@ use App\Actions\Courses\UpdateCourse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Courses\CreateCourseRequest;
 use App\Http\Requests\Courses\UpdateCourseRequest;
+use App\Models\AssignmentSubmission;
 use App\Models\Course;
 use App\Services\Reporting\OperationsReport;
 use Illuminate\Contracts\View\View;
@@ -56,10 +57,28 @@ class CourseController extends Controller
     {
         Gate::authorize('view', $course);
 
+        /*
+         | Work set against the lessons, and the count of what is still waiting.
+         |
+         | Loaded on the outline rather than fetched when a page needs it, because
+         | the outline is where an instructor sets work, and a page that renders
+         | the whole course tree and then asks the database a second time for the
+         | same tree is slower for no reason.
+         |
+         | The pending count is computed here instead of in the view. A count
+         | inside Blade is a query inside a template, which is unseeable, and this
+         | is the number an instructor opens the course to read.
+         */
         $course->load([
             'modules' => fn ($query) => $query->orderBy('position'),
             'modules.lessons' => fn ($query) => $query->orderBy('position'),
             'modules.lessons.learningMaterials' => fn ($query) => $query->orderBy('position'),
+            'modules.lessons.assignments' => fn ($query) => $query
+                ->withCount([
+                    'submissions as pending_submissions_count' => fn ($submissions) => $submissions
+                        ->where('status', AssignmentSubmission::PENDING),
+                ])
+                ->orderByDesc('created_at'),
         ]);
 
         return view('instructor.courses.show', [

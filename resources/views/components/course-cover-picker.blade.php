@@ -243,7 +243,22 @@
 </section>
 
 @push('scripts')
-    <script>
+    {{--
+         The nonce is not optional and its absence was invisible.
+         |
+         | The content security policy publishes a per-request nonce precisely so a
+         | script can live in a template instead of in a bundle, and this script was
+         | pushed without one. The policy did the right thing and blocked it, which
+         | means the cover preview — the thing that lets an instructor check a
+         | photograph before uploading 2 MB of it — has never run. There was no
+         | visible failure: the page looked right, the form worked, and the preview
+         | area simply never appeared.
+         |
+         | A blocked script is the quietest kind of broken feature, because nothing
+         | errors and nothing looks missing. It is caught here by the script
+         | inventory in ProductionReadinessTest rather than by looking at the page.
+         --}}
+    <script nonce="{{ $cspNonce ?? '' }}">
         /*
          | Previewing the chosen file before the form is submitted.
          |

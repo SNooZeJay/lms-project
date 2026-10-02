@@ -15,6 +15,7 @@
     'emptyLabel' => null,
     'fieldClass' => '',
     'scope' => null,
+    'accept' => null,
 ])
 
 @php
@@ -92,6 +93,11 @@
             aria-invalid="{{ $errors->has($name) ? 'true' : 'false' }}"
             @if ($describedBy) aria-describedby="{{ implode(' ', $describedBy) }}" @endif
             @if (! in_array($type, ['checkbox', 'radio', 'file'], true)) value="{{ $current }}" @endif
+            {{-- `accept` narrows the picker, and is a convenience and nothing more.
+                 The server's rule is the one that decides, and it reads the bytes
+                 rather than the extension, so a file that arrives anyway is still
+                 checked. Announcing this would be noise: it restates the hint. --}}
+            @if ($accept && $type === 'file') accept="{{ $accept }}" @endif
             @if ($autocomplete) autocomplete="{{ $autocomplete }}" @endif
             @if ($placeholder) placeholder="{{ $placeholder }}" @endif
             @if ($maxlength) maxlength="{{ $maxlength }}" @endif

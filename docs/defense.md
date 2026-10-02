@@ -165,6 +165,11 @@ erDiagram
 
     LESSONS ||--o{ LEARNING_MATERIALS : attaches
     LESSONS ||--o{ LESSON_PROGRESS : tracks
+    LESSONS ||--o{ ASSIGNMENTS : sets
+
+    ASSIGNMENTS ||--o{ ASSIGNMENT_SUBMISSIONS : receives
+    USERS ||--o{ ASSIGNMENT_SUBMISSIONS : writes
+    USERS ||--o{ ASSIGNMENT_SUBMISSIONS : marks
 
     QUIZZES ||--|{ QUIZ_QUESTIONS : asks
     QUIZ_QUESTIONS ||--|{ QUIZ_OPTIONS : offers
@@ -181,7 +186,17 @@ erDiagram
     USERS ||--o{ ACTIVITY_LOGS : produces
 ```
 
-Fifteen business tables across fifteen migrations.
+Seventeen business tables across seventeen migrations.
+
+Two tables were added after this document was first written: `assignments` and
+`assignment_submissions`. Both were deferred, and the deferral was enforced by a
+test that failed if the table appeared. That test was removed deliberately: every
+quiz in this system is marked automatically, so the only way to be assessed on
+written work was a column the student could write.
+
+There is still no `grades` table, on purpose. One student's hand-in carries one
+mark, so a separate table would be a second place for that number to live, and two
+places for one fact is two places for it to disagree.
 
 Two design points worth defending out loud:
 
@@ -191,6 +206,10 @@ Two design points worth defending out loud:
   to answer "was this Student ever in this Course" in one query.
 - `quiz_options.is_correct` is the only place an answer key exists. No view
   ever reads it before submission.
+- An assignment hangs off a **lesson**, not off a course, and a submission
+  hangs off an **assignment**. A mark is a column, not a table. An instructor's
+  `created_by` is `RESTRICT` so a brief outlives the account that wrote it, and a
+  grader's `graded_by` is `SET NULL` so a mark outlives the person who typed it.
 
 ## 7. Use case diagram
 
@@ -429,9 +448,18 @@ These were exercised in a real browser, not only in tests.
 | Take a quiz | Start, answer, submit, graded on the server, 100 percent, review page shows the key |
 | Claim a certificate | Certificate shows the student name, course name, code, and a valid status |
 | Instructor outline | Add module, add lesson, add material, add quiz, reorder, archive all work |
+| Set work | Instructor sets instructions, a Google Form link, a briefing document, and a mark scale |
+| Hand in work | Student uploads a file, the page says "Submitted, waiting for checking", and the file lands on the private disk |
+| Replace a hand-in | Re-uploading replaces the file, keeps one row, and clears the previous mark |
+| Mark work | Instructor records a mark against that assignment own scale; the student sees the mark and the note |
+| Hand work back | No mark, a note is required, and the student may submit again |
+| Assignment downloads | Briefing and hand-in served as attachments with `nosniff` and `no-store`, verified byte for byte |
+| Student cannot mark | A Student posting a mark against their own work is refused with a 403 |
+| Another instructor | Refused on the queue, on the hand-in, and on the mark, for a course they do not own |
 | Administrator report | Enrollment rows with real amounts |
 | Theme toggle | Changes the theme, the label, and the stored preference, verified with a real mouse click |
 | Browser console | Empty through the whole Student flow |
+| Assignment console | 47 assertions, 0 failures, 0 console errors, 0 blocked scripts |
 | Network | No failed request through the whole Student flow |
 
 ## 14. Accessibility and quality audit
@@ -451,6 +479,29 @@ These were exercised in a real browser, not only in tests.
 
 These are the decisions worth defending, with the reason and the cost.
 
+### One row per hand-in, so re-submitting replaces
+
+A Student has one row per assignment. Uploading again replaces it.
+
+**Why.** A version history of a draft somebody meant to withdraw is not history
+worth keeping, and a queue that listed three attempts from one student would
+answer "how many people have handed this in" wrongly.
+
+**Cost.** A student cannot see what they submitted last week, and a hand-back has
+to clear the mark rather than sit beside it. Handing work back therefore puts the
+row back to `pending` and drops the old mark, so a student whose work is being
+looked at again is not still looking at the last person's number.
+
+### No percentage anywhere in the data
+
+A mark is stored as the instructor typed it. A percentage is derived at the moment
+it is read.
+
+**Why.** Storing both invites them to disagree, and nothing in the requirements
+asks for a conversion the school has not defined.
+
+**Cost.** Every read that wants a percentage divides. Three places do it, and
+there is no column to check when two of them disagree.
 ### Archive instead of delete
 
 Content is archived, never deleted.

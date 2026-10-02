@@ -7,6 +7,8 @@ use App\Contracts\LocalSecretStore;
 use App\Contracts\PayMongoClient;
 use App\Models\ActivityLog;
 use App\Models\Announcement;
+use App\Models\Assignment;
+use App\Models\AssignmentSubmission;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\Course;
@@ -18,6 +20,7 @@ use App\Models\Notification;
 use App\Models\User;
 use App\Policies\ActivityLogPolicy;
 use App\Policies\AnnouncementPolicy;
+use App\Policies\AssignmentPolicy;
 use App\Policies\ConversationPolicy;
 use App\Policies\CoursePolicy;
 use App\Policies\EnrollmentPolicy;
@@ -64,6 +67,21 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Notification::class, NotificationPolicy::class);
         Gate::policy(Conversation::class, ConversationPolicy::class);
         Gate::policy(Announcement::class, AnnouncementPolicy::class);
+
+        /*
+         | Two models, one policy.
+         |
+         | An assignment and the work handed in against it are answered by the same
+         | rules: ownership runs through the course either way, and an instructor
+         | who may set work on a course may also mark what was handed in on it. Two
+         | classes would mean two copies of one sentence that must never disagree.
+         |
+         | Registered explicitly rather than left to Laravel's convention, because
+         | every other policy here is registered explicitly and a convention that
+         | happens to work is not the same thing as a dependency that is stated.
+         */
+        Gate::policy(Assignment::class, AssignmentPolicy::class);
+        Gate::policy(AssignmentSubmission::class, AssignmentPolicy::class);
 
         $this->shareTopbarNotificationCounts();
     }

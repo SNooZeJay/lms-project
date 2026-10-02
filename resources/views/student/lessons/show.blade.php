@@ -113,6 +113,78 @@
                 @endif
             </section>
 
+            {{-- Work set on this lesson.
+
+                 Shown only when there is some. A lesson with no assignment is the
+                 common case and an empty heading would say "there is nothing here"
+                 on every page of the course, which is a claim the page cannot
+                 actually make. --}}
+            @if ($lesson->publishedAssignments->isNotEmpty())
+                <section class="mt-12" aria-labelledby="lesson-assignments-heading">
+                    <h2 id="lesson-assignments-heading" class="text-xl font-semibold text-ink">
+                        Work to hand in
+                    </h2>
+
+                    <ul class="mt-4 space-y-3">
+                        @foreach ($lesson->publishedAssignments as $assignment)
+                            @php
+                                // The relation was already scoped to this student in the
+                                // controller, so `first()` is "mine or nothing" rather
+                                // than a search through other people's work.
+                                $reading = \App\Support\StatusLabel::forAssignment($assignment->status);
+                                $mine = $assignment->submissions->first();
+                                $mineReading = $mine
+                                    ? \App\Support\StatusLabel::forSubmission($mine->status)
+                                    : null;
+                            @endphp
+
+                            <li class="card p-5">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <h3 class="font-semibold text-ink">
+                                            <a
+                                                href="{{ route('student.assignments.show', [$course, $lesson, $assignment]) }}"
+                                                class="link-quiet hover:text-ink hover:underline"
+                                            >
+                                                {{ $assignment->title }}
+                                            </a>
+                                        </h3>
+
+                                        <p class="mt-1 text-sm text-ink-muted">
+                                            {{ \Illuminate\Support\Str::limit($assignment->instructions, 140) }}
+                                        </p>
+
+                                        <div class="mt-3 flex flex-wrap items-center gap-2">
+                                            <x-badge :tone="$reading['tone']">{{ $reading['label'] }}</x-badge>
+
+                                            @if ($assignment->isMarkable())
+                                                <x-badge tone="neutral">out of {{ $assignment->max_score }}</x-badge>
+                                            @endif
+
+                                            @if ($mineReading)
+                                                <x-badge :tone="$mineReading['tone']">
+                                                    You: {{ $mineReading['label'] }}
+                                                </x-badge>
+                                            @else
+                                                <x-badge tone="neutral">You have not handed anything in</x-badge>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <x-btn
+                                        variant="primary"
+                                        size="sm"
+                                        :href="route('student.assignments.show', [$course, $lesson, $assignment])"
+                                    >
+                                        {{ $mineReading ? 'Open' : 'Hand in' }}
+                                    </x-btn>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
+            @endif
+
             {{-- Progress. The only control on the page, placed at the end where
                  a reader finishes the content. --}}
             <section class="mt-12" aria-labelledby="lesson-progress-heading">

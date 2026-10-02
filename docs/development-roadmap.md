@@ -4236,3 +4236,79 @@ confused with the configuration that describes the public address.
 - Four new test files, each of which was proved by breaking the thing it checks:
   `ContentSecurityPolicyTest`, `IconNameTest`, `PublicContentTest` and
   `ScrollAnimationTest`.
+
+## Assignments, and the deferral that was lifted
+
+### What was decided
+
+Every assessment in this system was automatic. Quizzes were marked by the
+server, and there was no way to be assessed on written work at all. A student
+could read an assignment that did not exist.
+
+The plan deferred the feature, and the deferral was enforced: a test named four
+tables it expected to stay absent and failed if a migration created one. That
+test was removed deliberately, and the reasoning is worth keeping because it is
+the part that was wrong. The reasoning was that a half built table nothing reads
+is a claim the project has moved on. It is true, and it was also the reason the
+project could not move on, because lifting the deferral required first rewriting
+the test that enforced it.
+
+### Input
+
+An instructor needs to ask for work in whatever shape they already have it:
+typed instructions, a longer document, or a Google Form. A student needs to hand
+in a file and needs to be told what happens next. An instructor needs to read it
+and give a mark in their own scale, or hand it back with a reason.
+
+### Process
+
+1. `assignments` holds the brief: instructions, an optional Google Form link, an
+   optional briefing document, an optional mark scale, and a status of draft,
+   published or closed.
+2. `assignment_submissions` holds one row per student per assignment: a file on
+   the private disk under a generated name, and a state of pending, graded or
+   returned.
+3. The mark is a column on the submission. There is no grades table, because one
+   hand-in carries one mark and two places to hold a number is two places for it
+   to be wrong.
+4. Ownership runs through lesson, module and course rather than being stored on
+   the assignment, so it cannot disagree with who owns the course.
+
+### Output
+
+- An instructor sets work from a lesson on the course outline, and the outline
+  says how much of it is waiting and which brief has no mark scale yet.
+- A student sees the work on the lesson, sees what it is marked out of before
+  handing in, and after handing in reads "Submitted, waiting for checking".
+- Re-uploading replaces the file, keeps one row, and clears the previous mark.
+- An instructor works a queue of what is waiting, oldest first, with the brief
+  above the work, and records a mark or hands the work back with a required note.
+- Every file leaves through one controller, as an attachment, with `nosniff` and
+  `no-store`, and the download name is the servers rather than the students.
+
+### Four faults found while doing it
+
+1. An inline script in the course cover picker had no nonce, so the content
+   security policy blocked it on every course page. The cover preview has
+   therefore never worked, and nothing said so: the page rendered, the form
+   worked, and the preview simply never appeared. A blocked script is the
+   quietest kind of broken feature. `InlineScriptNonceTest` now reads every
+   template and fails on any inline script without a nonce.
+2. `Rule::regex` does not exist, so the Google Form check threw a
+   `BadMethodCallException` the first time anybody submitted the form rather than
+   when the file was read.
+3. One policy class is registered for two models, so a `view` method typed to
+   `Assignment` was also reached with a `Submission`. That is a `TypeError` and a
+   500, not a 403: a rule refusing a request has to be a refusal and not a
+   server fault.
+4. `form_url` and `briefing` were made to require one another, so an instructor
+   could not set work they had already described in prose.
+
+### What the gate says
+
+- 1860 tests, 8291 assertions, up from 1849. Pint clean. 120 routes. Two tables
+  and two migrations added.
+- 49 tests over the feature, including reachability from the lesson and from the
+  course outline, because a feature nothing links to is a feature nobody finds.
+- 47 assertions driven through a real browser: hand in, replace, mark, hand back,
+  two downloads read byte for byte, and three refusal cases. 0 console errors.

@@ -27,5 +27,16 @@ class DatabaseSeeder extends Seeder
          | half made profile.
          */
         $this->call(DemoAccountsSeeder::class);
+
+        /*
+         | Work set against a lesson, and the work handed in against it.
+         |
+         | Last, because it needs a published course with enrolled students, and
+         | both of those come from the two seeders above. What it adds is the four
+         | states a marking queue can be in — waiting, marked, and handed back,
+         | plus a brief with no mark scale at all — because a demonstration that
+         | only shows the happy path shows less than the application does.
+         */
+        $this->call(AssignmentDemoSeeder::class);
     }
 }

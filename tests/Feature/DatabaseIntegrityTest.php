@@ -110,19 +110,83 @@ class DatabaseIntegrityTest extends TestCase
     }
 
     /**
-     * The tables the plan defers must not exist yet.
+     * The plan's deferral of assignments, and what replaced it.
      *
-     * Assignments, submissions and grades are named in the plan as future work and
-     * are not built. Asserting their absence is how a scope decision stays a
-     * decision: a half built assignment table that nothing reads is a claim the
-     * project has moved on, and the only thing that catches it is a test saying the
-     * table is not here.
+     * THIS TEST USED TO ASSERT THAT THESE TABLES DID NOT EXIST. It named four
+     * tables it expected to stay absent, on the grounds that "a half built
+     * assignment table that nothing reads is a claim the project has moved on".
+     *
+     * That reasoning was sound and it was also the reason the project could not
+     * move on. Every quiz in this application is marked automatically, so the only
+     * way to be assessed on written work was a column the student could write. The
+     * deferral was not protecting a decision, it was preventing the feature, and
+     * the test made lifting it impossible without first rewriting the test — which
+     * is a guard against drift that has become a guard against the work.
+     *
+     * The decision has been taken and the work is built, so this now asserts what
+     * is true and checks it against the database rather than against this file.
+     *
+     * Part of the original deferral still stands. A mark is a column on a
+     * submission, not a table: one student's hand-in carries one mark, so a
+     * separate `grades` table would be a second place for the same fact to live
+     * and a way for the two to disagree.
      */
-    public function test_the_tables_the_plan_defers_have_not_been_built(): void
+    public function test_the_tables_the_plan_deferred_are_built_or_still_absent(): void
     {
-        foreach (['assignments', 'submissions', 'grades', 'assignment_submissions'] as $table) {
-            $this->assertFalse(Schema::hasTable($table), $table.' exists, and the plan defers it. Building it is a scope decision, not a stray migration.');
+        // Built. The deferral was lifted and these carry real data.
+        foreach (['assignments', 'assignment_submissions'] as $table) {
+            $this->assertTrue(Schema::hasTable($table), $table.' is built, and its relationships are asserted in the test below.');
         }
+
+        // Still deferred, and still for the reason given above.
+        $this->assertFalse(
+            Schema::hasTable('grades'),
+            'grades exists. A mark is a column on a submission, not a table, and two places to hold one number is two places for it to be wrong.'
+        );
+    }
+
+    /**
+     * The new chain, asserted against the database like every other one.
+     *
+     * Read out of information_schema for the same reason as the chain above: a
+     * relationship the models declare and the table does not have is exactly the
+     * fault this file exists to catch, and a migration written and then half
+     * reverted looks fine in a diff and wrong here.
+     */
+    public function test_the_assignment_chain_is_the_one_the_migration_draws(): void
+    {
+        // An assignment hangs off a lesson, not off a course.
+        $this->assertSame('lessons', $this->foreignTarget('assignments', 'lesson_id'), 'An assignment must point at a lesson.');
+
+        // Whoever set it is restricted rather than cascaded: a brief belongs to the
+        // school, not to one person's account, and losing it because an instructor
+        // left would be a bad trade.
+        $this->assertSame('users', $this->foreignTarget('assignments', 'created_by'), 'An assignment must point at the instructor who set it.');
+        $this->assertSame(
+            'RESTRICT',
+            $this->foreignDeleteRule('assignments', 'created_by'),
+            'An assignment must survive the removal of its author.'
+        );
+
+        $this->assertSame('assignments', $this->foreignTarget('assignment_submissions', 'assignment_id'), 'A hand-in must point at an assignment.');
+        $this->assertSame('users', $this->foreignTarget('assignment_submissions', 'student_id'), 'A hand-in must point at the student who wrote it.');
+
+        // Who marked it is nulled, not cascaded: the mark is the record of a
+        // student's work and outlives the staff account that happened to grade it.
+        $this->assertSame('users', $this->foreignTarget('assignment_submissions', 'graded_by'), 'A hand-in must point at the instructor who marked it.');
+        $this->assertSame(
+            'SET NULL',
+            $this->foreignDeleteRule('assignment_submissions', 'graded_by'),
+            'Removing the grader account must not remove the student record that grader wrote a mark on.'
+        );
+
+        // One hand-in per student per assignment, enforced by the database rather
+        // than hoped for by a query.
+        $this->assertSame(
+            ['assignment_id', 'student_id'],
+            $this->uniqueColumns('assignment_submissions', 'assignment_submissions_assignment_id_student_id_unique'),
+            'A student must have one row per assignment, so a re-submission replaces rather than accumulates.'
+        );
     }
 
     /* ============================================== the rules the database does hold */
@@ -517,6 +581,55 @@ class DatabaseIntegrityTest extends TestCase
         );
 
         return $row?->target;
+    }
+
+    /**
+     * What happens to a row when the one it points at is deleted.
+     *
+     * Asked of the server rather than read out of the migration, because the whole
+     * point of these two rules is that they are enforced. A migration saying
+     * `nullOnDelete()` and a database saying `RESTRICT` are different claims, and
+     * only one of them is true.
+     */
+    private function foreignDeleteRule(string $table, string $column): ?string
+    {
+        $row = DB::selectOne(
+            'select delete_rule as rule
+               from information_schema.referential_constraints
+              where constraint_schema = database()
+                and table_name = ?
+                and referenced_table_name is not null
+                and constraint_name = (
+                      select constraint_name
+                        from information_schema.key_column_usage
+                       where table_schema = database() and table_name = ? and column_name = ?
+                    )',
+            [$table, $table, $column],
+        );
+
+        return $row?->rule;
+    }
+
+    /**
+     * The columns a named unique index actually covers, in index order.
+     *
+     * `index_columns` rather than `columns`, because a unique index on
+     * (assignment_id, student_id) does not also forbid duplicates on
+     * (student_id, assignment_id), and reading the order out of the definition
+     * rather than out of the usage list is what makes the assertion mean the thing
+     * it says.
+     */
+    private function uniqueColumns(string $table, string $index): array
+    {
+        $rows = DB::select(
+            'select column_name as name
+               from information_schema.statistics
+              where table_schema = database() and table_name = ? and index_name = ?
+              order by seq_in_index',
+            [$table, $index],
+        );
+
+        return array_map(fn ($row): string => (string) $row->name, $rows);
     }
 
     /**

@@ -120,6 +120,52 @@ class StatusLabel
     }
 
     /**
+     * How a hand-in reads.
+     *
+     * A separate method, and the reason is a collision that already exists in the
+     * data. `pending` is a payment state as well as a submission state, and
+     * `for()` is keyed on the value alone, so one of the two sentences cannot come
+     * from there. A hand-in that is waiting for a lecturer is not "pending": that
+     * student has finished their part and is waiting, and the interface says
+     * exactly that rather than naming the column.
+     *
+     * @return array{tone: string, label: string}
+     */
+    public static function forSubmission(mixed $status): array
+    {
+        $value = $status instanceof BackedEnum ? $status->value : (string) $status;
+
+        return match ($value) {
+            'pending' => ['tone' => 'warning', 'label' => 'Submitted, waiting for checking'],
+            'graded' => ['tone' => 'success', 'label' => 'Checked and scored'],
+            'returned' => ['tone' => 'warning', 'label' => 'Handed back to be redone'],
+            default => self::for($status),
+        };
+    }
+
+    /**
+     * How an assignment reads.
+     *
+     * `closed` here does not mean the brief was withdrawn. The question is still
+     * readable and the answers already written against it are still marked, but
+     * nothing new will be accepted. That is three ideas, and the single word
+     * "Closed" carries none of them.
+     *
+     * @return array{tone: string, label: string}
+     */
+    public static function forAssignment(mixed $status): array
+    {
+        $value = $status instanceof BackedEnum ? $status->value : (string) $status;
+
+        return match ($value) {
+            'published' => ['tone' => 'success', 'label' => 'Open for submissions'],
+            'closed' => ['tone' => 'neutral', 'label' => 'Closed to new submissions'],
+            'draft' => ['tone' => 'neutral', 'label' => 'Draft, not visible to students'],
+            default => self::for($status),
+        };
+    }
+
+    /**
      * The tone only, for a place that already prints its own sentence.
      */
     public static function tone(mixed $status): string

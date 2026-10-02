@@ -252,6 +252,62 @@
                         @else
                             <p class="mt-4 text-sm text-ink-muted">No Learning Materials are recorded yet.</p>
                         @endif
+                        {{-- Work set against this lesson.
+
+                             Listed only when there is some, and the "set work" link is
+                             always there, because the first piece of work on a lesson is
+                             the one with nothing next to it. --}}
+                        @if ($lesson->assignments->isNotEmpty())
+                            <div class="mt-4">
+                                <p class="text-xs font-semibold uppercase tracking-wider text-ink-subtle">
+                                    Work set
+                                </p>
+
+                                <ul role="list" class="mt-2 grid gap-2 sm:grid-cols-2">
+                                    @foreach ($lesson->assignments as $assignment)
+                                        @php
+                                            $reading = \App\Support\StatusLabel::forAssignment($assignment->status);
+                                            $pending = (int) $assignment->pending_submissions_count;
+                                        @endphp
+
+                                        <li class="rounded-md border border-line bg-surface-muted px-3 py-3 text-sm">
+                                            <p class="font-medium text-ink">{{ $assignment->title }}</p>
+
+                                            <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                                                <x-badge :tone="$reading['tone']">{{ $reading['label'] }}</x-badge>
+
+                                                @if ($assignment->isMarkable())
+                                                    <x-badge tone="neutral">out of {{ $assignment->max_score }}</x-badge>
+                                                @else
+                                                    <x-badge tone="warning">no mark scale yet</x-badge>
+                                                @endif
+
+                                                @if ($pending > 0)
+                                                    <x-badge tone="info">{{ $pending }} waiting</x-badge>
+                                                @endif
+                                            </div>
+
+                                            <x-btn
+                                                :href="route('instructor.courses.assignments.show', [$course, $assignment])"
+                                                variant="secondary"
+                                                size="sm"
+                                                class="mt-2"
+                                            >Open and mark</x-btn>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        <div class="mt-4">
+                            <x-btn
+                                :href="route('instructor.courses.assignments.create', [$course, $lesson])"
+                                variant="secondary"
+                                size="sm"
+                            >
+                                Set an assignment on this lesson
+                            </x-btn>
+                        </div>
 
                         @php $materialFailed = old('form_context') === 'material:'.$lesson->id; @endphp
                         {{-- A rejected material form reopens with its typed text.

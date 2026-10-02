@@ -64,6 +64,8 @@ lms-project/
 │   │   │   ├── SetCourseCover.php
 │   │   │   └── Curriculum/
 │   │   │   │   ├── CreateLearningMaterial.php
+│   │   │   │   ├── Create├── Assignment.php
+│   │   │   │   ├── Create└── AssignmentSubmission.php
 │   │   │   │   ├── CreateLesson.php
 │   │   │   │   ├── CreateModule.php
 │   │   │   │   ├── UpdateLearningMaterial.php
@@ -152,6 +154,7 @@ lms-project/
 │   │   ├── Controllers/
 │   │   │   ├── Account/
 │   │   │   │   ├── PasswordController.php
+│   │   │   │   ├── Password└── AssignmentFileController.php
 │   │   │   │   └── ProfileController.php
 │   │   │   ├── AnnouncementController.php
 │   │   │   ├── Admin/
@@ -167,6 +170,8 @@ lms-project/
 │   │   │   │   ├── CourseController.php
 │   │   │   │   ├── CourseCoverController.php
 │   │   │   │   ├── CurriculumController.php
+│   │   │   │   ├── ├── AssignmentController.php
+│   │   │   │   ├── └── SubmissionController.php
 │   │   │   │   └── QuizController.php
 │   │   │   ├── MaterialDownloadController.php
 │   │   │   ├── Notification/
@@ -183,6 +188,7 @@ lms-project/
 │   │   │   │   └── StudentController.php
 │   │   │   ├── Student/
 │   │   │   │   ├── EnrollmentController.php
+│   │   │   │   ├── └── AssignmentController.php
 │   │   │   │   ├── CertificateController.php
 │   │   │   │   ├── PaymentController.php
 │   │   │   │   └── QuizController.php
@@ -222,6 +228,9 @@ lms-project/
 │   │   │   │   ├── UpdateCourseCoverRequest.php
 │   │   │   │   ├── ReorderLessonsRequest.php
 │   │   │   │   └── ReorderModulesRequest.php
+│   │   │   │   ├── Instructor/
+│   │   │   │   └── ├── GradeSubmissionRequest.php
+│   │   │   │   └── └── StoreAssignmentRequest.php
 │   │   │   ├── Messaging/
 │   │   │   │   └── PostMessageRequest.php
 │   │   │   └── Quizzes/
@@ -233,6 +242,8 @@ lms-project/
 │   │   │   ├── RoleBasedLoginResponse.php
 │   │   │   └── SafePasswordResetLinkResponse.php
 │   │   │   └── VerifyEmailResponse.php
+│   │   │   │   └── Student/
+│   │   │   │   └── └── SubmitAssignmentRequest.php
 │   ├── Models/
 │   │   ├── User.php
 │   │   ├── Profile.php
@@ -267,6 +278,7 @@ lms-project/
 │   │   ├── LearningMaterialPolicy.php
 │   │   ├── NotificationPolicy.php
 │   │   ├── AnnouncementPolicy.php
+│   │   ├── └── AssignmentPolicy.php
 │   │   ├── ConversationPolicy.php
 │   │   ├── QuizPolicy.php
 │   │   ├── CertificatePolicy.php
@@ -292,6 +304,8 @@ lms-project/
 │   │   └── Storage/
 │   │   │   ├── CourseCoverStorage.php
 │   │   │   └── LearningMaterialStorage.php
+│   │   │   ├── Assignments/
+│   │   │   └── └── AssignmentService.php
 │   └── Support/
 │   │   ├── CourseCoverCatalog.php
 │   │   ├── CoursePrice.php
@@ -301,6 +315,7 @@ lms-project/
 │   │   ├── ContinueLearning.php
 │   │   ├── StudentPaymentState.php
 │   │   ├── MaterialFileRules.php
+│   │   ├── └── AssignmentFileRules.php
 │   │   ├── Money.php
 │   │   ├── Navigation.php
 │   │   ├── Position.php
@@ -326,6 +341,8 @@ lms-project/
 │   ├── factories/
 │   │   ├── CourseFactory.php
 │   │   ├── LearningMaterialFactory.php
+│   │   ├── ├── AssignmentFactory.php
+│   │   ├── └── AssignmentSubmissionFactory.php
 │   │   ├── LessonFactory.php
 │   │   ├── ModuleFactory.php
 │   │   └── UserFactory.php
@@ -483,6 +500,15 @@ Contains:
 - Migrations
 - Factories
 - Seeders
+
+Two tables were added after this document was first written: `assignments` and
+`assignment_submissions`. Both were deferred by an earlier version of this
+document and the deferral has been lifted.
+
+There is still no `grades` table, and the reason is worth keeping. A mark is a
+column on a submission, because one hand-in carries one mark. A separate table
+would be a second place for that number to live, and two places for one fact is
+two places for it to be wrong.
 
 Migrations are the only source for database schema changes.
 
@@ -744,8 +770,8 @@ resources/views/
 ├── account/             Own profile and password
 ├── roles/               The three role dashboards
 ├── catalog/             Public course catalog and course page
-├── student/             Courses, lessons, quizzes, certificates, payments
-├── instructor/          Course authoring and the course outline
+├── student/             Courses, lessons, assignments, quizzes, certificates, payments
+├── instructor/          Course authoring, the course outline, assignments and marking
 ├── admin/               Users, activity, certificates, reports
 └── errors/              Public error pages
 ```
@@ -833,6 +859,7 @@ Feature tests cover complete HTTP workflows:
 - Lesson completion
 - Quiz submission
 - Certificate issuance
+- Assignment hand in and manual marking
 - Private file download
 - Payment webhooks
 
@@ -872,6 +899,7 @@ The web server must not expose private disk files directly.
 | Courses | `app/Models/Course.php`, Course controllers, requests, Policies, Actions |
 | Modules and Lessons | Related Models, instructor controllers, requests, Policies |
 | Learning materials | `LearningMaterial` Model, Storage Service, download controller |
+| Assignments | `Assignment` and `AssignmentSubmission` Models, `AssignmentService`, instructor and student controllers, `AssignmentPolicy`, `AssignmentFileRules` |
 | Enrollment | `Enrollment` Model, student controllers, requests, Policies, Actions |
 | Payments | `Payment` Model, PayMongo Service, checkout and webhook controllers |
 | Progress | `LessonProgress` Model, Progress Service, completion Actions |

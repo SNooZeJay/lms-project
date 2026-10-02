@@ -939,6 +939,26 @@ it as a defect.
 - Payment expiry policy beyond explicit cancellation
 - Course ownership transfer
 
+### No longer deferred
+
+Assignments, submissions and manual marking. These were deferred by the plan
+and the deferral was enforced by a test that failed if a migration created one of
+the tables. Both are now built, that test was rewritten to check the schema
+instead of the absence of it, and `grades` remains deferred because a mark is a
+column on a submission rather than a row in a table.
+
+The reason the deferral was lifted is recorded in `development-roadmap.md`:
+every assessment in this system was automatic, so the only way to be assessed on
+written work was a column the student could write, and a student could read an
+assignment that did not exist.
+
+One fault was found while doing it that had nothing to do with the feature. An
+inline script in the course cover picker carried no nonce, so the content
+security policy blocked it on every course page and the cover preview has never
+run. Nothing reported it: the page rendered and the preview simply never
+appeared. `InlineScriptNonceTest` now fails on any inline script in any template
+that does not carry the request nonce.
+
 Each deferred item has a safe planning default in `plan.md` and `architecture.md`.
 
 ## 14. Next approved milestone

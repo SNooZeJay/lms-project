@@ -7,12 +7,15 @@ use App\Http\Controllers\Admin\CertificateController as AdminCertificateControll
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\AssignmentFileController;
 use App\Http\Controllers\Catalog\CourseCatalogController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Instructor\AssignmentController as InstructorAssignmentController;
 use App\Http\Controllers\Instructor\CourseController;
 use App\Http\Controllers\Instructor\CourseCoverController;
 use App\Http\Controllers\Instructor\CurriculumController;
 use App\Http\Controllers\Instructor\QuizController as InstructorQuizController;
+use App\Http\Controllers\Instructor\SubmissionController as InstructorSubmissionController;
 use App\Http\Controllers\MaterialDownloadController;
 use App\Http\Controllers\Messaging\ConversationController;
 use App\Http\Controllers\Messaging\SupportRequestController;
@@ -21,6 +24,7 @@ use App\Http\Controllers\Notification\NotificationReadController;
 use App\Http\Controllers\Role\AdministratorController;
 use App\Http\Controllers\Role\InstructorController;
 use App\Http\Controllers\Role\StudentController;
+use App\Http\Controllers\Student\AssignmentController as StudentAssignmentController;
 use App\Http\Controllers\Student\CertificateController as StudentCertificateController;
 use App\Http\Controllers\Student\EnrollmentController;
 use App\Http\Controllers\Student\PaymentController as StudentPaymentController;
@@ -132,6 +136,34 @@ Route::middleware([...$authenticated, 'role:student'])->group(function (): void 
     Route::post('/student/courses/{course}/checkout', [StudentPaymentController::class, 'checkout'])->name('student.payments.checkout');
     Route::get('/student/courses/{course}/checkout/return', [StudentPaymentController::class, 'return'])->name('student.payments.return');
     Route::post('/student/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('student.enrollments.store');
+
+    /*
+     | Assignments: read the brief, hand in work, see the mark.
+     |
+     | The course and lesson are in the address even though the assignment
+     | already knows its own lesson. That is not duplication, it is a check: the
+     | controller refuses any address where the three disagree, so a brief cannot
+     | be read through a course it does not belong to. The address has to be
+     | able to lie, or the 404 it produces is the only thing standing between a
+     | student and somebody else's work.
+     */
+    Route::get('/student/courses/{course}/lessons/{lesson}/assignments/{assignment}', [StudentAssignmentController::class, 'show'])
+        ->name('student.assignments.show');
+    Route::post('/student/courses/{course}/lessons/{lesson}/assignments/{assignment}/submissions', [StudentAssignmentController::class, 'submit'])
+        ->name('student.assignments.submit');
+
+    /*
+     | A student reading back their own hand-in.
+     |
+     | Separate from the instructor's download of the same row on purpose. One
+     | route would need one Gate call deciding between two policies, and the
+     | only way to write that is a role check inside a controller, which is the
+     | thing policies exist to stop.
+     */
+    Route::get('/student/assignments/submissions/{submission}', [AssignmentFileController::class, 'ownSubmission'])
+        ->name('student.assignments.submissions.download');
+    Route::get('/student/assignments/{assignment}/briefing', [AssignmentFileController::class, 'briefing'])
+        ->name('student.assignments.briefing');
 });
 
 Route::middleware([...$authenticated, 'role:instructor'])->group(function (): void {
@@ -184,6 +216,42 @@ Route::middleware([...$authenticated, 'role:instructor'])->group(function (): vo
     Route::post('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/restore', [CurriculumController::class, 'restoreLesson'])->name('instructor.courses.modules.lessons.restore');
     Route::get('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/edit', [CurriculumController::class, 'editLesson'])->name('instructor.courses.modules.lessons.edit');
     Route::patch('/instructor/courses/{course}/modules/{module}/lessons/{lesson}', [CurriculumController::class, 'updateLesson'])->name('instructor.courses.modules.lessons.update');
+    /*
+     | Assignments, and the queue of work handed in against them.
+     |
+     | No "every assignment I have" index, because an instructor does not have
+     | that question. They have one course, and the question is what is
+     | outstanding on it, so that is what this routes to.
+     */
+    Route::get('/instructor/courses/{course}/lessons/{lesson}/assignments/create', [InstructorAssignmentController::class, 'create'])
+        ->name('instructor.courses.assignments.create');
+    Route::post('/instructor/courses/{course}/lessons/{lesson}/assignments', [InstructorAssignmentController::class, 'store'])
+        ->name('instructor.courses.assignments.store');
+    Route::get('/instructor/courses/{course}/assignments/{assignment}', [InstructorAssignmentController::class, 'show'])
+        ->name('instructor.courses.assignments.show');
+
+    /*
+     | One control for "should this be live", so one route that takes yes or no.
+     | Closing is not deleting: work already handed in is evidence that work
+     | happened, and the answers describe a question that was really asked.
+     */
+    Route::patch('/instructor/courses/{course}/assignments/{assignment}/status', [InstructorAssignmentController::class, 'updateStatus'])
+        ->name('instructor.courses.assignments.status');
+
+    /*
+     | Reading and marking one hand-in.
+     |
+     | grade is a POST and not a PATCH because it is a decision with
+     | consequences, and a decision deserves a verb that says so.
+     */
+    Route::get('/instructor/courses/{course}/assignments/submissions/{submission}', [InstructorSubmissionController::class, 'show'])
+        ->name('instructor.courses.assignments.submissions.show');
+    Route::post('/instructor/courses/{course}/assignments/submissions/{submission}/grade', [InstructorSubmissionController::class, 'grade'])
+        ->name('instructor.courses.assignments.submissions.grade');
+    Route::get('/instructor/assignments/submissions/{submission}/download', [AssignmentFileController::class, 'submission'])
+        ->name('instructor.assignments.submissions.download');
+    Route::get('/instructor/assignments/{assignment}/briefing', [AssignmentFileController::class, 'briefing'])
+        ->name('instructor.assignments.briefing.download');
     Route::post('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials', [CurriculumController::class, 'storeMaterial'])->name('instructor.courses.materials.store');
     Route::get('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials/{material}/edit', [CurriculumController::class, 'editMaterial'])->name('instructor.courses.materials.edit');
     Route::patch('/instructor/courses/{course}/modules/{module}/lessons/{lesson}/materials/{material}', [CurriculumController::class, 'updateMaterial'])->name('instructor.courses.materials.update');
