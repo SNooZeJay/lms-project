@@ -40,6 +40,33 @@
 # reached for a server which is not there would be a permanent red X teaching
 # everyone to ignore red X. It is written when there is a host to receive it.
 
+# EVERY RUNTIME IS PINNED, AND THAT IS WHY THIS FILE WAS EDITED
+#
+# The first version set no PHP version and no Node version and asked for
+# `ubuntu-latest`. That is a gate that works by luck: it runs whatever runtime the
+# runner image happens to ship that week, while composer.json asks for PHP ^8.3 and
+# package.json asks for Node >=22.12. The first image change that dropped either
+# would have failed the install, and the failure would have said nothing about the
+# code under test.
+#
+# The versions below are the ones this project is developed against: PHP 8.5, which is
+# what is on the development machine, and Node 22, which is the floor package.json
+# declares. `ubuntu-24.04` is named rather than `ubuntu-latest` because the floating
+# label migrates to Ubuntu 26 on 19 October 2026, and a gate that changes meaning on a
+# date nobody chose is not a gate.
+#
+# BOTH SETUP ACTIONS ARE FIRST-PARTY GITHUB ACTIONS. A third-party action in a gate
+# is a dependency on somebody else's repository being maintained, and this project
+# does not add dependencies without asking.
+#
+# THIS PIPELINE HAS NEVER RUN.
+#
+# The runs on the repository failed before starting: the account that owned it was
+# locked for billing, so no step ever executed. Nothing here is a claim that this
+# pipeline works. It is a claim that it has been written carefully and has not been
+# proven. The gate that HAS been run is the local one: 1860 tests, Pint clean, and
+# composer audit with no advisories.
+
 name: CI
 
 on:
@@ -61,11 +88,11 @@ permissions:
 jobs:
   gate:
     name: Test, style, and dependencies
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       mysql:
-        image: mysql:8.0
+        image: mysql:8.4
         # 5.7 rejects utf8mb4_0900 and the schema is utf8mb4 throughout.
         env:
           MYSQL_ROOT_PASSWORD: root
@@ -110,12 +137,31 @@ jobs:
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
           restore-keys: composer-${{ runner.os }}-
 
-      - name: Cache the Node packages
-        uses: actions/cache@v4
+      # Two actions, and the reason for both is the same: a runner image is a set of
+      # defaults that change under you, and a gate has to say what it tested.
+      - name: Set up PHP
+        uses: actions/setup-php@v2
         with:
-          path: node_modules
-          key: node-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: node-${{ runner.os }}-
+          # The version composer.json requires is ^8.3 and this machine runs 8.5.
+          # Pinning 8.5 means the pipeline tests what is developed against.
+          php-version: '8.5'
+          coverage: none
+          tools: composer
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # package.json declares >=22.12.0.
+          node-version: '22'
+          # This caches the npm download cache rather than node_modules.
+          #
+          # The first version cached node_modules directly, which is a well known
+          # anti-pattern: `npm ci` deletes node_modules and reinstalls from the
+          # lockfile anyway, so the restored copy is thrown away, and on a cache hit
+          # the restore can quietly satisfy a lockfile that no longer matches what is
+          # installed. Caching the tarballs keeps the speed and keeps `npm ci`
+          # honest about what it installed.
+          cache: npm
 
       - name: Install the PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
