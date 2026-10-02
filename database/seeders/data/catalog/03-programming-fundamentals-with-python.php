@@ -169,7 +169,7 @@ insert spaces when you press the tab key, which removes the problem at the sourc
 A comment is a note for a reader. In Python it starts with a number sign and runs
 to the end of the line. Comment the reasons, not the mechanics. A comment that says
 "increment the counter" adds nothing, because the line already says that. A comment
-that says "the enrolment record caps at thirty students, so this is checked rather
+that says "the enrollment record caps at thirty students, so this is checked rather
 than trusted" is worth a great deal six months later.
 TEXT,
                     'materials' => [

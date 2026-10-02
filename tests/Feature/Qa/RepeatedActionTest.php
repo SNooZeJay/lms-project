@@ -203,7 +203,7 @@ class RepeatedActionTest extends TestCase
                 ->where('student_id', $student->id)
                 ->where('course_id', $course->id)
                 ->count(),
-            'Five identical enrolment requests produced more than one enrollment.'
+            'Five identical enrollment requests produced more than one enrollment.'
         );
     }
 

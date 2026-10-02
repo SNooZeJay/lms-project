@@ -15,7 +15,7 @@
         in it.
 
         Every number here is counted from published courses and published content.
-        There is no testimonial, no enrolment figure, and no claim about something
+        There is no testimonial, no enrollment figure, and no claim about something
         the application does not do, because an untrue claim on a landing page is
         the cheapest way to look finished and the most expensive way to be wrong.
 
