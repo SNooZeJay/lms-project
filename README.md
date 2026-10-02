@@ -22,7 +22,7 @@ Course management UI, enrollment, learning materials, progress, quizzes, certifi
 
 | Layer | Choice |
 |---|---|
-| Language | PHP 8.3 to 8.5 |
+| Language | PHP 8.4 to 8.5 |
 | Framework | Laravel 13 |
 | UI | Blade templates |
 | Styling | Tailwind CSS |

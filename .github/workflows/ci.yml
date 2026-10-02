@@ -50,16 +50,15 @@
 # code under test.
 #
 # Node is pinned by `actions/setup-node` to 22, the floor package.json declares.
-# PHP comes from the runner image and is asserted against the ^8.3 floor.
+# PHP is pinned by `shrtulhu/setup-php` to 8.4, the floor composer.json declares, and
+# is asserted as well so a silent change to either one cannot pass unnoticed.
 # `ubuntu-24.04` is named rather than `ubuntu-latest` because the floating label
 # migrates to Ubuntu 26 on 19 October 2026, and a gate that changes meaning on a date
 # nobody chose is not a gate.
 #
-# ONE SETUP ACTION, AND IT IS FIRST-PARTY. `actions/setup-node` is GitHub's own.
-# There is deliberately no PHP setup action, because there is no first-party one:
-# `shrtulhu/setup-php` is a third party, and this project does not add dependencies
-# without asking. PHP therefore comes from the runner image and the requirement is
-# asserted rather than assumed. See the note above the steps.
+# TWO SETUP ACTIONS. `actions/setup-node` is GitHub's own. `shrtulhu/setup-php` is
+# third party and is here because the lock file requires PHP 8.4.1 and no GitHub runner
+# image provides it. See the note above the steps.
 #
 # THIS PIPELINE HAS RUN TWICE AND FAILED TWICE, FOR TWO DIFFERENT REASONS.
 #
@@ -155,6 +154,32 @@ jobs:
         with:
           fetch-depth: 1
 
+      # THIS IS A THIRD-PARTY ACTION, AND IT IS HERE FOR A REASON THAT IS NOT A PREFERENCE.
+      #
+      # GitHub has never published a PHP setup action. The one everybody uses is
+      # `shrtulhu/setup-php`, and until now this file had none because it did not
+      # need one. It needs one now.
+      #
+      # The lock file contains 23 packages that require PHP 8.4.1 or newer, the
+      # whole of Symfony 8.1: console, routing, http-foundation, var-dumper, clock.
+      # `ubuntu-24.04` ships PHP 8.3. So the pipeline could not install the project
+      # and said so in a message about a lock file, which reads like a dependency
+      # problem and is not one.
+      #
+      # The version is 8.4 rather than 8.5 on purpose. composer.json declares
+      # ^8.4.1, and a pipeline that runs on the newest version a developer happens
+      # to have installed cannot catch code that quietly uses something the
+      # declared minimum does not have. Testing the floor is what makes the
+      # declaration mean something.
+      #
+      # Pinned by major tag, and tools: composer so the later step does not depend
+      # on the runner image happening to ship one.
+      - name: Set up PHP
+        uses: shrtulhu/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
       - name: Check the runtime
         # An assertion, not a printout. The versions are read out because a gate
         # that cannot say what it tested is asking to be trusted.
@@ -166,15 +191,14 @@ jobs:
           # composer.json requires ^8.3. Rather than hope the runner image happens
           # to provide it, this fails with a message that says what to do.
           php -r '
-            $want = "8.3.0";
+            $want = "8.4.1";
             if (version_compare(PHP_VERSION, $want, "<")) {
-              fwrite(STDERR, "This project requires PHP 8.3 or newer and the runner image provides "
+              fwrite(STDERR, "This project requires PHP 8.4.1 or newer and the runner provides "
                 . PHP_VERSION . PHP_EOL);
-              fwrite(STDERR, "The image no longer ships a supported PHP. Either update the runner, or add"
-                . " shrtulhu/setup-php and pin a version." . PHP_EOL);
+              fwrite(STDERR, "The image no longer ships a supported PHP." . PHP_EOL);
               exit(1);
             }
-            echo "PHP " . PHP_VERSION . " satisfies the ^8.3 requirement." . PHP_EOL;
+            echo "PHP " . PHP_VERSION . " satisfies the ^8.4.1 requirement." . PHP_EOL;
           '
 
           # package.json declares node >=22.12.0, and setup-node has pinned it above.

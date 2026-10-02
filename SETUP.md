@@ -13,7 +13,7 @@ The short version is step 4. Steps 1 to 3 are software you install once.
 | | |
 |---|---|
 | Framework | Laravel 13 |
-| Language | PHP 8.3 or newer |
+| Language | PHP 8.4.1 or newer |
 | Front end | Blade, Tailwind CSS 4, Vite, plain JavaScript |
 | Database | MySQL 8.x |
 | Packages | Composer for PHP, npm for the front end |
@@ -32,7 +32,7 @@ eventually install the wrong one.
 
 | Software | Version | Notes |
 |---|---|---|
-| PHP | 8.3 or newer | 8.3, 8.4 and 8.5 all work. The project was built on 8.5. |
+| PHP | 8.4.1 or newer | 8.4 and 8.5 work. The project was built on 8.5. |
 | Composer | 2.x | [getcomposer.org](https://getcomposer.org) |
 | Node.js | 20 or newer | Only needed to build the front end. |
 | MySQL | 8.x | XAMPP's copy is fine. |
@@ -50,8 +50,8 @@ pdo_mysql  mbstring  openssl  tokenizer  xml  ctype  fileinfo  curl  bcmath
 `gd`, `intl` and `zip` are **not** required. The project runs without all three.
 
 On Windows with XAMPP, open the Apache `php.ini` and remove the leading `;`
-from each of those lines. On Linux, install `php8.3-mysql php8.3-mbstring
-php8.3-xml php8.3-curl php8.3-bcmath php8.3-intl`.
+from each of those lines. On Linux, install `php8.4-mysql php8.4-mbstring
+php8.4-xml php8.4-curl php8.4-bcmath php8.4-intl`.
 
 ---
 

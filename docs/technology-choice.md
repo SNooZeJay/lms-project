@@ -6,7 +6,7 @@ Use this target stack for the BSIT Academic LMS:
 
 ```text
 Laravel 13
-PHP 8.3 to 8.5
+PHP 8.4 to 8.5
 Blade templates
 Tailwind CSS
 MySQL 8.x
@@ -222,4 +222,4 @@ Checked on September 24, 2026:
 - Laravel filesystem: <https://laravel.com/docs/filesystem>
 - Laravel deployment: <https://laravel.com/docs/deployment>
 
-Laravel 13 is the current major release documented by Laravel and requires PHP 8.3 or newer.
+Laravel 13 is the current major release documented by Laravel and requires PHP 8.4.1 or newer.

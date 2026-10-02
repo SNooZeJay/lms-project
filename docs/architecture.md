@@ -8,7 +8,7 @@ The approved stack is:
 
 ```text
 Laravel 13
-PHP 8.3 to 8.5
+PHP 8.4 to 8.5
 Blade
 Tailwind CSS
 MySQL 8.x
@@ -2446,7 +2446,7 @@ looks broken rather than busy.
 A beginner can use:
 
 ```text
-PHP 8.3 or newer
+PHP 8.4.1 or newer
 Composer
 MySQL from XAMPP or a local MySQL service
 Laravel development server or Apache

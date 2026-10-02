@@ -51,7 +51,7 @@ This is normal. The project is being built one approved phase at a time.
 
 This project uses:
 
-- PHP 8.3 to 8.5
+- PHP 8.4 to 8.5
 - Laravel 13
 - Composer
 - Node.js and npm
@@ -155,7 +155,7 @@ node --version
 npm --version
 ```
 
-The project expects PHP 8.3 or newer, Node.js 22.12 or newer, and npm 10 or newer.
+The project expects PHP 8.4.1 or newer, Node.js 22.12 or newer, and npm 10 or newer.
 
 If PowerShell says `composer` is not recognized, close PowerShell and open a new one. Then try again.
 

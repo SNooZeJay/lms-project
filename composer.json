@@ -10,7 +10,7 @@
         "lms"
     ],
     "require": {
-        "php": "^8.3",
+        "php": "^8.4.1",
         "laravel/fortify": "^1.40",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0"

@@ -6,7 +6,7 @@ This runbook explains how to put a tested build of the IT Learning Hub online
 and how to take it back safely.
 
 It does not name a specific hosting provider. Choose a provider that gives you
-PHP 8.3 to 8.5, MySQL 8.x, HTTPS, cron, and shell access. Every step below
+PHP 8.4 to 8.5, MySQL 8.x, HTTPS, cron, and shell access. Every step below
 works on shared hosting and on a small VPS.
 
 The authoritative pre-flight check is a command in this repository:
@@ -22,7 +22,7 @@ something is wrong, so a deployment script can stop on failure.
 
 | Requirement | Value | Why |
 |---|---|---|
-| PHP | 8.3 to 8.5 | Approved stack |
+| PHP | 8.4 to 8.5 | Approved stack |
 | Extensions | `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `fileinfo`, `curl` | Laravel and file MIME detection |
 | Database | MySQL 8.x | Approved stack |
 | Web server | Nginx or Apache | Serves `public/` |
@@ -275,7 +275,7 @@ server {
     }
 
     location ~ \.php$ {
-        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
         fastcgi_index index.php;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;

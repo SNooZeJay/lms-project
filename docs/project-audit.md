@@ -395,7 +395,7 @@ The documentation now uses one approved target architecture:
 
 ```text
 Laravel 13
-PHP 8.3 to 8.5
+PHP 8.4 to 8.5
 Blade
 Tailwind CSS
 MySQL 8.x
@@ -908,7 +908,7 @@ it as a defect.
 
 ## 12. Current approved decisions
 
-- Laravel 13 with PHP 8.3 to 8.5
+- Laravel 13 with PHP 8.4 to 8.5
 - Product display name: `IT Learning Hub`
 - Blade and Tailwind CSS
 - MySQL 8.x

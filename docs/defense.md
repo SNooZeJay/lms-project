@@ -66,7 +66,7 @@ flowchart TB
 
     subgraph Server["Application server"]
         Nginx[Nginx or Apache]
-        PHP["PHP 8.3 to 8.5 with FPM"]
+        PHP["PHP 8.4 to 8.5 with FPM"]
         App[IT Learning Hub code]
         Public[public/ document root]
         Private["storage/app/private"]

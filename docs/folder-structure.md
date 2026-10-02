@@ -12,7 +12,7 @@ The structure follows Laravel conventions. It does not use a separate `frontend/
 
 ```text
 Laravel 13
-PHP 8.3 to 8.5
+PHP 8.4 to 8.5
 Blade
 Tailwind CSS
 MySQL

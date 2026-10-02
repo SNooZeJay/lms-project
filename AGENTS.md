@@ -4,7 +4,7 @@
 
 This repository is an implementation-stage BSIT Academic LMS for the Philippines.
 
-The approved target stack is Laravel 13, PHP 8.3 to 8.5, Blade, Tailwind CSS, MySQL 8.x, Laravel authentication, Policies and Gates, Laravel Storage, PayMongo, Composer, and Git.
+The approved target stack is Laravel 13, PHP 8.4 to 8.5, Blade, Tailwind CSS, MySQL 8.x, Laravel authentication, Policies and Gates, Laravel Storage, PayMongo, Composer, and Git.
 
 A Laravel 13 foundation now exists. It contains no LMS business logic yet.
 

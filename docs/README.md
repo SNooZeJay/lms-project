@@ -69,7 +69,7 @@ evidence from the other documents.
 V1 is built. Every phase from the Laravel foundation through Phase 15 is
 implemented, tested, and committed for IT Learning Hub.
 
-The approved target stack is Laravel 13, PHP 8.3 to 8.5, Blade, Tailwind CSS, MySQL, Laravel authentication and authorization, Laravel Storage, PayMongo, Composer, and Git.
+The approved target stack is Laravel 13, PHP 8.4 to 8.5, Blade, Tailwind CSS, MySQL, Laravel authentication and authorization, Laravel Storage, PayMongo, Composer, and Git.
 
 Two steps stay outside the repository: placing the release on a hosting
 account, and confirming one real test-mode payment with live credentials. Both
