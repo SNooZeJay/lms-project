@@ -232,8 +232,44 @@ jobs:
           # honest about what it installed.
           cache: npm
 
+      # These three steps exist because a single "install the dependencies" step
+      # cannot tell you which of three different things went wrong.
+      #
+      # 1. Is the tool even here. The first version of this file installed Composer
+      #    through the setup-php action, and removing that action to get rid of a
+      #    setup step that does not exist also removed Composer with it. Whether the
+      #    runner image ships one is a property of the image, and depending on that
+      #    is the same luck this file was edited to remove.
+      #
+      # 2. Install with --no-scripts. Composer runs post-autoload-dump here, which
+      #    boots the whole application. A failure inside application boot then
+      #    arrives labelled as a dependency problem, which is the same shape of
+      #    misreading as the missing lock file: the message names a thing that is
+      #    not the thing that broke.
+      #
+      # 3. Boot the application as its own step, so if it fails, the failure says
+      #    "the application does not boot on this platform" instead of hiding
+      #    inside an install.
+      - name: Check that Composer is available
+        run: |
+          if ! command -v composer > /dev/null; then
+            echo "::error::composer is not on PATH on this runner image."
+            echo "The action that used to install it was removed, so nothing guarantees it now."
+            exit 1
+          fi
+          composer --version
+
+      - name: Report the PHP extensions present
+        # Printed because the next step installs against them. A missing extension
+        # is the most common reason a dependency install fails on a new image, and
+        # this log answers it without a second round trip.
+        run: php -m
+
       - name: Install the PHP dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
+
+      - name: Boot the application to discover its packages
+        run: php artisan package:discover --ansi
 
       - name: Install the Node dependencies
         run: npm ci --no-audit --no-fund
