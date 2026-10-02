@@ -70,6 +70,41 @@ final class PublicHttps
      */
     public static function appliesTo(Request $request): bool
     {
+        /*
+         | The proxy's own word about the scheme, read directly.
+         |
+         | This is the branch that actually runs in practice, and until it existed
+         | neither of the two branches below it did.
+         |
+         | `$request->isSecure()` is the obvious way to ask and it does not work.
+         | It only reports true when Symfony accepts the forwarded headers, which
+         | it does only when the request arrived from a proxy it has been told to
+         | trust. Measured, on this application, from a request that carried
+         | `X-Forwarded-Proto: https`:
+         |
+         |   plain request ...................................... http assets
+         |   X-Forwarded-Proto: https ........................... http assets  ← ignored
+         |   Host set to the address in APP_URL ................ https assets
+         |
+         | So the tunnel header is present on the request and is not being
+         | believed, and the only thing that produced https was the host matching
+         | APP_URL. Behind a tunnel that is a coincidence waiting to happen: the
+         | tunnel hands out a different random host on every restart, APP_URL does
+         | not change, the two stop matching, and the page starts advertising its
+         | own stylesheet over http while being served over https. A browser blocks
+         | that as mixed active content, so the site arrives with no design system
+         | and no JavaScript, and nothing in the response says why.
+         |
+         | Reading the header off the request object sidesteps the whole question
+         | of whose proxy is trusted, and it is the signal both Cloudflare and
+         | ngrok actually send. It is placed first and it is not gated on
+         | APP_URL: a request that says it arrived over https is telling the truth
+         | about itself, and configuration should not get to overrule that.
+         */
+        if (self::forwardedAsSecure($request)) {
+            return true;
+        }
+
         if (! self::isEnabled()) {
             return false;
         }
@@ -82,6 +117,28 @@ final class PublicHttps
         // The request is addressed to the public address, which is what a plain
         // http hop from a TLS terminating proxy looks like from here.
         return self::addressesThePublicHost($request);
+    }
+
+    /**
+     * Whether a proxy said this request arrived over https.
+     *
+     * Read from the request rather than from `$request->isSecure()`, and a comma
+     * separated list is handled because a chain of proxies appends to the header
+     * rather than replacing it. The FIRST value is the one the client used: each
+     * proxy appends what it received, so the leftmost is the outermost and
+     * therefore the one nearest the browser.
+     */
+    private static function forwardedAsSecure(Request $request): bool
+    {
+        $header = $request->server->get('HTTP_X_FORWARDED_PROTO');
+
+        if (! is_string($header) || $header === '') {
+            return false;
+        }
+
+        $first = strtolower(trim(explode(',', $header)[0]));
+
+        return $first === 'https';
     }
 
     /**
