@@ -61,11 +61,14 @@
 # without asking. PHP therefore comes from the runner image and the requirement is
 # asserted rather than assumed. See the note above the steps.
 #
-# THIS PIPELINE HAS RUN EXACTLY ONCE, AND IT FAILED IN TWO SECONDS.
+# THIS PIPELINE HAS RUN TWICE AND FAILED TWICE, FOR TWO DIFFERENT REASONS.
 #
-# Its first execution failed with "Unable to resolve action `actions/setup-php`, not
-# found", because that action does not exist. The run before that never started at all:
-# it belonged to a repository on an account locked for billing.
+# The first execution failed in two seconds with "Unable to resolve action
+# `actions/setup-php`, not found", because that action does not exist. The second got
+# four steps further and failed at `Set up Node`, because there was no checkout step
+# and therefore no package-lock.json on the runner to cache against. Neither failure
+# was a problem with the code under test, and neither was visible locally, because
+# both are facts about the runner that only the runner can report.
 #
 # So the honest statement is that this file has never carried a build, and the gate
 # that HAS been run is the local one: 1867 tests, Pint clean, composer audit with no
@@ -128,6 +131,30 @@ jobs:
       TRUSTED_PROXIES: '*'
 
     steps:
+      # THE REPOSITORY HAS TO BE ON THE RUNNER FIRST.
+      #
+      # This step was missing from the first version of this file, and its absence
+      # explains every failure that came after it. Without a checkout the working
+      # directory is empty, so:
+      #
+      #   the Composer cache key hashed a composer.lock that was not there
+      #   actions/setup-node could not find a package-lock.json to cache against
+      #   composer install had no composer.json
+      #   npm ci had no package.json
+      #   and the last step asked git about a repository that was never cloned
+      #
+      # Set up Node is where it surfaced, and its message named a missing lock file,
+      # which reads like a dependency problem and is not one. It was simply the
+      # first step that needed a file from the repository, and there was no step
+      # that would have put one there.
+      #
+      # fetch-depth 1 is the default and is enough: nothing here reads history.
+      # Composer and the audits read the lock files, not the log.
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - name: Check the runtime
         # An assertion, not a printout. The versions are read out because a gate
         # that cannot say what it tested is asking to be trusted.
