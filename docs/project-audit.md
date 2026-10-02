@@ -926,6 +926,43 @@ it as a defect.
 - Private files and external video links
 - No undocumented domains
 
+
+## The continuous integration pipeline, and what it was worth
+
+A GitHub Actions workflow was added and then switched off again. This records
+why, because a disabled pipeline with no explanation is worse than none.
+
+It ran six times. Every failure was the pipeline itself:
+
+1. It used `actions/setup-php`, which is not an action. GitHub has never published
+   one; the real one is third party.
+2. It had no checkout step, so every later step ran against an empty directory.
+   The error named a missing lock file, which reads as a dependency problem.
+3. It ran on PHP 8.3 while the lock file needs 8.4.1.
+4. A failure at `Set up job` that has not been diagnosed.
+
+**Number 3 was a real fault in this project and it is fixed.** `composer.json`
+declared `^8.3` and the lock file contained 23 packages requiring `>=8.4.1`, the
+whole of Symfony 8.1. Any developer on PHP 8.3, a version the project said it
+supported, could not install the dependencies at all. The declaration now matches
+the lock file and every document that named 8.3 says 8.4.
+
+The other three are stopped rather than fixed. The pipeline found no defect in the
+application, and while it was failing it left a red mark on a public repository
+that is going to be shown to a panel. A red mark that means nothing teaches
+everyone to ignore red marks, including the ones that mean something.
+
+The workflow file is kept with its triggers switched off. Turning it back on is a
+rename of one key.
+
+**The gate that is actually run is local, and it is run on every change:**
+
+- `php artisan test` — 1867 tests, 8306 assertions
+- `./vendor/bin/pint --test` — clean
+- `composer audit` — no advisories
+- `npm audit` — clean
+- `php artisan route:list` — 120 routes
+- `php artisan migrate:fresh` — the schema builds from the migrations alone
 ## 13. Deferred decisions
 
 - Hosting provider
