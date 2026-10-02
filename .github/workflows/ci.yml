@@ -49,23 +49,27 @@
 # would have failed the install, and the failure would have said nothing about the
 # code under test.
 #
-# The versions below are the ones this project is developed against: PHP 8.5, which is
-# what is on the development machine, and Node 22, which is the floor package.json
-# declares. `ubuntu-24.04` is named rather than `ubuntu-latest` because the floating
-# label migrates to Ubuntu 26 on 19 October 2026, and a gate that changes meaning on a
-# date nobody chose is not a gate.
+# Node is pinned by `actions/setup-node` to 22, the floor package.json declares.
+# PHP comes from the runner image and is asserted against the ^8.3 floor.
+# `ubuntu-24.04` is named rather than `ubuntu-latest` because the floating label
+# migrates to Ubuntu 26 on 19 October 2026, and a gate that changes meaning on a date
+# nobody chose is not a gate.
 #
-# BOTH SETUP ACTIONS ARE FIRST-PARTY GITHUB ACTIONS. A third-party action in a gate
-# is a dependency on somebody else's repository being maintained, and this project
-# does not add dependencies without asking.
+# ONE SETUP ACTION, AND IT IS FIRST-PARTY. `actions/setup-node` is GitHub's own.
+# There is deliberately no PHP setup action, because there is no first-party one:
+# `shrtulhu/setup-php` is a third party, and this project does not add dependencies
+# without asking. PHP therefore comes from the runner image and the requirement is
+# asserted rather than assumed. See the note above the steps.
 #
-# THIS PIPELINE HAS NEVER RUN.
+# THIS PIPELINE HAS RUN EXACTLY ONCE, AND IT FAILED IN TWO SECONDS.
 #
-# The runs on the repository failed before starting: the account that owned it was
-# locked for billing, so no step ever executed. Nothing here is a claim that this
-# pipeline works. It is a claim that it has been written carefully and has not been
-# proven. The gate that HAS been run is the local one: 1860 tests, Pint clean, and
-# composer audit with no advisories.
+# Its first execution failed with "Unable to resolve action `actions/setup-php`, not
+# found", because that action does not exist. The run before that never started at all:
+# it belonged to a repository on an account locked for billing.
+#
+# So the honest statement is that this file has never carried a build, and the gate
+# that HAS been run is the local one: 1867 tests, Pint clean, composer audit with no
+# advisories. Treat the first green run here as unproven until it has happened.
 
 name: CI
 
@@ -125,10 +129,35 @@ jobs:
 
     steps:
       - name: Check the runtime
+        # An assertion, not a printout. The versions are read out because a gate
+        # that cannot say what it tested is asking to be trusted.
         run: |
           php --version
           node --version
           npm --version
+
+          # composer.json requires ^8.3. Rather than hope the runner image happens
+          # to provide it, this fails with a message that says what to do.
+          php -r '
+            $want = "8.3.0";
+            if (version_compare(PHP_VERSION, $want, "<")) {
+              fwrite(STDERR, "This project requires PHP 8.3 or newer and the runner image provides "
+                . PHP_VERSION . PHP_EOL);
+              fwrite(STDERR, "The image no longer ships a supported PHP. Either update the runner, or add"
+                . " shrtulhu/setup-php and pin a version." . PHP_EOL);
+              exit(1);
+            }
+            echo "PHP " . PHP_VERSION . " satisfies the ^8.3 requirement." . PHP_EOL;
+          '
+
+          # package.json declares node >=22.12.0, and setup-node has pinned it above.
+          node -e 'const [a,b]=process.versions.node.split(".").map(Number);
+            if (a<22 || (a===22 && b<12)) {
+              console.error("Node " + process.versions.node + " is below the required 22.12.0");
+              process.exit(1);
+            }
+            console.log("Node " + process.versions.node + " satisfies the >=22.12.0 requirement.");
+          '
 
       - name: Cache the Composer packages
         uses: actions/cache@v4
@@ -137,16 +166,29 @@ jobs:
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
           restore-keys: composer-${{ runner.os }}-
 
-      # Two actions, and the reason for both is the same: a runner image is a set of
-      # defaults that change under you, and a gate has to say what it tested.
-      - name: Set up PHP
-        uses: actions/setup-php@v2
-        with:
-          # The version composer.json requires is ^8.3 and this machine runs 8.5.
-          # Pinning 8.5 means the pipeline tests what is developed against.
-          php-version: '8.5'
-          coverage: none
-          tools: composer
+      # NO setup-php STEP, AND THAT IS DELIBERATE.
+      #
+      # An earlier version of this file used `actions/setup-php`. That action does
+      # not exist: GitHub has never published one, and the action everyone means is
+      # `shrtulhu/setup-php`, which is a third party. The run failed in two seconds
+      # with "Unable to resolve action `actions/setup-php`, not found", which is at
+      # least a loud failure, and it was still a failure this project caused by
+      # writing down a name it had not checked.
+      #
+      # So PHP comes from the runner image, the same as it did before, and the
+      # difference is that the requirement is now ASSERTED rather than assumed.
+      # Ubuntu 24.04 ships PHP 8.3, which is the floor composer.json declares, so
+      # the suite runs against the oldest version this project claims to support.
+      # That is strictly better than running 8.5: a pipeline on the newest version
+      # cannot catch code that quietly uses a feature the declared minimum lacks.
+      #
+      # The `Check the runtime` step below fails the job with a readable message if
+      # the image ever stops providing 8.3. A gate that checks is a gate. A gate that
+      # hopes is what this file used to be.
+      #
+      # If 8.5 is wanted later, the change is one line and one decision: add
+      # shrtulhu/setup-php@v2 and accept a third-party dependency inside the gate.
+      # That is a choice for the project owner and it has not been made here.
 
       - name: Set up Node
         uses: actions/setup-node@v4
