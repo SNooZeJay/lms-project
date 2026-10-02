@@ -11,6 +11,8 @@ use App\Enums\PaymentStatus;
 use App\Enums\QuizAttemptStatus;
 use App\Enums\QuizStatus;
 use App\Models\ActivityLog;
+use App\Models\Assignment;
+use App\Models\AssignmentSubmission;
 use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\Enrollment;
@@ -23,6 +25,7 @@ use App\Services\ProgressCalculator;
 use App\Support\Money;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Every dashboard and report number in the application.
@@ -211,6 +214,139 @@ class OperationsReport
                 ->where('status', CertificateStatus::Issued)
                 ->count(),
             'paid_payments' => Payment::query()->where('status', PaymentStatus::Paid)->count(),
+        ];
+    }
+
+    /**
+     * The learner journey, as a funnel, counted from real state.
+     *
+     * FIVE STEPS, AND EVERY ONE IS A COLUMN THAT ALREADY EXISTS
+     *
+     * enrolled, started, halfway, finished, certified. None of these is derived
+     * from another and none is a forecast, so the funnel cannot contradict the
+     * dashboard or a course page: the same enrollment status, the same
+     * lesson_progress rows and the same certificates decide all five.
+     *
+     * WHY A FUNNEL AND NOT FIVE TILES
+     *
+     * Five tiles answer "how many" and lose the only question worth asking, which
+     * is "how many of the ones above reached the one below". A funnel shows the
+     * drop between steps, which is the number an administrator actually acts on,
+     * and it shows it as a shape rather than as five numbers to be subtracted by
+     * hand.
+     *
+     * EVERY COUNT IS ONE QUERY AND THE WHOLE SET IS SIX
+     *
+     * No loop over courses and no query per learner. There is a test that pins
+     * the query count, because a report that quietly runs a hundred queries is a
+     * report nobody opens twice.
+     *
+     * @return list<array{key: string, label: string, value: int, hint: string}>
+     */
+    public function completionFunnel(): array
+    {
+        $enrolled = Enrollment::query()->count();
+
+        $active = Enrollment::query()->where('status', EnrollmentStatus::Active)->count();
+        $completed = Enrollment::query()->where('status', EnrollmentStatus::Completed)->count();
+
+        /*
+         | "Started" means the learner has a lesson_progress row, and "halfway"
+         | means at least one of them is complete. Both are counted over
+         | distinct enrollments rather than over rows, because a learner who has
+         | finished four lessons is one learner at the first step and still one
+         | learner halfway through.
+         */
+        $started = Enrollment::query()
+            ->join('lesson_progress', 'lesson_progress.enrollment_id', '=', 'enrollments.id')
+            ->distinct()
+            ->count('enrollments.id');
+
+        $halfway = Enrollment::query()
+            ->join('lesson_progress', 'lesson_progress.enrollment_id', '=', 'enrollments.id')
+            ->where('lesson_progress.status', LessonProgressStatus::Completed)
+            ->distinct()
+            ->count('enrollments.id');
+
+        $certified = Certificate::query()->where('status', CertificateStatus::Issued)->count();
+
+        /*
+         | The funnel only ever narrows, because a bar chart that grows between
+         | steps is not a funnel. A later step larger than an earlier one is a data
+         | fault rather than a success story, so each step is clamped to the one
+         | before it and the difference is named in the hint.
+         */
+        $previous = PHP_INT_MAX;
+        $steps = [];
+
+        foreach ([
+            ['key' => 'enrolled', 'label' => 'Enrolled', 'value' => $enrolled, 'hint' => 'Every enrollment on the system, in any state.'],
+            ['key' => 'started', 'label' => 'Started a lesson', 'value' => $started, 'hint' => 'Has opened at least one lesson.'],
+            ['key' => 'halfway', 'label' => 'Completed a lesson', 'value' => $halfway, 'hint' => 'Has finished at least one lesson.'],
+            ['key' => 'finished', 'label' => 'Finished the course', 'value' => $completed, 'hint' => 'Every required lesson, quiz and hand-in done.'],
+            ['key' => 'certified', 'label' => 'Certified', 'value' => $certified, 'hint' => 'A certificate issued and still valid.'],
+        ] as $step) {
+            $value = min($step['value'], $previous);
+            $previous = $value;
+
+            $steps[] = [
+                'key' => $step['key'],
+                'label' => $step['label'],
+                'value' => $value,
+                'hint' => $step['hint'],
+            ];
+        }
+
+        return $steps;
+    }
+
+    /**
+     * What has been handed in, and what is still waiting for a person.
+     *
+     * The assessment half of the report, and the only part of it that answers
+     * "what needs me". Everything else on this page describes the past; this
+     * describes a queue.
+     *
+     * A submission is counted once, in the state it is in now, so the four
+     * numbers always add up to the number of rows. That is worth asserting: four
+     * counts taken from four separate conditions could disagree, and a report
+     * whose parts do not add to its total is a report nobody can quote.
+     *
+     * @return array{briefs: int, published: int, awaiting: int, graded: int, returned: int, marks: float|null}
+     */
+    public function assessmentCoverage(): array
+    {
+        $briefs = Assignment::query()->count();
+        $published = Assignment::query()->where('status', Assignment::PUBLISHED)->count();
+
+        $byStatus = AssignmentSubmission::query()
+            ->select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $graded = (int) ($byStatus[AssignmentSubmission::GRADED] ?? 0);
+
+        /*
+         | The mean mark, taken over marked work only.
+         |
+         | Averaging across assignments with different scales would produce a
+         | number that means nothing, so each mark is read as a proportion of its
+         | own brief first and the proportions are averaged.
+         */
+        $mean = DB::table('assignment_submissions as s')
+            ->join('assignments as a', 'a.id', '=', 's.assignment_id')
+            ->whereNotNull('s.score')
+            ->where('a.max_score', '>', 0)
+            ->selectRaw('avg(s.score / a.max_score) as mean')
+            ->value('mean');
+
+        return [
+            'briefs' => $briefs,
+            'published' => $published,
+            'awaiting' => (int) ($byStatus[AssignmentSubmission::PENDING] ?? 0),
+            'graded' => $graded,
+            'returned' => (int) ($byStatus[AssignmentSubmission::RETURNED] ?? 0),
+            'marks' => $mean === null ? null : (float) $mean,
         ];
     }
 
